@@ -64,9 +64,8 @@ protected:
 private:
 
 	unsigned int m_mrows, m_ncols;
-	unsigned int m_rowstride, m_colstride;
+	unsigned int m_rowStart, m_rowEnd, m_colStart, m_colEnd;
 	Matrix & m_parent;
-
 
 };
 
