@@ -39,4 +39,6 @@ void qr_givens(const Matrix & A, Matrix & Q, Matrix & R);
 // svd A = USV*
 void svd(const Matrix & A, Matrix & U, Matrix & S, Matrix & V);
 
+// LU decomposition
+void lu(const Matrix & A, Matrix & L, Matrix & U);
 #endif
