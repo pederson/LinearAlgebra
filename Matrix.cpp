@@ -112,7 +112,12 @@ int main(int argc, char * argv[]){
 	cout << "D = " << D << endl;
 	cout << "C = " << C << endl;
 
-	// subvector assignment
+	// vector proxy
+	cout << "B(:, 3) = " << B.col(3) << endl;
+	cout << "B(2, :) = " << B.row(2) << endl;
+
+	// dot products
+	cout << "B(:,1)' * B(:,2) = " << Vector_Proxy::dot(B.col(1), B.col(2)) << endl;
 
 	// matrix-matrix mult
 

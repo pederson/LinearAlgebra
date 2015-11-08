@@ -20,8 +20,8 @@ public:
 	virtual std::size_t rows() const = 0;
 	virtual std::size_t cols() const = 0;
 	virtual double norm() const = 0;
-	// virtual Vector_Proxy & row(unsigned int i) = 0;
-	// virtual Vector_Proxy & col(unsigned int j) = 0;
+	virtual Vector_Proxy row(unsigned int i) = 0;
+	virtual Vector_Proxy col(unsigned int j) = 0;
 	// virtual void transpose() = 0;
 
 protected:
@@ -104,9 +104,29 @@ public:
 	{
 	}
 
-	Vector_Proxy & operator=(const Vector & vct);
+	static double dot(const Vector_Proxy & vp1, const Vector_Proxy & vp2)
+	{
+		double result = 0.0;
+		if (vp1.m_length == vp2.m_length)
+		{
+			for (auto i=0; i< vp1.m_length; i++)
+			{
+				result += *(vp1.m_dataptr + i*vp1.m_stride) * *(vp1.m_dataptr + i*vp2.m_stride);
+			}
+		}
+		else
+		{
+			throw "Vectors must be of same size!";
+		}
 
-	Vector_Proxy & operator=(Vector_Proxy & vctp);
+		return result;
+	}
+
+	// Vector_Proxy & operator=(const Vector & vct);
+
+	// Vector_Proxy & operator=(Vector_Proxy & vctp);
+
+	friend std::ostream & operator<<(std::ostream & os, const Vector_Proxy & vctp);
 
 protected:
 
@@ -118,7 +138,28 @@ protected:
 
 };
 
+std::ostream& operator<<(std::ostream & os, const Vector_Proxy & vctp)
+{
+	os << std::endl;
+	if (vctp.m_is_column)
+	{
+		for (auto i=0; i<vctp.m_length; i++)
+		{
+			os << *(vctp.m_dataptr + i*vctp.m_stride) << std::endl;
+		}
+	}
+	else
+	{
+		for (auto i=0; i<vctp.m_length; i++)
+		{
+			os << *(vctp.m_dataptr + i*vctp.m_stride) << "\t" ;
+		}
+		os << std::endl;
+	}
+	
 
+	return os;
+}
 
 
 
@@ -219,8 +260,11 @@ public:
 		return *this;
 	}
 
-	// // Matrix-Matrix multiplication
-	// Matrix & operator*(const Matrix & A, const Matrix & B);
+	// Matrix-Matrix multiplication
+	Matrix operator*(const Matrix & A, const Matrix & B)
+	{
+		
+	}
 
 	// scalar multiplication
 	Matrix operator*(double val)
@@ -272,6 +316,17 @@ public:
 		return m_data[m_mrows*j + i];
 	}
 
+	// row access
+	Vector_Proxy row(unsigned int i)
+	{
+		return Vector_Proxy(&m_data[i], m_ncols, m_mrows, false);
+	}
+
+	// column access
+	Vector_Proxy col(unsigned int j)
+	{
+		return Vector_Proxy(&m_data[j*m_mrows], m_mrows, 1, true);
+	}
 
 	void fill(double fillval)
 	{
