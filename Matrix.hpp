@@ -21,7 +21,10 @@ public:
 	virtual std::size_t cols() const = 0;
 	virtual double norm() const = 0;
 	virtual Vector_Proxy row(unsigned int i) = 0;
+	virtual const Vector_Proxy row(unsigned int i) const = 0;
 	virtual Vector_Proxy col(unsigned int j) = 0;
+	virtual const Vector_Proxy col(unsigned int j) const = 0;
+
 	// virtual void transpose() = 0;
 
 protected:
@@ -39,25 +42,25 @@ class Matrix_Proxy
 public:
 
 	Matrix_Proxy(Matrix & mtx, unsigned int rowStart, unsigned int rowEnd, unsigned int colStart, unsigned int colEnd)
-	: m_rowStart	(rowStart)
-	, m_rowEnd		(rowEnd)
-	, m_colStart	(colStart)
-	, m_colEnd		(colEnd)
-	, m_parent		(mtx)
-	, m_mrows 		(rowEnd-rowStart+1)
-	, m_ncols		(colEnd-colStart+1)
+		: m_rowStart	(rowStart)
+		, m_rowEnd		(rowEnd)
+		, m_colStart	(colStart)
+		, m_colEnd		(colEnd)
+		, m_parent		(mtx)
+		, m_mrows 		(rowEnd-rowStart+1)
+		, m_ncols		(colEnd-colStart+1)
 	{
 	}
 
 	// copy constructor
 	Matrix_Proxy(const Matrix_Proxy & mtxp)
-	: m_rowStart	(mtxp.m_rowStart)
-	, m_rowEnd		(mtxp.m_rowEnd)
-	, m_colStart	(mtxp.m_colStart)
-	, m_colEnd		(mtxp.m_colEnd)
-	, m_parent		(mtxp.m_parent)
-	, m_mrows 		(mtxp.m_mrows)
-	, m_ncols		(mtxp.m_ncols)
+		: m_rowStart	(mtxp.m_rowStart)
+		, m_rowEnd		(mtxp.m_rowEnd)
+		, m_colStart	(mtxp.m_colStart)
+		, m_colEnd		(mtxp.m_colEnd)
+		, m_parent		(mtxp.m_parent)
+		, m_mrows 		(mtxp.m_mrows)
+		, m_ncols		(mtxp.m_ncols)
 	{
 	}
 
@@ -88,19 +91,19 @@ public:
 
 	// constructor
 	Vector_Proxy(double * dataptr, std::size_t length, std::size_t stride, bool is_column=true)
-	: m_length		(length)
-	, m_stride		(stride)
-	, m_dataptr		(dataptr)
-	, m_is_column 	(is_column)
+		: m_length		(length)
+		, m_stride		(stride)
+		, m_dataptr		(dataptr)
+		, m_is_column 	(is_column)
 	{
 	}
 
 	// copy constructor
 	Vector_Proxy(const Vector_Proxy & vctp)
-	: m_length		(vctp.m_length)
-	, m_stride 		(vctp.m_length)
-	, m_dataptr 	(vctp.m_dataptr)
-	, m_is_column 	(vctp.m_is_column)
+		: m_length		(vctp.m_length)
+		, m_stride 		(vctp.m_length)
+		, m_dataptr 	(vctp.m_dataptr)
+		, m_is_column 	(vctp.m_is_column)
 	{
 	}
 
@@ -111,7 +114,7 @@ public:
 		{
 			for (auto i=0; i< vp1.m_length; i++)
 			{
-				result += *(vp1.m_dataptr + i*vp1.m_stride) * *(vp1.m_dataptr + i*vp2.m_stride);
+				result += *(vp1.m_dataptr + i*vp1.m_stride) * *(vp2.m_dataptr + i*vp2.m_stride);
 			}
 		}
 		else
@@ -122,7 +125,7 @@ public:
 		return result;
 	}
 
-	// Vector_Proxy & operator=(const Vector & vct);
+	Vector_Proxy & operator=(const Vector & vct);
 
 	// Vector_Proxy & operator=(Vector_Proxy & vctp);
 
@@ -261,9 +264,22 @@ public:
 	}
 
 	// Matrix-Matrix multiplication
-	Matrix operator*(const Matrix & A, const Matrix & B)
+	Matrix operator*(const Matrix & A)
 	{
-		
+		if (m_ncols != A.m_mrows)
+		{
+			throw "Matrix dimensions do not match!";
+		}
+
+		Matrix out(m_mrows, A.m_ncols);
+		for (auto i=0; i<m_mrows; i++)
+		{
+			for (auto j=0; j<A.m_ncols; j++)
+			{
+				out(i,j) = Vector_Proxy::dot(row(i), A.col(j));
+			}
+		}
+		return out;
 	}
 
 	// scalar multiplication
@@ -322,8 +338,20 @@ public:
 		return Vector_Proxy(&m_data[i], m_ncols, m_mrows, false);
 	}
 
+	// row access const
+	const Vector_Proxy row(unsigned int i) const
+	{
+		return Vector_Proxy(&m_data[i], m_ncols, m_mrows, false);
+	}
+
 	// column access
 	Vector_Proxy col(unsigned int j)
+	{
+		return Vector_Proxy(&m_data[j*m_mrows], m_mrows, 1, true);
+	}
+
+	// column access const
+	const Vector_Proxy col(unsigned int j) const
 	{
 		return Vector_Proxy(&m_data[j*m_mrows], m_mrows, 1, true);
 	}
@@ -354,10 +382,6 @@ public:
 
 	// void transpose(); // see: http://stackoverflow.com/questions/16737298/what-is-the-fastest-way-to-transpose-a-matrix-in-c
 
-	// Vector_Proxy & row(unsigned int i);
-
-	// Vector_Proxy & col(unsigned int j);
-
 	friend std::ostream & operator<<(std::ostream & os, const Matrix & mtx);
 
 protected:
@@ -384,23 +408,180 @@ std::ostream& operator<<(std::ostream & os, const Matrix & mtx)
 
 
 
+// vector is derived from matrix. Has either 1 column or 1 row
+class Vector : public Matrix{
+public:
+
+	Vector()
+		: Matrix(0, 0)
+		, m_is_column (true)
+	{
+	}
+
+	// create and allocate a new matrix
+	Vector(unsigned int length)
+		: Matrix(length, 1)
+		, m_is_column (true)
+	{
+	}
+
+	// create a matrix initialized by existing data
+	Vector(unsigned int length, const double * data)
+		: Matrix(length, 1, data)
+		, m_is_column (true)
+	{
+		//std::copy(data, data + m_len, m_data);
+	}
 
 
-// // vector is derived from matrix. Has either 1 column or 1 row
-// class Vector : public Abstract_Matrix{
-// public:
+	// copy constructor
+	Vector(const Vector & vct)
+		: Matrix(vct.m_mrows, vct.m_ncols, vct.m_data)
+		, m_is_column (vct.m_is_column)
+	{
+		//std::copy(vct.m_data, vct.m_data + m_len, m_data);
+	}
 
-// 	Vector();
+	// constructor from proxy
+	Vector(const Vector_Proxy & vctp)
+		: Matrix((vctp.m_is_column? vctp.m_length : 1), (vctp.m_is_column? 1 : vctp.m_length))
+		, m_is_column (vctp.m_is_column)
+	{
+		Vector m;
+		m = vctp;
+		swap(*this, m);
+	}
 
-// 	Vector(unsigned int length);
+	// destructor
+	~Vector()
+	{
+	}
 
-// 	Vector(unsigned int length, const double * data);
+	friend void swap(Vector & v1, Vector & v2)
+	{
+		using std::swap;
+		swap(v1.m_mrows, v2.m_mrows);
+		swap(v1.m_ncols, v2.m_ncols);
+		swap(v1.m_len, v2.m_len);
+		swap(v1.m_data, v2.m_data);
+		swap(v1.m_is_column, v2.m_is_column);
 
-// protected:
+	}
 
-// private:
+	// assignment operator
+	Vector & operator=(Vector& vct)
+	{
+		swap(*this, vct);
+		return *this;
+	}
 
-// };
+	// overloaded assignment for submatrix assignment
+	Vector & operator=(const Vector_Proxy & vctp)
+	{
+		Vector m(vctp.m_length);
+		
+		for (auto i=0; i<vctp.m_length; i++)
+		{
+			m(i) = *(vctp.m_dataptr + i*vctp.m_stride);
+		}
+
+		swap(*this, m);
+		return *this;
+	}
+
+	// Vector-Matrix multiplication
+	Vector operator*(const Matrix & A)
+	{
+		if (m_ncols != A.rows())
+		{
+			throw "Matrix dimensions do not match!";
+		}
+
+		Vector out(A.cols());
+		Vector_Proxy mine(m_data, m_len, 1, m_is_column);
+		for (auto i=0; i<A.cols(); i++)
+		{
+			out(i) = Vector_Proxy::dot(mine, A.col(i));
+		}
+		out.transpose();
+		return out;
+	}
+
+	// scalar multiplication
+	Vector operator*(double val)
+	{
+		Vector out(*this);
+		for (auto i=0; i<m_len; i++) out.m_data[i]*=val;
+		return out;
+	}
+
+	// scalar division
+	Vector operator/(double val)
+	{
+		Vector out(*this);
+		for (auto i=0; i<m_len; i++) out.m_data[i]/=val;
+		return out;
+	}
+
+	// scalar addition
+	Vector operator+(double val)
+	{
+		Vector out(*this);
+		for (auto i=0; i<m_len; i++) out.m_data[i]+=val;
+		return out;
+	}
+
+	// scalar subtraction
+	Vector operator-(double val)
+	{
+		Vector out(*this);
+		for (auto i=0; i<m_len; i++) out.m_data[i]-=val;
+		return out;
+	}
+
+	double & operator()(unsigned int i)
+	{
+		return m_data[i];
+	}
+
+	double operator()(unsigned int i) const
+	{
+		return m_data[i];
+	}
+
+	// create a subvector of an existing vector  (no new memory allocation)
+	Vector_Proxy operator()(unsigned int indStart, unsigned int indEnd)
+	{
+		return Vector_Proxy(m_data+indStart, indEnd-indStart+1, 1, m_is_column);
+	}
+
+	static double dot(const Vector & v1, const Vector & v2)
+	{
+		double result = 0.0;
+		if (v1.m_len == v2.m_len)
+		{
+			for (auto i=0; i< v1.m_len; i++)
+			{
+				result += v1.m_data[i] * v2.m_data[i];
+			}
+		}
+		else
+		{
+			throw "Vectors must be of same size!";
+		}
+
+		return result;
+	}
+
+	double length() const {return m_len;};
+
+	void transpose() {m_is_column = !m_is_column; std::swap(m_mrows, m_ncols);};
+
+protected:
+
+	bool m_is_column;
+
+};
 
 
 #endif

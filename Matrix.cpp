@@ -21,53 +21,15 @@ Matrix_Proxy & Matrix_Proxy::operator=(const Matrix & mtx)
 	return *this;
 }
 
+Vector_Proxy & Vector_Proxy::operator=(const Vector & vct)
+{
+	for (auto i=0; i<m_length; i++)
+	{
+		*(m_dataptr + i*m_stride) = vct(i);
+	}
 
-// // create a submatrix of an existing matrix  (no new memory allocation)
-// Matrix_Proxy & Matrix::operator()(unsigned int rowStart, unsigned int rowEnd, unsigned int colStart, unsigned int colEnd){
-// 	Matrix_Proxy mprx(*this);
-// 	mprx.m_rowStart = rowStart;
-// 	mprx.m_rowEnd = rowEnd;
-// 	mprx.m_colStart = colStart;
-// 	mprx.m_colEnd = colEnd;
-// }
-
-// // accessing an element
-// double & Matrix::operator()(unsigned int i, unsigned int j){
-// 	return data[m_mrows*j + i];
-// }
-
-// // Matrix-Matrix multiplication
-// Matrix & Matrix::operator*(const Matrix & A, const Matrix & B){
-// 	if (A.cols() != B.rows()){
-// 		throw "Matrix dimensions must match!";
-// 	}
-
-// 	Matrix result(A.rows(), B.cols());
-// 	for (auto i=0; i<result.m_mrows; i++){
-// 		for (auto j=0; j<result.m_ncols; j++){
-// 			result(i, j) = 
-// 		}
-// 	}
-// }
-
-
-// void Matrix::transpose(); // see: http://stackoverflow.com/questions/16737298/what-is-the-fastest-way-to-transpose-a-matrix-in-c
-
-
-
-// Matrix_Proxy::Matrix_Proxy(Matrix & mtx){
-// 	m_parent = mtx;
-// }
-
-// Matrix_Proxy & Matrix_Proxy::operator=(Matrix & mtx){
-
-// }
-
-// // Vector::Vector();
-
-// // Vector::Vector(unsigned int length);
-
-// // Vector::Vector(unsigned int length, const double * data);
+	return *this;
+}
 
 
 
@@ -77,6 +39,7 @@ int main(int argc, char * argv[]){
 
 	unsigned int nrows=20, ncols = 5;
 
+	//**************** MATRIX TESTS *********************//
 	Matrix A(nrows, ncols);
 	for (auto i=0; i<nrows; i++)
 	{
@@ -120,6 +83,69 @@ int main(int argc, char * argv[]){
 	cout << "B(:,1)' * B(:,2) = " << Vector_Proxy::dot(B.col(1), B.col(2)) << endl;
 
 	// matrix-matrix mult
+	Matrix E = B(0, 2, 0, 4);
+	Matrix F = B(14, 18, 2, 4);
+	Matrix G = E*F;
+	cout << "E = " << E << endl;
+	cout << "F = " << F << endl;
+	cout << "G = " << G << endl;
+
+	//***************************************************//
+
+
+
+
+	//**************** VECTOR TESTS *********************//
+	Vector v1(5);
+	for (auto i=0; i<5; i++)
+	{
+		v1(i) = i;
+	}
+
+	// assignment operator
+	Vector v2 = v1;
+	cout << "v2 = " << v2 << endl;
+
+	v2.print_summary();
+
+	// // subvector extraction
+	Vector v3 = v2(1, 2);
+	cout << "v3 = " << v3 << endl;
+
+	// // subvector assignment
+	Vector v4(2);
+	v4.fill(-10);
+	v2(0, 1) = v4;
+	cout << "v2 = " << v2 << endl;
+
+	// // subvector assignment via vector proxy
+	// // B(0, 1, 0, 1) = S(3, 4, 0, 1);
+	// // cout << "B = " << B << endl;
+
+	// scalar multiplication, subtraction, addition, division
+	Vector v5 = (((v2*0.5)/2.0) + 10) - 2.5;
+	cout << "v2 = " << v2 << endl;
+	cout << "v5 = " << v5 << endl;
+
+	// vector proxy
+	cout << " v2(1:2) = " << v2(1,2) << endl;
+	cout << "v2(2, :) = " << v2.row(2) << endl;
+
+	// dot products
+	cout << "v2' * v5= " << Vector::dot(v2, v5) << endl;
+
+	// vector-matrix mult
+	v5.transpose();
+	Vector v6 = v5*F;
+	cout << "v5 = " << v5 << endl;
+	cout << "F = " << F << endl;
+	cout << "v6 = " << v6 << endl;
+
+	// matrix-vector mult
+
+
+	//***************************************************//
+
 
 	return 0;
 }
