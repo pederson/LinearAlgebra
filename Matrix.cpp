@@ -31,6 +31,51 @@ Vector_Proxy & Vector_Proxy::operator=(const Vector & vct)
 	return *this;
 }
 
+Vector Vector_Proxy::operator*(double val)
+{
+	Vector out(*this);
+	for (auto i=0; i<m_length; i++) out(i)*=val;
+	return out;
+}
+
+Vector Vector_Proxy::operator/(double val)
+{
+	Vector out(*this);
+	for (auto i=0; i<m_length; i++) out(i)/=val;
+	return out;
+}
+
+Vector Vector_Proxy::operator+(double val)
+{
+	Vector out(*this);
+	for (auto i=0; i<m_length; i++) out(i)+=val;
+	return out;
+}
+
+Vector Vector_Proxy::operator-(double val)
+{
+	Vector out(*this);
+	for (auto i=0; i<m_length; i++) out(i)-=val;
+	return out;
+}
+
+Vector Matrix::operator*(const Vector & v)
+{
+	if (m_ncols != v.rows())
+	{
+		throw "Matrix dimensions do not match!";
+	}
+
+	Vector out(m_mrows);
+	out.fill(0);
+	for (auto i=0; i<m_ncols; i++)
+	{
+		out += col(i)*v(i);
+	}
+
+	return out;
+}
+
 
 
 #include <typeinfo>
@@ -142,6 +187,11 @@ int main(int argc, char * argv[]){
 	cout << "v6 = " << v6 << endl;
 
 	// matrix-vector mult
+	v6.transpose();
+	cout << "F = " << F << endl;
+	cout << "v6 = " << v6 << endl;
+	Vector v7 = F*v6;
+	cout << "v7 = " << v7 << endl;
 
 
 	//***************************************************//

@@ -1,6 +1,7 @@
 #ifndef _MATRIX_H
 #define _MATRIX_H
 
+#include <math.h>
 #include <iostream>
 #include <stdlib.h>
 
@@ -126,6 +127,14 @@ public:
 	}
 
 	Vector_Proxy & operator=(const Vector & vct);
+
+	Vector operator*(double val);
+
+	Vector operator/(double val);
+
+	Vector operator+(double val);
+
+	Vector operator-(double val);
 
 	// Vector_Proxy & operator=(Vector_Proxy & vctp);
 
@@ -280,6 +289,83 @@ public:
 			}
 		}
 		return out;
+	}
+
+	// Matrix-Vector multiplication
+	Vector operator*(const Vector & v);
+
+	// Matrix-Matrix addition
+	Matrix operator+(const Matrix & mtx)
+	{
+		if (mtx.m_mrows != m_mrows || mtx.m_ncols != m_ncols)
+		{
+			throw "Matrix dimensions do not match!";
+		}
+
+		Matrix out(m_mrows, m_ncols);
+		for (auto i=0; i<m_mrows; i++)
+		{
+			for (auto j=0; j<m_ncols; j++)
+			{
+				out(i,j) = (*this)(i,j) + mtx(i,j);
+			}
+		}
+		return out;
+	}
+
+	// Matrix-Matrix subtraction
+	Matrix operator-(const Matrix & mtx)
+	{
+		if (mtx.m_mrows != m_mrows || mtx.m_ncols != m_ncols)
+		{
+			throw "Matrix dimensions do not match!";
+		}
+
+		Matrix out(m_mrows, m_ncols);
+		for (auto i=0; i<m_mrows; i++)
+		{
+			for (auto j=0; j<m_ncols; j++)
+			{
+				out(i,j) = (*this)(i,j) - mtx(i,j);
+			}
+		}
+		return out;
+	}
+
+	// Matrix-Matrix addition shorthand
+	Matrix & operator+=(const Matrix & mtx)
+	{
+		if (mtx.m_mrows != m_mrows || mtx.m_ncols != m_ncols)
+		{
+			throw "Matrix dimensions do not match!";
+		}
+
+		for (auto i=0; i<m_mrows; i++)
+		{
+			for (auto j=0; j<m_ncols; j++)
+			{
+				(*this)(i,j) += mtx(i,j);
+			}
+		}
+		return *this;
+	}
+
+	// Matrix-Matrix subtraction shorthand
+	Matrix & operator-=(const Matrix & mtx)
+	{
+		if (mtx.m_mrows != m_mrows || mtx.m_ncols != m_ncols)
+		{
+			throw "Matrix dimensions do not match!";
+		}
+
+		for (auto i=0; i<m_mrows; i++)
+		{
+			for (auto j=0; j<m_ncols; j++)
+			{
+				(*this)(i,j) -= mtx(i,j);
+			}
+		}
+		return *this;
 	}
 
 	// scalar multiplication
@@ -507,6 +593,72 @@ public:
 		return out;
 	}
 
+	// Vector-Vector addition
+	Vector operator+(const Vector & vct)
+	{
+		if (m_len != vct.m_len)
+		{
+			throw "Vector dimensions do not match";
+		}
+
+		Vector out(m_len);
+		for (auto i=0; i<m_len; i++)
+		{
+			out(i) = m_data[i] + vct.m_data[i];
+		}
+
+		return out;
+	}
+
+	// Vector-Vector subtraction
+	Vector operator-(const Vector & vct)
+	{
+		if (m_len != vct.m_len)
+		{
+			throw "Vector dimensions do not match";
+		}
+
+		Vector out(m_len);
+		for (auto i=0; i<m_len; i++)
+		{
+			out(i) = m_data[i] - vct.m_data[i];
+		}
+
+		return out;
+	}
+
+	// Vector-Vector addition shorthand
+	Vector & operator+=(const Vector & vct)
+	{
+		if (m_len != vct.m_len)
+		{
+			throw "Vector dimensions do not match";
+		}
+
+		for (auto i=0; i<m_len; i++)
+		{
+			m_data[i] += vct.m_data[i];
+		}
+
+		return *this;
+	}
+
+	// Vector-Vector subtraction shorthand
+	Vector & operator-=(const Vector & vct)
+	{
+		if (m_len != vct.m_len)
+		{
+			throw "Vector dimensions do not match";
+		}
+
+		for (auto i=0; i<m_len; i++)
+		{
+			m_data[i] -= vct.m_data[i];
+		}
+
+		return *this;
+	}
+
 	// scalar multiplication
 	Vector operator*(double val)
 	{
@@ -574,6 +726,17 @@ public:
 	}
 
 	double length() const {return m_len;};
+
+	double norm() const 
+	{
+		double nm=0; 
+		for (auto i=0; i<m_len; i++)
+		{
+			nm+=m_data[i]*m_data[i];
+		}
+		nm = sqrt(nm);
+		return nm;
+	}
 
 	void transpose() {m_is_column = !m_is_column; std::swap(m_mrows, m_ncols);};
 
