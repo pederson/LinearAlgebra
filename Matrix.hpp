@@ -272,6 +272,14 @@ public:
 		return *this;
 	}
 
+	// Matrix transpose
+	Matrix operator~()
+	{
+		Matrix m(*this);
+		m.transpose();
+		return m;
+	}
+
 	// Matrix-Matrix multiplication
 	Matrix operator*(const Matrix & A)
 	{
@@ -400,6 +408,34 @@ public:
 		return out;
 	}
 
+	// scalar multiplication
+	Matrix & operator*=(double val)
+	{
+		for (auto i=0; i<m_len; i++) m_data[i]*=val;
+		return *this;
+	}
+
+	// scalar division
+	Matrix & operator/=(double val)
+	{
+		for (auto i=0; i<m_len; i++) m_data[i]/=val;
+		return *this;
+	}
+
+	// scalar addition
+	Matrix & operator+=(double val)
+	{
+		for (auto i=0; i<m_len; i++) m_data[i]+=val;
+		return *this;
+	}
+
+	// scalar subtraction
+	Matrix & operator-=(double val)
+	{
+		for (auto i=0; i<m_len; i++) m_data[i]-=val;
+		return *this;
+	}
+
 	// create a submatrix of an existing matrix  (no new memory allocation)
 	Matrix_Proxy operator()(unsigned int rowStart, unsigned int rowEnd, unsigned int colStart, unsigned int colEnd)
 	{
@@ -430,6 +466,18 @@ public:
 		return Vector_Proxy(&m_data[i], m_ncols, m_mrows, false);
 	}
 
+	// subrow access
+	Vector_Proxy subrow(unsigned int i, unsigned int colStart, unsigned int colEnd)
+	{
+		return Vector_Proxy(&m_data[m_mrows*colStart + i], colEnd-colStart+1, m_mrows, false);
+	}
+
+	// subrow access const
+	const Vector_Proxy subrow(unsigned int i, unsigned int colStart, unsigned int colEnd) const
+	{
+		return Vector_Proxy(&m_data[m_mrows*colStart + i], colEnd-colStart+1, m_mrows, false);
+	}
+
 	// column access
 	Vector_Proxy col(unsigned int j)
 	{
@@ -440,6 +488,18 @@ public:
 	const Vector_Proxy col(unsigned int j) const
 	{
 		return Vector_Proxy(&m_data[j*m_mrows], m_mrows, 1, true);
+	}
+
+	// subcolumn access
+	Vector_Proxy subcol(unsigned int j, unsigned int rowStart, unsigned int rowEnd)
+	{
+		return Vector_Proxy(&m_data[j*m_mrows + rowStart], rowEnd-rowStart+1, 1, true);
+	}
+
+	// subcolumn access const
+	const Vector_Proxy subcol(unsigned int j, unsigned int rowStart, unsigned int rowEnd) const
+	{
+		return Vector_Proxy(&m_data[j*m_mrows + rowStart], rowEnd-rowStart+1, 1, true);
 	}
 
 	void fill(double fillval)
@@ -466,7 +526,7 @@ public:
 
 	const double * data() const {return m_data;};
 
-	// void transpose(); // see: http://stackoverflow.com/questions/16737298/what-is-the-fastest-way-to-transpose-a-matrix-in-c
+	void transpose();
 
 	friend std::ostream & operator<<(std::ostream & os, const Matrix & mtx);
 
@@ -689,6 +749,34 @@ public:
 		Vector out(*this);
 		for (auto i=0; i<m_len; i++) out.m_data[i]-=val;
 		return out;
+	}
+
+	// scalar multiplication
+	Vector & operator*=(double val)
+	{
+		for (auto i=0; i<m_len; i++) m_data[i]*=val;
+		return *this;
+	}
+
+	// scalar division
+	Vector & operator/=(double val)
+	{
+		for (auto i=0; i<m_len; i++) m_data[i]/=val;
+		return *this;
+	}
+
+	// scalar addition
+	Vector & operator+=(double val)
+	{
+		for (auto i=0; i<m_len; i++) m_data[i]+=val;
+		return *this;
+	}
+
+	// scalar subtraction
+	Vector & operator-=(double val)
+	{
+		for (auto i=0; i<m_len; i++) m_data[i]-=val;
+		return *this;
 	}
 
 	double & operator()(unsigned int i)

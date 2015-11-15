@@ -4,6 +4,23 @@
 using namespace std;
 
 
+// for a better method,
+// see: http://stackoverflow.com/questions/16737298/what-is-the-fastest-way-to-transpose-a-matrix-in-c
+void Matrix::transpose()
+{
+	Matrix m(m_ncols, m_mrows);
+	Vector c;
+	for (auto i=0; i<m_ncols; i++)
+	{
+		c = col(i);
+		c.transpose();
+
+		m.row(i) = c;
+	}
+
+	swap(*this, m);
+}
+
 Matrix_Proxy & Matrix_Proxy::operator=(const Matrix & mtx)
 {
 	unsigned int ix=0, jx=0;
@@ -77,8 +94,10 @@ Vector Matrix::operator*(const Vector & v)
 }
 
 
+// g++ -std=c++11 Matrix.cpp LinearSolvers.hpp -o matrixtest
 
 #include <typeinfo>
+#include "LinearSolvers.hpp"
 
 int main(int argc, char * argv[]){
 
@@ -193,6 +212,33 @@ int main(int argc, char * argv[]){
 	Vector v7 = F*v6;
 	cout << "v7 = " << v7 << endl;
 
+
+	//***************************************************//
+
+
+
+
+	//************* LINEAR SOLVER TESTS *****************//
+
+	// generate random matrix
+	Matrix m = randmat(5,3);
+	cout << "m = " << m << endl;
+
+	// generate random normal vector
+	Vector v = randvecn(7);
+	cout << "v = " << v << endl;
+
+	// generate identity matrix
+	Matrix I = eye(5);
+	cout << "I = " << I*5.0 << endl;
+
+	// orthogonalize matrix
+	Matrix Q, Qt, R;
+	qr_gram_schmidt(m,Q,R);
+	cout << "Q: " << Q << endl;
+	cout << "R: " << R << endl;
+	cout << "Q'*Q : " << ~Q*Q << endl;
+	cout << "Q*R : " << Q*R << endl;
 
 	//***************************************************//
 
