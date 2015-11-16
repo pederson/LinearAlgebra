@@ -41,6 +41,10 @@ Vector lower_triangular_solve(const Matrix & L, const Vector & b)
 	{
 		throw "Matrix is not square!";
 	}
+	if (b.length() != L.rows())
+	{
+		throw "Matrix-Vector dimensions do not match!";
+	}
 
 	Vector out(b);
 	double sum;
@@ -63,6 +67,10 @@ Vector diagonal_solve(const Matrix & D, const Vector & b)
 	if (D.rows() != D.cols())
 	{
 		throw "Matrix is not square!";
+	}
+	if (b.length() != D.rows())
+	{
+		throw "Matrix-Vector dimensions do not match!";
 	}
 
 	Vector out(b);
@@ -160,7 +168,8 @@ void svd(const Matrix & A, Matrix & U, Matrix & S, Matrix & V);
 // LU decomposition
 void lu(const Matrix & A, Matrix & L, Matrix & U);
 
-
+// randomized method for basis
+void rand_basis(const Matrix & A, Matrix & Q);
 
 
 
@@ -211,7 +220,7 @@ Matrix randmatn(unsigned int rows, unsigned int cols)
 	return out;
 }
 
-// random vector uniformly distributed [0.1]
+// random vector uniformly distributed [0,1]
 Vector randvec(unsigned int length)
 {
 	Matrix m = randmat(length,1);
