@@ -16,13 +16,17 @@ Vector upper_triangular_solve(const Matrix & U, const Vector & b)
 	{
 		throw "Matrix is not square!";
 	}
+	if (b.length() != U.rows())
+	{
+		throw "Matrix-Vector dimensions do not match!";
+	}
 
 	Vector out(b);
 	double sum;
 	// last element
 	out(U.rows()-1) = b(U.rows()-1)/U(U.rows()-1, U.rows()-1);
 	// backward substitution
-	for (auto i=U.rows()-2; i>=0; i--)
+	for (int i=U.rows()-2; i>=0; i--)
 	{
 		sum = Vector_Proxy::dot(U.subrow(i, i+1, U.rows()-1), out(i+1, U.rows()-1));
 		out(i) = (b(i) - sum)/U(i,i);
@@ -72,13 +76,13 @@ Vector diagonal_solve(const Matrix & D, const Vector & b)
 // unitary matrix Ux = b
 Vector unitary_solve(const Matrix & U, const Vector & b)
 {
-	if (U.rows() != U.cols())
+	if (U.rows() != b.length())
 	{
-		throw "Matrix is not square (and therefore not unitary)!";
+		throw "Matrix-Vector dimensions do not match!";
 	}
 
-	Vector out(U.rows());
-	for (auto i=0; i<U.rows(); i++)
+	Vector out(U.cols());
+	for (auto i=0; i<U.cols(); i++)
 	{
 		out(i) = Vector_Proxy::dot(U.col(i), b.col(0));
 	}
@@ -143,6 +147,9 @@ void qr_gram_schmidt_mod(const Matrix & A, Matrix & Q, Matrix & R);
 
 // qr factorization using Householder reflections (stable)
 void qr_householder(const Matrix & A, Matrix & Q, Matrix & R);
+
+// qr factorization using Householder with pivoting
+void qr_householder(const Matrix & A, Matrix & Q, Matrix & R, Matrix & P);
 
 // qr factorization using Givens rotations
 void qr_givens(const Matrix & A, Matrix & Q, Matrix & R);

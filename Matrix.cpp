@@ -225,11 +225,11 @@ int main(int argc, char * argv[]){
 	cout << "m = " << m << endl;
 
 	// generate random normal vector
-	Vector v = randvecn(7);
+	Vector v = randvecn(3);
 	cout << "v = " << v << endl;
 
 	// generate identity matrix
-	Matrix I = eye(5);
+	Matrix I = eye(3);
 	cout << "I = " << I*5.0 << endl;
 
 	// orthogonalize matrix
@@ -239,6 +239,26 @@ int main(int argc, char * argv[]){
 	cout << "R: " << R << endl;
 	cout << "Q'*Q : " << ~Q*Q << endl;
 	cout << "Q*R : " << Q*R << endl;
+
+	// check the solution to a problem
+	Vector b = m*v;
+	Vector y = unitary_solve(Q,b);
+	cout << "y: " << y << endl;
+	Vector x = upper_triangular_solve(R, y);
+	cout << "actual solution: " << v << endl;
+	cout << "computed soution: " << x << endl;
+
+	// check the lower-triangular solver
+	Vector b2 = ~R*v;
+	Vector x2 = lower_triangular_solve(~R, b2);
+	cout << "actual solution: " << v << endl;
+	cout << "computed solution: " << x2 << endl;
+
+	// check the diagonal solver
+	Vector b3 = I*v;
+	Vector x3 = lower_triangular_solve(I, b3);
+	cout << "actual solution: " << v << endl;
+	cout << "computed solution: " << x3 << endl;
 
 	//***************************************************//
 
