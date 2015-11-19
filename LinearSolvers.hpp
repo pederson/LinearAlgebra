@@ -7,6 +7,78 @@
 
 #include "Matrix.hpp"
 
+// miscellaneous
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
+
+// collection of matrix/vector generators
+
+// identity matrix
+Matrix eye(unsigned int rows, unsigned int cols)
+{
+	Matrix out(rows, cols);
+	out.fill(0);
+	for (auto i=0; i<cols; i++)
+	{
+		out(i,i) = 1;
+	}
+	return out;
+}
+
+// random matrix uniformly distributed [0,1]
+Matrix randmat(unsigned int rows, unsigned int cols)
+{
+	// seed
+	std::default_random_engine generator;
+	std::uniform_real_distribution<double> distrib(0.0,1.0);
+
+	Matrix out(rows, cols);
+	for (auto i=0; i<rows; i++){
+		for (auto j=0; j<cols; j++){
+			out(i,j) = distrib(generator);
+		}
+	}
+
+	return out;
+}
+
+// random matrix normally distributed
+Matrix randmatn(unsigned int rows, unsigned int cols)
+{
+	std::default_random_engine generator;
+	std::normal_distribution<double> distrib(0.0,1.0);
+
+	Matrix out(rows, cols);
+	for (auto i=0; i<rows; i++){
+		for (auto j=0; j<cols; j++){
+			out(i,j) = distrib(generator);
+		}
+	}
+
+	return out;
+}
+
+// random vector uniformly distributed [0,1]
+Vector randvec(unsigned int length)
+{
+	Matrix m = randmat(length,1);
+	Vector out = m.col(0);
+	return out;
+}
+
+// random vector normally distributed
+Vector randvecn(unsigned int length)
+{
+	Matrix m=randmatn(length,1);
+	Vector out = m.col(0);
+	return out;
+}
+
+
+
+
 // collection of solvers for linear algebra problems
 
 // upper triangular matrix Ux = b
@@ -107,7 +179,7 @@ Vector tridiagonal_solve(const Matrix & T, const Vector & b);
 // collection of helper routines
 
 // qr factorization using Gram-Schmidt algorithm A=QR
-void qr_gram_schmidt(const Matrix & A, Matrix & Qout, Matrix & Rout)
+void qr_gram_schmidt(const Matrix & A, Matrix & Qout)
 {
 	Matrix Q(A.rows(), A.cols());
 
@@ -141,10 +213,20 @@ void qr_gram_schmidt(const Matrix & A, Matrix & Qout, Matrix & Rout)
 		Q.col(j) = q;
 	}
 
-	// calculate R
-	Matrix R = (~Q)*A;
-
 	swap(Qout, Q);
+
+	return;
+}
+
+
+// qr factorization using Gram-Schmidt algorithm A=QR
+void qr_gram_schmidt(const Matrix & A, Matrix & Qout, Matrix & Rout)
+{
+
+	qr_gram_schmidt(A, Qout);
+
+	// calculate R
+	Matrix R = (~Qout)*A;
 	swap(Rout, R);
 
 	return;
@@ -153,11 +235,132 @@ void qr_gram_schmidt(const Matrix & A, Matrix & Qout, Matrix & Rout)
 // qr factorization using modified G-S algorithm
 void qr_gram_schmidt_mod(const Matrix & A, Matrix & Q, Matrix & R);
 
+// householder utility function
+void householder_reflect_to_e1(const Vector & w, Vector & uout, double & b)
+{
+	Vector u = w;
+	double sigma = sgn(w(0))*w.norm();
+	u(0) += sigma;
+	b = 2.0/(sigma*u(0));
+	u /= u.norm();
+	
+	swap(u,uout);
+	return;
+}
+
 // qr factorization using Householder reflections (stable)
-void qr_householder(const Matrix & A, Matrix & Q, Matrix & R);
+void qr_householder(const Matrix & A, Matrix & Uout, Matrix & Rout)
+{
+
+// non-recursive way
+	// std::size_t m,n;
+	// A.size(m,n);
+
+	// Matrix U(A);
+	// U.fill(0);
+	// Q = U;
+	// R(A);
+	// Vector w, u;
+
+	// double sigma;
+	// for (auto k=0; k<n; k++)
+	// {
+	// 	w = R.subcol(k, k, m-1);
+	// 	sigma = sgn(w(1))*w.norm();
+
+	// 	// calcuate the reflector
+	// 	u = w;
+	// 	u(1) += sigma;
+	// 	u /= u.norm();
+
+	// 	// apply the transformation
+	// 	R(k, m-1, k, n-1) = R(k, m-1, k, n-1) - u*(~u*R(k, m-1, k, n-1))*2.0;
+	// 	U.subcol(k, k, m-1) = u;
+	// }
+
+	// // construct Q
+
+
+
+	// // reflect the first column to e_1
+	// Vector u = A.col(0);
+	// double sigma = 
+	// u(0) += u.norm();
+	// u /= u.norm();
+
+// recursive way
+	
+	// reflect to -e_1
+	Vector u;
+	double b;
+	householder_reflect_to_e1(A.col(0), u, b);
+
+	// multiply through by H = I - 2u*u'
+	Matrix B = A - 2.0*u*(~u*A);
+
+	// recompose the full matrices
+	// R
+	Matrix R=A;
+	R.col(0) = B.col(0);
+
+	// U
+	Matrix U(A.rows(), A.cols());
+	U.fill(0);
+	U.col(0) = u;
+
+	if (A.cols() > 1)
+	{
+		// recurse on submatrix
+		Matrix Rsub;
+		Matrix Usub;
+		Matrix Bsub = B(1, B.rows()-1, 1, B.cols()-1);
+
+		qr_householder(Bsub, Usub, Rsub);
+
+		R(1, R.rows()-1, 1, R.cols()-1) = Rsub;
+		R.subrow(0, 1, B.cols()-1) = B.subrow(0, 1, B.cols()-1);
+	
+		U(1,U.rows()-1, 1,U.cols()-1) = Usub;
+	}
+
+	// swap
+	swap(R, Rout);
+	swap(U, Uout);
+
+	return;
+}
+
+// qr factorization using Householder reflections (stable)
+void qr_householder(const Matrix & A, Matrix & Uout, Matrix & Rout, Matrix & Qout)
+{
+	Matrix Uh, Rh;
+	qr_householder(A, Uh, Rh);
+	Vector u=Uh.col(0);
+	Matrix I = eye(A.rows(), A.rows());
+	Matrix Qh = I - 2.0*u*~u;
+
+	// extract Q from Uh
+	for (auto j=1; j<Uh.cols(); j++)
+	{
+		u = Uh.col(j);
+		Matrix Qj = I - 2.0*u*~u;
+		Qh *= Qj;
+	}
+
+	// extract the square R
+	Matrix R = Rh(0, A.cols()-1, 0, A.cols()-1);
+
+	// extract the appropriate size Q
+	Matrix Q = Qh(0, Qh.rows()-1, 0, A.cols()-1);
+
+	swap(Rout, R);
+	swap(Qout, Q);
+	swap(Uout, Uh);
+	return;
+}
 
 // qr factorization using Householder with pivoting
-void qr_householder(const Matrix & A, Matrix & Q, Matrix & R, Matrix & P);
+void qr_householder(const Matrix & A, Matrix & U, Matrix & R, Matrix & Q, Matrix & P);
 
 // qr factorization using Givens rotations
 void qr_givens(const Matrix & A, Matrix & Q, Matrix & R);
@@ -172,69 +375,6 @@ void lu(const Matrix & A, Matrix & L, Matrix & U);
 void rand_basis(const Matrix & A, Matrix & Q);
 
 
-
-// collection of matrix/vector generators
-
-// identity matrix
-Matrix eye(unsigned int size)
-{
-	Matrix out(size, size);
-	out.fill(0);
-	for (auto i=0; i<size; i++)
-	{
-		out(i,i) = 1;
-	}
-	return out;
-}
-
-// random matrix uniformly distributed [0,1]
-Matrix randmat(unsigned int rows, unsigned int cols)
-{
-	// seed
-	std::default_random_engine generator;
-	std::uniform_real_distribution<double> distrib(0.0,1.0);
-
-	Matrix out(rows, cols);
-	for (auto i=0; i<rows; i++){
-		for (auto j=0; j<cols; j++){
-			out(i,j) = distrib(generator);
-		}
-	}
-
-	return out;
-}
-
-// random matrix normally distributed
-Matrix randmatn(unsigned int rows, unsigned int cols)
-{
-	std::default_random_engine generator;
-	std::normal_distribution<double> distrib(0.0,1.0);
-
-	Matrix out(rows, cols);
-	for (auto i=0; i<rows; i++){
-		for (auto j=0; j<cols; j++){
-			out(i,j) = distrib(generator);
-		}
-	}
-
-	return out;
-}
-
-// random vector uniformly distributed [0,1]
-Vector randvec(unsigned int length)
-{
-	Matrix m = randmat(length,1);
-	Vector out = m.col(0);
-	return out;
-}
-
-// random vector normally distributed
-Vector randvecn(unsigned int length)
-{
-	Matrix m=randmatn(length,1);
-	Vector out = m.col(0);
-	return out;
-}
 
 
 #endif

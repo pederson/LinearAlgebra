@@ -76,7 +76,8 @@ Vector Vector_Proxy::operator-(double val)
 	return out;
 }
 
-Vector Matrix::operator*(const Vector & v)
+
+Vector Matrix::operator*(const Vector & v) const
 {
 	if (m_ncols != v.rows())
 	{
@@ -84,10 +85,13 @@ Vector Matrix::operator*(const Vector & v)
 	}
 
 	Vector out(m_mrows);
+
 	out.fill(0);
 	for (auto i=0; i<m_ncols; i++)
 	{
-		out += col(i)*v(i);
+		const Vector c = col(i);
+		// out += col(i)*v(i);
+		out += c*v(i);
 	}
 
 	return out;
@@ -212,6 +216,12 @@ int main(int argc, char * argv[]){
 	Vector v7 = F*v6;
 	cout << "v7 = " << v7 << endl;
 
+	// outer product
+	Matrix m6 = v3*(v5);
+	cout << "v3: " << v3 << endl;
+	cout << "v5: " << v5 << endl;
+	cout << "outer product: " << m6 << endl;
+
 
 	//***************************************************//
 
@@ -229,12 +239,13 @@ int main(int argc, char * argv[]){
 	cout << "v = " << v << endl;
 
 	// generate identity matrix
-	Matrix I = eye(3);
+	Matrix I = eye(3,3);
 	cout << "I = " << I*5.0 << endl;
 
 	// orthogonalize matrix
 	Matrix Q, Qt, R;
 	qr_gram_schmidt(m,Q,R);
+	cout << "************************** CLASSICAL GRAM-SCHMIDT:" << endl;
 	cout << "Q: " << Q << endl;
 	cout << "R: " << R << endl;
 	cout << "Q'*Q : " << ~Q*Q << endl;
@@ -245,20 +256,33 @@ int main(int argc, char * argv[]){
 	Vector y = unitary_solve(Q,b);
 	cout << "y: " << y << endl;
 	Vector x = upper_triangular_solve(R, y);
+	cout << "************************** UPPER TRIANGULAR:" << endl;
 	cout << "actual solution: " << v << endl;
 	cout << "computed soution: " << x << endl;
 
 	// check the lower-triangular solver
 	Vector b2 = ~R*v;
 	Vector x2 = lower_triangular_solve(~R, b2);
+	cout << "************************** LOWER TRIANGULAR:" << endl;
 	cout << "actual solution: " << v << endl;
 	cout << "computed solution: " << x2 << endl;
 
 	// check the diagonal solver
 	Vector b3 = I*v;
-	Vector x3 = lower_triangular_solve(I, b3);
+	Vector x3 = diagonal_solve(I, b3);
+	cout << "************************** DIAGONAL:" << endl;
 	cout << "actual solution: " << v << endl;
 	cout << "computed solution: " << x3 << endl;
+
+	// check householder
+	Matrix Uh, Rh, Qh;
+	qr_householder(m, Uh, Rh, Qh);
+	cout << "************************** HOUSEHOLDER:" << endl;
+	cout << "U: " << Uh << endl;
+	cout << "Q: " << Qh << endl;
+	cout << "R: " << Rh << endl;
+	cout << "Q'*Q : " << ~Qh*Qh << endl;
+	cout << "Q*R : " << Qh*Rh << endl;
 
 	//***************************************************//
 

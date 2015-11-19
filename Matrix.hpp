@@ -53,6 +53,17 @@ public:
 	{
 	}
 
+	// Matrix_Proxy(const Matrix & mtx, unsigned int rowStart, unsigned int rowEnd, unsigned int colStart, unsigned int colEnd)
+	// 	: m_rowStart	(rowStart)
+	// 	, m_rowEnd		(rowEnd)
+	// 	, m_colStart	(colStart)
+	// 	, m_colEnd		(colEnd)
+	// 	, m_parent		(mtx)
+	// 	, m_mrows 		(rowEnd-rowStart+1)
+	// 	, m_ncols		(colEnd-colStart+1)
+	// {
+	// }
+
 	// copy constructor
 	Matrix_Proxy(const Matrix_Proxy & mtxp)
 		: m_rowStart	(mtxp.m_rowStart)
@@ -136,7 +147,25 @@ public:
 
 	Vector operator-(double val);
 
-	// Vector_Proxy & operator=(Vector_Proxy & vctp);
+	double & operator()(unsigned int i)
+	{
+		return m_dataptr[i*m_stride];
+	}
+
+	double operator()(unsigned int i) const
+	{
+		return m_dataptr[i*m_stride];
+	}
+
+	void operator=(Vector_Proxy & vctp)
+	{
+		for (auto i=0; i<m_length; i++)
+		{
+			m_dataptr[i*m_stride] = vctp.m_dataptr[i*vctp.m_stride];
+		}
+	}
+
+	std::size_t length() const {return m_length;}; 
 
 	friend std::ostream & operator<<(std::ostream & os, const Vector_Proxy & vctp);
 
@@ -273,7 +302,7 @@ public:
 	}
 
 	// Matrix transpose
-	Matrix operator~()
+	Matrix operator~() const
 	{
 		Matrix m(*this);
 		m.transpose();
@@ -281,7 +310,7 @@ public:
 	}
 
 	// Matrix-Matrix multiplication
-	Matrix operator*(const Matrix & A)
+	Matrix operator*(const Matrix & A) const
 	{
 		if (m_ncols != A.m_mrows)
 		{
@@ -299,11 +328,31 @@ public:
 		return out;
 	}
 
+	// Matrix-Matrix multiplication
+	Matrix & operator*=(const Matrix & A)
+	{
+		if (m_ncols != A.m_mrows)
+		{
+			throw "Matrix dimensions do not match!";
+		}
+
+		Matrix out(m_mrows, A.m_ncols);
+		for (auto i=0; i<m_mrows; i++)
+		{
+			for (auto j=0; j<A.m_ncols; j++)
+			{
+				out(i,j) = Vector_Proxy::dot(row(i), A.col(j));
+			}
+		}
+		swap(out, *this);
+		return *this;
+	}
+
 	// Matrix-Vector multiplication
-	Vector operator*(const Vector & v);
+	Vector operator*(const Vector & v) const;
 
 	// Matrix-Matrix addition
-	Matrix operator+(const Matrix & mtx)
+	Matrix operator+(const Matrix & mtx) const
 	{
 		if (mtx.m_mrows != m_mrows || mtx.m_ncols != m_ncols)
 		{
@@ -322,7 +371,7 @@ public:
 	}
 
 	// Matrix-Matrix subtraction
-	Matrix operator-(const Matrix & mtx)
+	Matrix operator-(const Matrix & mtx) const
 	{
 		if (mtx.m_mrows != m_mrows || mtx.m_ncols != m_ncols)
 		{
@@ -377,7 +426,7 @@ public:
 	}
 
 	// scalar multiplication
-	Matrix operator*(double val)
+	Matrix operator*(double val) const
 	{
 		Matrix out(*this);
 		for (auto i=0; i<m_len; i++) out.m_data[i]*=val;
@@ -385,7 +434,7 @@ public:
 	}
 
 	// scalar division
-	Matrix operator/(double val)
+	Matrix operator/(double val) const
 	{
 		Matrix out(*this);
 		for (auto i=0; i<m_len; i++) out.m_data[i]/=val;
@@ -393,7 +442,7 @@ public:
 	}
 
 	// scalar addition
-	Matrix operator+(double val)
+	Matrix operator+(double val) const
 	{
 		Matrix out(*this);
 		for (auto i=0; i<m_len; i++) out.m_data[i]+=val;
@@ -401,7 +450,7 @@ public:
 	}
 
 	// scalar subtraction
-	Matrix operator-(double val)
+	Matrix operator-(double val) const
 	{
 		Matrix out(*this);
 		for (auto i=0; i<m_len; i++) out.m_data[i]-=val;
@@ -442,6 +491,12 @@ public:
 		return Matrix_Proxy(*this, rowStart, rowEnd, colStart, colEnd);
 	}
 
+	// // create a const submatrix of an existing matrix (no new memory allocation)
+	// const Matrix_Proxy operator()(unsigned int rowStart, unsigned int rowEnd, unsigned int colStart, unsigned int colEnd) const
+	// {
+	// 	return Matrix_Proxy(*this, rowStart, rowEnd, colStart, colEnd);
+	// }
+
 	// accessing an element
 	double & operator()(unsigned int i, unsigned int j)
 	{
@@ -467,15 +522,15 @@ public:
 	}
 
 	// subrow access
-	Vector_Proxy subrow(unsigned int i, unsigned int colStart, unsigned int colEnd)
+	Vector_Proxy subrow(unsigned int row, unsigned int colStart, unsigned int colEnd)
 	{
-		return Vector_Proxy(&m_data[m_mrows*colStart + i], colEnd-colStart+1, m_mrows, false);
+		return Vector_Proxy(&m_data[m_mrows*colStart + row], colEnd-colStart+1, m_mrows, false);
 	}
 
 	// subrow access const
-	const Vector_Proxy subrow(unsigned int i, unsigned int colStart, unsigned int colEnd) const
+	const Vector_Proxy subrow(unsigned int row, unsigned int colStart, unsigned int colEnd) const
 	{
-		return Vector_Proxy(&m_data[m_mrows*colStart + i], colEnd-colStart+1, m_mrows, false);
+		return Vector_Proxy(&m_data[m_mrows*colStart + row], colEnd-colStart+1, m_mrows, false);
 	}
 
 	// column access
@@ -491,15 +546,15 @@ public:
 	}
 
 	// subcolumn access
-	Vector_Proxy subcol(unsigned int j, unsigned int rowStart, unsigned int rowEnd)
+	Vector_Proxy subcol(unsigned int col, unsigned int rowStart, unsigned int rowEnd)
 	{
-		return Vector_Proxy(&m_data[j*m_mrows + rowStart], rowEnd-rowStart+1, 1, true);
+		return Vector_Proxy(&m_data[col*m_mrows + rowStart], rowEnd-rowStart+1, 1, true);
 	}
 
 	// subcolumn access const
-	const Vector_Proxy subcol(unsigned int j, unsigned int rowStart, unsigned int rowEnd) const
+	const Vector_Proxy subcol(unsigned int col, unsigned int rowStart, unsigned int rowEnd) const
 	{
-		return Vector_Proxy(&m_data[j*m_mrows + rowStart], rowEnd-rowStart+1, 1, true);
+		return Vector_Proxy(&m_data[col*m_mrows + rowStart], rowEnd-rowStart+1, 1, true);
 	}
 
 	void fill(double fillval)
@@ -588,6 +643,18 @@ public:
 		//std::copy(vct.m_data, vct.m_data + m_len, m_data);
 	}
 
+	// construct via a matrix with 1 row or column
+	Vector(const Matrix & mtx)
+		: Matrix(mtx)
+		, m_is_column	(true)
+	{
+		if (mtx.rows() != 1 && mtx.cols() != 1)
+		{
+			std::cout << "Cannot convert matrix to vector!" << std::endl;
+			throw -1;
+		}
+	}
+
 	// constructor from proxy
 	Vector(const Vector_Proxy & vctp)
 		: Matrix((vctp.m_is_column? vctp.m_length : 1), (vctp.m_is_column? 1 : vctp.m_length))
@@ -635,26 +702,62 @@ public:
 		return *this;
 	}
 
-	// Vector-Matrix multiplication
-	Vector operator*(const Matrix & A)
+	// overloaded assignment converting matrix
+	Vector & operator=(Matrix mtx)
 	{
-		if (m_ncols != A.rows())
+		if (mtx.rows() != 1 && mtx.cols() != 1)
 		{
-			throw "Matrix dimensions do not match!";
+			throw "Cannot convert matrix to vector!";
 		}
 
-		Vector out(A.cols());
-		Vector_Proxy mine(m_data, m_len, 1, m_is_column);
-		for (auto i=0; i<A.cols(); i++)
+		Vector m(mtx.rows()*mtx.cols());
+		unsigned int ctr=0;
+		for (auto i=0; i<mtx.rows(); i++)
 		{
-			out(i) = Vector_Proxy::dot(mine, A.col(i));
+			for (auto j=0; j<mtx.cols(); j++)
+			{
+				m(ctr++) = mtx(i,j);
+			}
 		}
+
+		swap(*this, m);
+		return *this;
+	}
+
+	Vector operator~()
+	{
+		Vector out(*this);
 		out.transpose();
 		return out;
 	}
 
+	// Vector-Matrix multiplication
+	// this returns a matrix to enable outer products
+	Matrix operator*(const Matrix & A) const
+	{
+
+		if (m_ncols != A.rows())
+		{
+			std::cout << "Matrix dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		Matrix out(m_mrows, A.cols());
+		//Vector_Proxy mine(m_data, m_len, 1, m_is_column);
+		for (auto i=0; i<m_mrows; i++)
+		{
+			for (auto j=0; j<A.cols(); j++)
+			{
+				Vector_Proxy myrow(&m_data[i], m_ncols, 1, false);
+				out(i,j) = Vector_Proxy::dot(myrow, A.col(j));
+			}
+		}
+
+		return out;
+	}
+
 	// Vector-Vector addition
-	Vector operator+(const Vector & vct)
+	Vector operator+(const Vector & vct) const
 	{
 		if (m_len != vct.m_len)
 		{
@@ -671,7 +774,7 @@ public:
 	}
 
 	// Vector-Vector subtraction
-	Vector operator-(const Vector & vct)
+	Vector operator-(const Vector & vct) const
 	{
 		if (m_len != vct.m_len)
 		{
@@ -720,7 +823,7 @@ public:
 	}
 
 	// scalar multiplication
-	Vector operator*(double val)
+	Vector operator*(double val) const
 	{
 		Vector out(*this);
 		for (auto i=0; i<m_len; i++) out.m_data[i]*=val;
@@ -728,7 +831,7 @@ public:
 	}
 
 	// scalar division
-	Vector operator/(double val)
+	Vector operator/(double val) const
 	{
 		Vector out(*this);
 		for (auto i=0; i<m_len; i++) out.m_data[i]/=val;
@@ -736,7 +839,7 @@ public:
 	}
 
 	// scalar addition
-	Vector operator+(double val)
+	Vector operator+(double val) const
 	{
 		Vector out(*this);
 		for (auto i=0; i<m_len; i++) out.m_data[i]+=val;
@@ -744,7 +847,7 @@ public:
 	}
 
 	// scalar subtraction
-	Vector operator-(double val)
+	Vector operator-(double val) const
 	{
 		Vector out(*this);
 		for (auto i=0; i<m_len; i++) out.m_data[i]-=val;
@@ -833,6 +936,110 @@ protected:
 	bool m_is_column;
 
 };
+
+
+
+
+
+// global operators - Matrix
+Matrix operator*(double val, const Matrix & mtx)
+{
+	Matrix out(mtx);
+	for (auto i=0; i<mtx.rows(); i++)
+	{
+		for (auto j=0; j<mtx.cols(); j++)
+		{ 
+			out(i,j)*=val;
+		}
+	}
+	return out;
+}
+
+Matrix operator+(double val, const Matrix & mtx)
+{
+	Matrix out(mtx);
+	for (auto i=0; i<mtx.rows(); i++)
+	{
+		for (auto j=0; j<mtx.cols(); j++)
+		{ 
+			out(i,j)+=val;
+		}
+	}
+	return out;
+}
+
+Matrix operator-(double val, const Matrix & mtx)
+{
+	Matrix out(mtx.rows(),mtx.cols());
+	out.fill(val);
+	for (auto i=0; i<mtx.rows(); i++)
+	{
+		for (auto j=0; j<mtx.cols(); j++)
+		{
+			out(i,j) -= mtx(i,j);
+		}
+	} 
+	return out;
+}
+
+
+
+
+
+
+// global operators - Vector
+Vector operator*(double val, const Vector & vct)
+{
+	Vector out(vct);
+	for (auto i=0; i<vct.length(); i++) out(i)*=val;
+	return out;
+}
+
+Vector operator+(double val, const Vector & vct)
+{
+	Vector out(vct);
+	for (auto i=0; i<vct.length(); i++) out(i)+=val;
+	return out;
+}
+
+Vector operator-(double val, const Vector & vct)
+{
+	Vector out(vct.length());
+	out.fill(val);
+	for (auto i=0; i<vct.length(); i++) out(i) -= vct(i);
+	return out;
+}
+
+
+
+
+
+
+
+// global operators - Vector_Proxy
+Vector operator*(double val, const Vector_Proxy & vct)
+{
+	Vector out(vct);
+	for (auto i=0; i<vct.length(); i++) out(i)*=val;
+	return out;
+}
+
+Vector operator+(double val, const Vector_Proxy & vct)
+{
+	Vector out(vct);
+	for (auto i=0; i<vct.length(); i++) out(i)+=val;
+	return out;
+}
+
+Vector operator-(double val, const Vector_Proxy & vct)
+{
+	Vector out(vct.length());
+	out.fill(val);
+	for (auto i=0; i<vct.length(); i++) out(i) -= vct(i);
+	return out;
+}
+
+
 
 
 #endif
