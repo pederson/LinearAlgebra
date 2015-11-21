@@ -190,6 +190,7 @@ protected:
 std::ostream& operator<<(std::ostream & os, const Vector_Proxy & vctp)
 {
 	os << std::endl;
+	os << std::scientific;
 	if (vctp.m_is_column)
 	{
 		for (auto i=0; i<vctp.m_length; i++)
@@ -604,6 +605,7 @@ protected:
 std::ostream& operator<<(std::ostream & os, const Matrix & mtx)
 {
 	os << std::endl;
+	os << std::scientific;
 	for (auto i=0; i<mtx.rows(); i++)
 	{
 		for (auto j=0; j<mtx.cols(); j++)
@@ -929,6 +931,10 @@ protected:
 	bool m_is_column;
 
 };
+
+
+
+
 
 
 

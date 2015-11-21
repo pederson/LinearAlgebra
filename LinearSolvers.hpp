@@ -371,25 +371,27 @@ void svd(const Matrix & A, Matrix & U, Matrix & S, Matrix & V);
 // LU decomposition
 void lu(const Matrix & A, Matrix & Lout, Matrix & Uout)
 {
-	Matrix L(A);
-	Matrix U(A.cols(), A.cols());
-	// ghetto way to fill-in by subvectors
-	Vector v;
-	for (auto j=0; j<A.cols(); j++)
+
+	if (A.cols() != A.rows())
 	{
-		v = A.subcol(j, 0, A.cols()-1);
-		U.col(j) = v;
+		std::cout << "LU decomposition will fail for non-square matrices!" << std::endl;
+		throw -1;
 	}
+	Matrix L(A);
+	Matrix U(L(0, A.cols()-1, 0, A.cols()-1));
 
-	L(0,0) = 1.0;
-	L.subcol(0, 1, L.rows()-1) /= A(0,0);
-	L.subrow(0, 1, L.cols()-1) *= 0.0;
-	U.subcol(0, 1, L.cols()-1) *= 0.0;
+	//L(0,0) = 1.0;
+	L.subcol(0, 0, L.rows()-1) /= A(0,0);
+	
 
-
-	if (A.cols() > 1)
+	if (A.cols() > 1 && A.rows()>1)
 	{
+		// zero out some stuff
+		L.subrow(0, 1, L.cols()-1) *= 0.0;
+		U.subcol(0, 1, L.cols()-1) *= 0.0;
+
 		// form submatrix A
+		Vector v;
 		Vector l_21 = L.subcol(0, 1, L.rows()-1);
 		Vector a_12t = A.subrow(0, 1, A.cols()-1);
 		Matrix Asub(A.rows()-1, A.cols()-1);
@@ -404,6 +406,11 @@ void lu(const Matrix & A, Matrix & Lout, Matrix & Uout)
 		// recurse on submatrix
 		Matrix Lsub, Usub;
 		lu(Asub, Lsub, Usub);
+
+		// std::cout << "Asub: " << Asub << std::endl;
+		// std::cout << "Lsub: " << Lsub << std::endl;
+		// std::cout << "Usub: " << Usub << std::endl;
+		// std::cout << "Lsub*Usub: " << Lsub*Usub << std::endl;
 
 		// form the sub L and U
 		L(1, L.rows()-1, 1, L.cols()-1) = Lsub;

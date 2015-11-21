@@ -4,6 +4,8 @@
 using namespace std;
 
 
+// things that can't be defined until everything has been defined
+
 // for a better method,
 // see: http://stackoverflow.com/questions/16737298/what-is-the-fastest-way-to-transpose-a-matrix-in-c
 void Matrix::transpose()
@@ -117,7 +119,6 @@ Vector Matrix::operator*(const Vector & v) const
 
 	return out;
 }
-
 
 // g++ -std=c++11 Matrix.cpp LinearSolvers.hpp -o matrixtest
 
@@ -307,11 +308,13 @@ int main(int argc, char * argv[]){
 
 	// check lu decomp
 	Matrix L, U;
-	lu(m, L, U);
-	cout << "************************** LU:" << endl;
+	Matrix newmat = randmatn(5,5);
+	lu(newmat, L, U);
+	cout << "************************** LU DECOMP:" << endl;
 	cout << "L: " << L << endl;
 	cout << "U: " << U << endl;
 	cout << "L*U : " << L*U << endl;
+	cout << "newmat : " << newmat << endl;
 
 	//***************************************************//
 
