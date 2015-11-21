@@ -147,6 +147,14 @@ public:
 
 	Vector operator-(double val);
 
+	void operator*=(double val);
+
+	void operator/=(double val);
+
+	void operator+=(double val);
+
+	void operator-=(double val);
+
 	double & operator()(unsigned int i)
 	{
 		return m_dataptr[i*m_stride];
@@ -660,9 +668,10 @@ public:
 		: Matrix((vctp.m_is_column? vctp.m_length : 1), (vctp.m_is_column? 1 : vctp.m_length))
 		, m_is_column (vctp.m_is_column)
 	{
-		Vector m;
-		m = vctp;
-		swap(*this, m);
+		for (auto i=0; i<vctp.m_length; i++)
+		{
+			m_data[i] = *(vctp.m_dataptr + i*vctp.m_stride);
+		}
 	}
 
 	// destructor
@@ -684,6 +693,7 @@ public:
 	// assignment operator
 	Vector & operator=(Vector& vct)
 	{
+		// implicit copy and swap
 		swap(*this, vct);
 		return *this;
 	}
@@ -691,13 +701,9 @@ public:
 	// overloaded assignment for submatrix assignment
 	Vector & operator=(const Vector_Proxy & vctp)
 	{
-		Vector m(vctp.m_length);
-		
-		for (auto i=0; i<vctp.m_length; i++)
-		{
-			m(i) = *(vctp.m_dataptr + i*vctp.m_stride);
-		}
 
+		// copy and swap
+		Vector m(vctp);
 		swap(*this, m);
 		return *this;
 	}
@@ -705,21 +711,8 @@ public:
 	// overloaded assignment converting matrix
 	Vector & operator=(Matrix mtx)
 	{
-		if (mtx.rows() != 1 && mtx.cols() != 1)
-		{
-			throw "Cannot convert matrix to vector!";
-		}
-
-		Vector m(mtx.rows()*mtx.cols());
-		unsigned int ctr=0;
-		for (auto i=0; i<mtx.rows(); i++)
-		{
-			for (auto j=0; j<mtx.cols(); j++)
-			{
-				m(ctr++) = mtx(i,j);
-			}
-		}
-
+		// copy and swap
+		Vector m(mtx);
 		swap(*this, m);
 		return *this;
 	}

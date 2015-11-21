@@ -369,7 +369,53 @@ void qr_givens(const Matrix & A, Matrix & Q, Matrix & R);
 void svd(const Matrix & A, Matrix & U, Matrix & S, Matrix & V);
 
 // LU decomposition
-void lu(const Matrix & A, Matrix & L, Matrix & U);
+void lu(const Matrix & A, Matrix & Lout, Matrix & Uout)
+{
+	Matrix L(A);
+	Matrix U(A.cols(), A.cols());
+	// ghetto way to fill-in by subvectors
+	Vector v;
+	for (auto j=0; j<A.cols(); j++)
+	{
+		v = A.subcol(j, 0, A.cols()-1);
+		U.col(j) = v;
+	}
+
+	L(0,0) = 1.0;
+	L.subcol(0, 1, L.rows()-1) /= A(0,0);
+	L.subrow(0, 1, L.cols()-1) *= 0.0;
+	U.subcol(0, 1, L.cols()-1) *= 0.0;
+
+
+	if (A.cols() > 1)
+	{
+		// form submatrix A
+		Vector l_21 = L.subcol(0, 1, L.rows()-1);
+		Vector a_12t = A.subrow(0, 1, A.cols()-1);
+		Matrix Asub(A.rows()-1, A.cols()-1);
+
+		for (auto j=1; j<A.cols(); j++)
+		{
+			v = A.subcol(j, 1, A.cols()-1);
+			Asub.col(j-1) = v;
+		}
+		Asub -= l_21*a_12t;
+
+		// recurse on submatrix
+		Matrix Lsub, Usub;
+		lu(Asub, Lsub, Usub);
+
+		// form the sub L and U
+		L(1, L.rows()-1, 1, L.cols()-1) = Lsub;
+		U(1, U.rows()-1, 1, U.cols()-1) = Usub;
+
+	}
+
+	swap(L, Lout);
+	swap(U, Uout);
+
+	return;
+}
 
 // randomized method for basis
 void rand_basis(const Matrix & A, Matrix & Q);

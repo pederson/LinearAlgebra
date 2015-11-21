@@ -77,6 +77,27 @@ Vector Vector_Proxy::operator-(double val)
 }
 
 
+void Vector_Proxy::operator*=(double val)
+{
+	for (auto i=0; i<m_length; i++) m_dataptr[i*m_stride] *= val;
+}
+
+void Vector_Proxy::operator/=(double val)
+{
+	for (auto i=0; i<m_length; i++) m_dataptr[i*m_stride] /= val;
+}
+
+void Vector_Proxy::operator+=(double val)
+{
+	for (auto i=0; i<m_length; i++) m_dataptr[i*m_stride] += val;
+}
+
+void Vector_Proxy::operator-=(double val)
+{
+	for (auto i=0; i<m_length; i++) m_dataptr[i*m_stride] -= val;
+}
+
+
 Vector Matrix::operator*(const Vector & v) const
 {
 	if (m_ncols != v.rows())
@@ -283,6 +304,14 @@ int main(int argc, char * argv[]){
 	cout << "R: " << Rh << endl;
 	cout << "Q'*Q : " << ~Qh*Qh << endl;
 	cout << "Q*R : " << Qh*Rh << endl;
+
+	// check lu decomp
+	Matrix L, U;
+	lu(m, L, U);
+	cout << "************************** LU:" << endl;
+	cout << "L: " << L << endl;
+	cout << "U: " << U << endl;
+	cout << "L*U : " << L*U << endl;
 
 	//***************************************************//
 
