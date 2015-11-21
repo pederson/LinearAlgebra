@@ -452,6 +452,22 @@ void rand_basis(const Matrix & A, Matrix & Qout, unsigned int rank)
 	return;
 }
 
+// pivoted lu decomposition
+
+// eigenvalue decomposition
+
+// schur decomposition
+
+// tridiagonalize
+
+// compute the determinant
+
+// estimate the condition number
+
+// cholesky factorization
+
+// direct inverse (slow in general)
+
 
 
 
