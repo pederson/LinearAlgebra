@@ -308,7 +308,7 @@ void qr_householder(const Matrix & A, Matrix & Uout, Matrix & Rout)
 	U.fill(0);
 	U.col(0) = u;
 
-	if (A.cols() > 1)
+	if (A.cols() > 1 && A.rows() > 1)
 	{
 		// recurse on submatrix
 		Matrix Rsub;
@@ -425,7 +425,32 @@ void lu(const Matrix & A, Matrix & Lout, Matrix & Uout)
 }
 
 // randomized method for basis
-void rand_basis(const Matrix & A, Matrix & Q);
+void rand_basis(const Matrix & A, Matrix & Qout, unsigned int rank)
+{
+
+	unsigned int q=3;
+
+	// get random matrix
+	Matrix G = randmatn(A.cols(), rank+10);
+	Matrix Y = A*G;
+	Matrix U, Q, R;
+
+	qr_householder(Y, U, R, Q);
+
+	// power iteration correction
+	for (auto j=1; j<q; j++)
+	{
+		Matrix Y = A*~A*Q;
+		qr_householder(Y, U, R, Q);
+	}
+
+	// truncate basis for output
+	Matrix Qr = Q(0, Q.rows()-1, 0, rank-1);
+	swap(Qout, Qr);
+
+
+	return;
+}
 
 
 

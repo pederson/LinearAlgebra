@@ -316,6 +316,17 @@ int main(int argc, char * argv[]){
 	cout << "L*U : " << L*U << endl;
 	cout << "newmat : " << newmat << endl;
 
+	// check randomized basis method
+	Matrix Qr;
+	unsigned int targetrank = 4;
+	rand_basis(newmat, Qr, targetrank);
+	cout << "************************** RANDOMIZED BASIS:" << endl;
+	cout << "A: " << newmat << endl;
+	cout << "Q: " << Qr << endl;
+	cout << "Q'*Q : " << ~Qr*Qr << endl;
+
+
+
 	//***************************************************//
 
 
