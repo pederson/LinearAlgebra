@@ -79,6 +79,10 @@ public:
 
 	Matrix_Proxy & operator=(const Matrix & mtx);
 
+	void operator-=(const Matrix & mtx);
+
+	Vector operator*(const Vector & vct);
+
 
 protected:
 
@@ -756,7 +760,8 @@ public:
 	{
 		if (m_len != vct.m_len)
 		{
-			throw "Vector dimensions do not match";
+			std::cout << "Vector dimensions do not match!" << std::endl;
+			throw -1;
 		}
 
 		Vector out(m_len);
@@ -773,7 +778,8 @@ public:
 	{
 		if (m_len != vct.m_len)
 		{
-			throw "Vector dimensions do not match";
+			std::cout << "Vector dimensions do not match!" << std::endl;
+			throw -1;
 		}
 
 		Vector out(m_len);
@@ -790,7 +796,8 @@ public:
 	{
 		if (m_len != vct.m_len)
 		{
-			throw "Vector dimensions do not match";
+			std::cout << "Vector dimensions do not match!" << std::endl;
+			throw -1;
 		}
 
 		for (auto i=0; i<m_len; i++)
@@ -806,7 +813,8 @@ public:
 	{
 		if (m_len != vct.m_len)
 		{
-			throw "Vector dimensions do not match";
+			std::cout << "Vector dimensions do not match!" << std::endl;
+			throw -1;
 		}
 
 		for (auto i=0; i<m_len; i++)

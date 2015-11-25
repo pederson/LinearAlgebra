@@ -40,6 +40,34 @@ Matrix_Proxy & Matrix_Proxy::operator=(const Matrix & mtx)
 	return *this;
 }
 
+void Matrix_Proxy::operator-=(const Matrix & mtx)
+{
+	unsigned int ix=0, jx=0;
+	for (auto i=m_rowStart; i<m_rowEnd+1; i++)
+	{
+		for (auto j=m_colStart; j<m_colEnd+1; j++)
+		{
+			m_parent(i,j) -= mtx(ix, jx);
+			jx++;
+		}
+		ix++;
+		jx=0;
+	}
+	return;
+}
+
+Vector Matrix_Proxy::operator*(const Vector & vct)
+{
+	unsigned int m = m_parent.rows();
+	Vector out(m_rowEnd-m_rowStart+1);
+	out.fill(0);
+	for (auto i=0; i<m_colEnd-m_colStart+1; i++)
+	{
+		out += m_parent.subcol(m_colStart + i, m_rowStart, m_rowEnd)*vct(i);
+	}
+	return out;
+}
+
 Vector_Proxy & Vector_Proxy::operator=(const Vector & vct)
 {
 	for (auto i=0; i<m_length; i++)
@@ -325,7 +353,28 @@ int main(int argc, char * argv[]){
 	cout << "Q: " << Qr << endl;
 	cout << "Q'*Q : " << ~Qr*Qr << endl;
 
+	// check hessenberg form
+	Matrix hess;
+	hessenberg(newmat, hess);
+	cout << "************************** HESSENBERG FORM:" << endl;
+	cout << "hess: " << hess << endl;
 
+	// test QR algorithm once
+	Matrix Eg = hilb(4);
+	cout << "hilb(4): " << Eg << endl;
+	Matrix T;
+	hessenberg(Eg, T);
+	cout << "hess: " << T << endl;
+	Matrix Tnew;
+	qr_alg_tridiag_unshifted(T, Tnew);
+	cout << "************************** QR ALGORITHM:" << endl;
+	cout << "Tnew: " << Tnew << endl;
+
+	// check eigenvalue decomp
+	Matrix eigs;
+	eig_symm(Eg, eigs);
+	cout << "************************** EIGENVALUES:" << endl;
+	cout << "eigs: " << eigs << endl;
 
 	//***************************************************//
 

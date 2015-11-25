@@ -27,6 +27,21 @@ Matrix eye(unsigned int rows, unsigned int cols)
 	return out;
 }
 
+// hilbert matrix
+// entries are H(i,j) = 1/(i+j+1) where i, j start at 0
+Matrix hilb(unsigned int rows)
+{
+	Matrix out(rows, rows);
+	for (auto i=0; i<rows; i++)
+	{
+		for (auto j=0; j<rows; j++)
+		{
+			out(i,j) = 1.0/(i+j+1);
+		}
+	}
+	return out;
+}
+
 // random matrix uniformly distributed [0,1]
 Matrix randmat(unsigned int rows, unsigned int cols)
 {
@@ -449,6 +464,127 @@ void rand_basis(const Matrix & A, Matrix & Qout, unsigned int rank)
 	swap(Qout, Qr);
 
 
+	return;
+}
+
+// reduction to hessenberg form
+// uses orthogonal similarity transformation
+void hessenberg(const Matrix & A, Matrix & Tout)
+{
+
+	std::size_t m,n;
+	A.size(m,n);
+	
+	if (m != n)
+	{
+		std::cout << "Matrix must be square to reduce to Hessenberg form!" << std::endl;
+		throw -1;
+	}
+
+	Matrix T(A);
+
+	// loop and apply householder transformations successively
+	for (auto k=0; k<m-2; k++)
+	{
+		Vector x = T.subcol(k, k+1, m-1);
+		Vector v(x.length()); v.fill(0);
+		v(0) = sgn(x(0))*x.norm();
+		v += x;
+		v /= v.norm(); // normalize
+		T(k+1, m-1, k, n-1) -= 2.0*v*(~v*T(k+1,m-1,k,n-1));
+		T(0, m-1, k+1, m-1) -= 2.0*(T(0,m-1, k+1, m-1)*v)*~v;
+	}
+	swap(Tout, T);
+	return;
+}
+
+// qr algorithm (unshifted)
+// reveals the smallest eigenvalue
+// requires a tridiagonal matrix input
+void qr_alg_tridiag_unshifted(const Matrix & A, Matrix & Tout)
+{
+	std::size_t m,n;
+	A.size(m,n);
+
+	Matrix T(A);
+	double crit = abs(T(m-1, m-2));
+
+	Matrix Q, R, U;
+	unsigned int ctr=0;
+	while(crit >= 1.0e-12)
+	{
+		qr_householder(T,U,R,Q);
+		Matrix Tnew = R*Q;
+
+		swap(Tnew, T);
+		crit = abs(T(m-1, m-2));
+	}
+
+	swap(T,Tout);
+	return;
+}
+
+// qr algorithm (Wilkinson Shift)
+// reveals the smallest eigenvalue
+// requires a tridiagonal matrix input
+void qr_alg_tridiag_shifted(const Matrix & A, Matrix & Tout)
+{
+	std::size_t m,n;
+	A.size(m,n);
+
+	Matrix T(A);
+	double crit = abs(T(m-1, m-2));
+	double delta, mu;
+
+	Matrix Q, R, U;
+	unsigned int ctr=0;
+	while(crit >= 1.0e-12)
+	{
+
+		delta = (T(m-2, m-2) - T(m-1,m-1))/2.0;
+		mu = T(m-1, m-1) 
+		   - sgn(delta)*T(m-1, m-2)*T(m-1,m-2)
+		   /(abs(delta) + sqrt(delta*delta + T(m-1, m-2)*T(m-1, m-2)));
+
+		qr_householder(T-mu*eye(n,n),U,R,Q);
+		Matrix Tnew = R*Q + mu*eye(n,n);
+
+		swap(Tnew, T);
+		crit = abs(T(m-1, m-2));
+	}
+
+	swap(T,Tout);
+	return;
+}
+
+// real, symmetric matrix eigenvalue decomp
+void eig_symm(const Matrix & A, Matrix & Lout)
+{
+
+	std::size_t m,n;
+	A.size(m,n);
+
+	Matrix L = eye(n,n);
+
+	// tridiagonalize
+	Matrix T;
+	hessenberg(A, T);
+
+	for (auto i=0; i<m-1; i++)
+	{
+		// get eigenvalue
+		Matrix Tnew;
+		qr_alg_tridiag_shifted(T, Tnew);
+
+		// capture eigenvalue
+		L(m-i-1, m-i-1) = Tnew(m-i-1, m-i-1);
+
+		// deflate
+		T = Tnew(0,m-i-2, 0, m-i-2);
+	}
+	L(0,0) = T(0,0);
+
+	swap(L,Lout);
 	return;
 }
 
