@@ -91,6 +91,31 @@ Vector randvecn(unsigned int length)
 	return out;
 }
 
+// return the diagonals of a matrix as a vector
+Vector diag(const Matrix & mtx)
+{
+	unsigned int dim = std::min(mtx.rows(), mtx.cols());
+	Vector out(dim);
+
+	for (auto i=0; i<dim; i++)
+	{
+		out(i) = mtx(i,i);
+	}
+	return out;
+}
+
+// convert vector into square diagonal matrix
+Matrix diag(const Vector & vct)
+{
+	Matrix out = eye(vct.length(), vct.length());
+
+	for (auto i=0; i<vct.length(); i++)
+	{
+		out(i,i) = vct(i);
+	}
+	return out;
+}
+
 
 
 
