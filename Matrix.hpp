@@ -79,6 +79,8 @@ public:
 
 	Matrix_Proxy & operator=(const Matrix & mtx);
 
+	void operator+=(const Matrix & mtx);
+
 	void operator-=(const Matrix & mtx);
 
 	Vector operator*(const Vector & vct);
@@ -1046,6 +1048,178 @@ Vector operator-(double val, const Vector_Proxy & vct)
 	return out;
 }
 
+
+// things that can't be defined until everything has been defined
+
+
+// for a better method,
+// see: http://stackoverflow.com/questions/16737298/what-is-the-fastest-way-to-transpose-a-matrix-in-c
+void Matrix::transpose()
+{
+	Matrix m(m_ncols, m_mrows);
+	Vector c;
+	for (auto i=0; i<m_ncols; i++)
+	{
+		c = col(i);
+		c.transpose();
+
+		m.row(i) = c;
+	}
+
+	swap(*this, m);
+}
+
+
+
+Matrix_Proxy & Matrix_Proxy::operator=(const Matrix & mtx)
+{
+	unsigned int ix=0, jx=0;
+	for (auto i=m_rowStart; i<m_rowEnd+1; i++)
+	{
+		for (auto j=m_colStart; j<m_colEnd+1; j++)
+		{
+			m_parent(i,j) = mtx(ix, jx);
+			jx++;
+		}
+		ix++;
+		jx=0;
+	}
+
+	return *this;
+}
+
+void Matrix_Proxy::operator+=(const Matrix & mtx)
+{
+	unsigned int ix=0, jx=0;
+	for (auto i=m_rowStart; i<m_rowEnd+1; i++)
+	{
+		for (auto j=m_colStart; j<m_colEnd+1; j++)
+		{
+			m_parent(i,j) += mtx(ix, jx);
+			jx++;
+		}
+		ix++;
+		jx=0;
+	}
+	return;
+}
+
+void Matrix_Proxy::operator-=(const Matrix & mtx)
+{
+	unsigned int ix=0, jx=0;
+	for (auto i=m_rowStart; i<m_rowEnd+1; i++)
+	{
+		for (auto j=m_colStart; j<m_colEnd+1; j++)
+		{
+			m_parent(i,j) -= mtx(ix, jx);
+			jx++;
+		}
+		ix++;
+		jx=0;
+	}
+	return;
+}
+
+
+Vector Matrix_Proxy::operator*(const Vector & vct)
+{
+	unsigned int m = m_parent.rows();
+	Vector out(m_rowEnd-m_rowStart+1);
+	out.fill(0);
+	for (auto i=0; i<m_colEnd-m_colStart+1; i++)
+	{
+		out += m_parent.subcol(m_colStart + i, m_rowStart, m_rowEnd)*vct(i);
+	}
+	return out;
+}
+
+
+
+
+
+
+
+
+Vector_Proxy & Vector_Proxy::operator=(const Vector & vct)
+{
+	for (auto i=0; i<m_length; i++)
+	{
+		*(m_dataptr + i*m_stride) = vct(i);
+	}
+
+	return *this;
+}
+
+Vector Vector_Proxy::operator*(double val)
+{
+	Vector out(*this);
+	for (auto i=0; i<m_length; i++) out(i)*=val;
+	return out;
+}
+
+Vector Vector_Proxy::operator/(double val)
+{
+	Vector out(*this);
+	for (auto i=0; i<m_length; i++) out(i)/=val;
+	return out;
+}
+
+Vector Vector_Proxy::operator+(double val)
+{
+	Vector out(*this);
+	for (auto i=0; i<m_length; i++) out(i)+=val;
+	return out;
+}
+
+Vector Vector_Proxy::operator-(double val)
+{
+	Vector out(*this);
+	for (auto i=0; i<m_length; i++) out(i)-=val;
+	return out;
+}
+
+
+void Vector_Proxy::operator*=(double val)
+{
+	for (auto i=0; i<m_length; i++) m_dataptr[i*m_stride] *= val;
+}
+
+void Vector_Proxy::operator/=(double val)
+{
+	for (auto i=0; i<m_length; i++) m_dataptr[i*m_stride] /= val;
+}
+
+void Vector_Proxy::operator+=(double val)
+{
+	for (auto i=0; i<m_length; i++) m_dataptr[i*m_stride] += val;
+}
+
+void Vector_Proxy::operator-=(double val)
+{
+	for (auto i=0; i<m_length; i++) m_dataptr[i*m_stride] -= val;
+}
+
+
+
+Vector Matrix::operator*(const Vector & v) const
+{
+	if (m_ncols != v.rows())
+	{
+		throw "Matrix dimensions do not match!";
+	}
+
+	Vector out(m_mrows);
+
+	out.fill(0);
+	for (auto i=0; i<m_ncols; i++)
+	{
+		const Vector c = col(i);
+		// out += col(i)*v(i);
+		out += c*v(i);
+	}
+
+	return out;
+}
 
 
 

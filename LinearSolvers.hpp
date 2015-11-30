@@ -439,6 +439,11 @@ void lu(const Matrix & A, Matrix & Lout, Matrix & Uout)
 	return;
 }
 
+
+// pivoted lu decomposition
+void lu(const Matrix & A, Matrix & Lout, Matrix & Uout, Matrix & P);
+
+
 // randomized method for basis
 void rand_basis(const Matrix & A, Matrix & Qout, unsigned int rank)
 {
@@ -469,6 +474,7 @@ void rand_basis(const Matrix & A, Matrix & Qout, unsigned int rank)
 
 // reduction to hessenberg form
 // uses orthogonal similarity transformation
+// this tridiagonalizes for hermitian matrices
 void hessenberg(const Matrix & A, Matrix & Tout)
 {
 
@@ -588,13 +594,10 @@ void eig_symm(const Matrix & A, Matrix & Lout)
 	return;
 }
 
-// pivoted lu decomposition
 
-// eigenvalue decomposition
+// generalized complex eigenvalue decomposition
 
 // schur decomposition
-
-// tridiagonalize
 
 // compute the determinant
 
