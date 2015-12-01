@@ -133,7 +133,7 @@ int main(int argc, char * argv[]){
 
 
 
-	//************* LINEAR SOLVER TESTS *****************//
+	//************* DIRECT LINEAR SOLVER TESTS ***********//
 
 	// generate random matrix
 	Matrix m = randmat(5,3);
@@ -230,6 +230,37 @@ int main(int argc, char * argv[]){
 	eig_symm(Eg, eigs);
 	cout << "************************** EIGENVALUES:" << endl;
 	cout << "eigs: " << eigs << endl;
+
+	//***************************************************//
+
+
+
+	//************* ITERATIVE LINEAR SOLVER TESTS ***********//
+	// steepest descent
+	Matrix spd = hilb(6);
+	Vector rndx = randvecn(6);
+	Vector solnb = spd*rndx;
+	Vector solncalc(6);
+	solncalc.fill(0);
+	steepest_descent(spd, solnb, solncalc);
+	cout << "************************** STEEPEST DESCENT:" << endl;
+	cout << "A: " << spd << endl;
+	cout << "b: " << solnb << endl;
+	cout << "x_exact: " << rndx << endl;
+	cout << "x_calc : " << solncalc << endl;
+	cout << "error: " << (rndx-solncalc).norm() << endl;
+
+	// conjugate gradient
+	Vector solncalc2(6);
+	solncalc2.fill(0);
+	conjugate_gradient(spd, solnb, solncalc2);
+	cout << "************************** CONJUGATE GRADIENT:" << endl;
+	cout << "A: " << spd << endl;
+	cout << "b: " << solnb << endl;
+	cout << "x_exact: " << rndx << endl;
+	cout << "x_calc : " << solncalc2 << endl;
+	cout << "error: " << (rndx-solncalc2).norm() << endl;
+
 
 	//***************************************************//
 

@@ -17,6 +17,7 @@ class Abstract_Matrix
 {
 public:
 
+	//virtual Abstract_Matrix & operator*(const Abstract_Matrix & vct) const = 0;
 	virtual void size(std::size_t & rows, std::size_t & cols) const = 0;
 	virtual std::size_t rows() const = 0;
 	virtual std::size_t cols() const = 0;
@@ -756,6 +757,24 @@ public:
 
 		return out;
 	}
+
+	// Vector operator*(const Vector & vct) const
+	// {
+	// 	if (m_ncols != vct.rows())
+	// 	{
+	// 		std::cout << "Matrix dimensions do not match!" << std::endl;
+	// 		throw -1;
+	// 	}
+
+	// 	Vector out(m_mrows);
+	// 	for (auto i=0; i<m_mrows; i++)
+	// 	{
+	// 		Vector_Proxy myrow(&m_data[i], m_ncols, 1, false);
+	// 		out(i) = Vector_Proxy::dot(myrow, vct.col(0));
+	// 	}
+	// 	return out;
+
+	// }
 
 	// Vector-Vector addition
 	Vector operator+(const Vector & vct) const

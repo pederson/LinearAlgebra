@@ -619,6 +619,100 @@ void eig_symm(const Matrix & A, Matrix & Lout)
 	return;
 }
 
+// *** iterative methods *** //
+
+// steepest descent
+// for square, SPD matrices only
+// uses the x argument as x0
+void steepest_descent(const Matrix & mtx, const Vector & b, Vector & x)
+{
+
+	Vector rv = b-mtx*x;
+	double resid = rv.norm();
+	double threshold = std::max(resid*1.0e-10, 1.0e-6);
+	double alpha;
+	Vector matvec;
+
+	unsigned int ctr=0;
+	while (resid > threshold)
+	{
+		// one matrix-vector product
+		matvec = mtx*rv;
+
+		// direction is residual
+		alpha = Vector::dot(rv,rv)/Vector::dot(rv,matvec);
+
+		// update x
+		x += alpha*rv;
+
+		if (ctr%50 == 0)
+		{
+			// recalculate the resid every 50 iters
+			rv = b - mtx*x;
+		}
+		else
+		{
+			// update residual
+			rv -= alpha*matvec;
+		}
+
+		resid = rv.norm();
+		//std::cout << "residual: " << resid << std::endl;
+
+		ctr++;
+	}
+
+	std::cout << "iterated: " << ctr << " times" << std::endl;
+
+
+	return;
+}
+
+
+// conjugate gradient
+// for square, SPD matrices only
+// uses the x argument as x0
+void conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x)
+{
+	Vector rv = b-mtx*x;
+
+	double resid = rv.norm();
+	double threshold = std::max(resid*1.0e-16, 1.0e-15);
+
+	// first iteration here
+	Vector d = rv;
+	Vector matvec = mtx*d;
+	double alpha = Vector::dot(d,rv)/Vector::dot(d,matvec);
+	x = alpha*b;
+
+	// continue iterating
+	unsigned int ctr=0;
+	while (resid > threshold)
+	{
+		// calculate residual
+		rv = b - mtx*x;
+		resid = rv.norm();
+
+		// pick new direction
+		d = rv - Vector::dot(rv, matvec)/Vector::dot(d, matvec)*d;
+
+		// one matrix-vector product
+		matvec = mtx*d;
+
+		// calculate new step size
+		alpha = Vector::dot(d,rv)/Vector::dot(d,matvec);
+
+		// update x
+		x += alpha*d;
+		
+		ctr++;
+	}
+
+	std::cout << "iterated: " << ctr << " times" << std::endl;
+
+	return;
+}
+
 
 // generalized complex eigenvalue decomposition
 
