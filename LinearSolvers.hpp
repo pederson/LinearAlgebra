@@ -216,7 +216,7 @@ Vector tridiagonal_solve(const Matrix & T, const Vector & b);
 
 
 
-// collection of helper routines
+// collection of helper routines and matrix decompositions
 
 // qr factorization using Gram-Schmidt algorithm A=QR
 void qr_gram_schmidt(const Matrix & A, Matrix & Qout)
@@ -405,8 +405,96 @@ void qr_householder(const Matrix & A, Matrix & U, Matrix & R, Matrix & Q, Matrix
 // qr factorization using Givens rotations
 void qr_givens(const Matrix & A, Matrix & Q, Matrix & R);
 
+// recursive golub-kahan bidiagonalization
+// returns matrices C and D that contain the householder reflectors
+// used to generate bidiagonal B
+void golub_kahan(const Matrix & A, Matrix & Bout, Matrix & Cout, Matrix & Dout){
+
+	Matrix B=A;
+	Matrix G=A;
+	Matrix C(A.rows(), A.cols());
+	Matrix D(A.rows(), A.cols());
+
+	// left multiply
+	if (A.rows() > 1){
+		// reflect to -e_1
+		Vector u;
+		double b;
+		householder_reflect_to_e1(A.col(0), u, b);
+
+		// multiply through by H = I - 2u*u'
+		G -= 2.0*u*(~u*G);
+
+		// C
+		C.fill(0);
+		C.col(0) = u;
+	}
+
+
+	// right multiply
+	if (A.cols() > 1){
+		Vector v;
+		double b2;
+		householder_reflect_to_e1(A.subrow(0, 1, A.cols()-1), v, b2);
+
+		// multiply through by H = I - 2v*v'
+		G -= 2.0(G*v)*~v;
+
+		// D
+		D.fill(0);
+		D.col(0) = v;
+	}
+
+	B.col(0) = G.col(0);
+	B.row(0) = G.row(0);
+
+	if (A.cols() > 1 && A.rows() > 1)
+	{
+		// recurse on submatrix
+		Matrix Bsub;
+		Matrix Csub;
+		Matrix Dsub;
+		Matrix Gsub = G(1, G.rows()-1, 1, G.cols()-1);
+
+		golub_kahan(Gsub, Bsub, Csub, Dsub);
+
+		B(1, B.rows()-1, 1, B.cols()-1) = Bsub;
+		B.subrow(0, 1, G.cols()-1) = Gsubrow(0, 1, G.cols()-1);
+		B.subcol(0, 1, G.rows()-1) = Gsubcol(0, 1, G.rows()-1);
+	
+		C(1,C.rows()-1, 1,C.cols()-1) = Csub;
+		D(1,D.rows()-1, 1,D.cols()-1) = Dsub;
+
+	}
+
+	// swap
+	swap(B, Bout);
+	swap(C, Cout);
+	swap(D, Dout);
+
+	return;
+}
+
+// bidiagonalization Golub-Kahan
+void bidiagonalize_golub_kahan(const Matrix & A, Matrix & B, Matrix & U, Matrix & V){
+
+	// call golub_kahan
+
+	// reform the U and V matrices
+
+	// swap
+}
+
 // svd A = USV*
-void svd(const Matrix & A, Matrix & U, Matrix & S, Matrix & V);
+void svd(const Matrix & A, Matrix & U, Matrix & S, Matrix & V){
+
+	// bidiagonalize
+	Matrix U1, V1, B;
+	bidiagonalize_golub_kahan(A, B, U1, V1);
+
+	// eigenvalue decomposition on bidiagonal matrix
+	
+}
 
 // LU decomposition
 void lu(const Matrix & A, Matrix & Lout, Matrix & Uout)
@@ -467,6 +555,28 @@ void lu(const Matrix & A, Matrix & Lout, Matrix & Uout)
 
 // pivoted lu decomposition
 void lu(const Matrix & A, Matrix & Lout, Matrix & Uout, Matrix & P);
+
+
+// cholesky factorization
+// only works for symmetric, positive definite matrices
+void cholesky(const Matrix & A, Matrix & Rout)
+{
+
+	std::size_t m,n;
+	A.size(m,n);
+
+	Matrix R = A;
+	for (auto k=0; k<m; k++)
+	{
+		for (auto j=k+1; j<m; j++)
+		{
+			R.subrow(j, j, m-1) -= R.subrow(k, j, m-1)*R(k,j)/R(k,k); 
+		}
+		R.subrow(k,k,m-1) /= sqrt(R(k,k));
+	}
+
+	swap(R, Rout);
+}
 
 
 // randomized method for basis
@@ -647,7 +757,7 @@ void steepest_descent(const Matrix & mtx, const Vector & b, Vector & x)
 
 		if (ctr%50 == 0)
 		{
-			// recalculate the resid every 50 iters
+			// recalculate the exact resid every 50 iters
 			rv = b - mtx*x;
 		}
 		else
@@ -721,8 +831,6 @@ void conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x)
 // compute the determinant
 
 // estimate the condition number
-
-// cholesky factorization
 
 // direct inverse (slow in general)
 
