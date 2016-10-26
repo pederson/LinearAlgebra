@@ -199,6 +199,14 @@ int main(int argc, char * argv[]){
 	cout << "L*U : " << L*U << endl;
 	cout << "newmat : " << newmat << endl;
 
+	// check cholesky decomp
+	newmat = hilb(5);
+	cholesky(newmat, L);
+	cout << "************************** CHOLESKY DECOMP:" << endl;
+	cout << "A: " << newmat << endl;
+	cout << "L: " << L << endl;
+	cout << "L*L' : " << L*~L << endl;
+
 	// check randomized basis method
 	Matrix Qr;
 	unsigned int targetrank = 4;
@@ -224,6 +232,24 @@ int main(int argc, char * argv[]){
 	qr_alg_tridiag_unshifted(T, Tnew);
 	cout << "************************** QR ALGORITHM:" << endl;
 	cout << "Tnew: " << Tnew << endl;
+
+
+	// test QR double shift algorithm once
+	Matrix Eg2 = hilb(6);
+	// Eg2(0,0) = 7; Eg2(0,1) = 3; Eg2(0,2) = 4; Eg2(0,3) = -11; Eg2(0,4) = -9; Eg2(0,5) = -2;
+	// Eg2(1,0) = -6; Eg2(1,1) = 4; Eg2(1,2) = -5; Eg2(1,3) = 7; Eg2(1,4) = 1; Eg2(1,5) = 12;
+	// Eg2(2,0) = -1; Eg2(2,1) = -5; Eg2(2,2) = 2; Eg2(2,3) = 2; Eg2(2,4) = 9; Eg2(2,5) = 1;
+	// Eg2(3,0) = -8; Eg2(3,1) = 0; Eg2(3,2) = -1; Eg2(3,3) = 5; Eg2(3,4) = 0; Eg2(3,5) = 8;
+	// Eg2(4,0) = -4; Eg2(4,1) = 3; Eg2(4,2) = -5; Eg2(4,3) = 7; Eg2(4,4) = 2; Eg2(4,5) = 10;
+	// Eg2(5,0) = 6; Eg2(5,1) = 1; Eg2(5,2) = 4; Eg2(5,3) = -11; Eg2(5,4) = -7; Eg2(5,5) = -1;
+	Matrix T2, Tnew2;
+	hessenberg(Eg2, T2);
+	qr_alg_double_shifted(T2, Tnew2);
+	complex<double> eig1, eig2;
+	eig2x2(Tnew2(4,5,4,5), eig1, eig2);
+	cout << "************************** QR DOUBLE SHIFT ALGORITHM:" << endl;
+	cout << "Tnew: " << Tnew2 << endl;
+	cout << "eigs: " << eig1 << ", " << eig2 << endl;
 
 	// check eigenvalue decomp
 	Matrix eigs;

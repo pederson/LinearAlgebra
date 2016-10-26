@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <random>
+#include <complex>
 
 #include "Matrix.hpp"
 
@@ -41,6 +42,7 @@ Matrix hilb(unsigned int rows)
 	}
 	return out;
 }
+
 
 // random matrix uniformly distributed [0,1]
 Matrix randmat(unsigned int rows, unsigned int cols)
@@ -117,7 +119,30 @@ Matrix diag(const Vector & vct)
 }
 
 
+double trace(const Matrix & A){
+	double s=0;
+	for (auto j=0; j<A.rows(); j++) s+= A(j,j);
+	return s;
+}
 
+
+double det2x2(const Matrix & A){
+	if (A.rows() != 2 || A.cols() != 2){
+		throw "Matrix is not 2x2!";
+	}
+
+	return A(0,0)*A(1,1) - A(0,1)*A(1,0);
+}
+
+
+void eig2x2(const Matrix & A, std::complex<double> & l1, std::complex<double> & l2){
+	if (A.rows() != 2 || A.cols() != 2){
+		throw "Matrix is not 2x2!";
+	}
+
+	l1 = 0.5*(A(0,0)+A(1,1)) + 0.5*sqrt((A(0,0)+A(1,1))*(A(0,0)+A(1,1)) - 1*(A(0,0)*A(1,1)-A(0,1)*A(1,0)));
+	l2 = 0.5*(A(0,0)+A(1,1)) - 0.5*sqrt((A(0,0)+A(1,1))*(A(0,0)+A(1,1)) - 1*(A(0,0)*A(1,1)-A(0,1)*A(1,0)));
+}
 
 // collection of solvers for linear algebra problems
 
@@ -438,7 +463,7 @@ void golub_kahan(const Matrix & A, Matrix & Bout, Matrix & Cout, Matrix & Dout){
 		householder_reflect_to_e1(A.subrow(0, 1, A.cols()-1), v, b2);
 
 		// multiply through by H = I - 2v*v'
-		G -= 2.0(G*v)*~v;
+		G -= 2.0*(G*v)*~v;
 
 		// D
 		D.fill(0);
@@ -459,8 +484,8 @@ void golub_kahan(const Matrix & A, Matrix & Bout, Matrix & Cout, Matrix & Dout){
 		golub_kahan(Gsub, Bsub, Csub, Dsub);
 
 		B(1, B.rows()-1, 1, B.cols()-1) = Bsub;
-		B.subrow(0, 1, G.cols()-1) = Gsubrow(0, 1, G.cols()-1);
-		B.subcol(0, 1, G.rows()-1) = Gsubcol(0, 1, G.rows()-1);
+		B.subrow(0, 1, G.cols()-1) = G.subrow(0, 1, G.cols()-1);
+		B.subcol(0, 1, G.rows()-1) = G.subcol(0, 1, G.rows()-1);
 	
 		C(1,C.rows()-1, 1,C.cols()-1) = Csub;
 		D(1,D.rows()-1, 1,D.cols()-1) = Dsub;
@@ -692,6 +717,79 @@ void qr_alg_tridiag_shifted(const Matrix & A, Matrix & Tout)
 
 		swap(Tnew, T);
 		crit = abs(T(m-1, m-2));
+	}
+
+	swap(T,Tout);
+	return;
+}
+
+// qr algorithm (Double Shift) = Francis Algorithm
+// reveals the smallest eigenvalue, possibly complex
+// but stays in real arithmetic
+// requires a hessenberg matrix input
+void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
+{
+	std::size_t m,n;
+	A.size(m,n);
+
+	Matrix T(A);
+	double crit = abs(T(m-1, m-2));
+	double delta, mu;
+
+	double s, t, x, y, z;
+	Vector u, v(3), q(2), uq;
+	double b;
+	unsigned int r;
+
+	Matrix Q, R, U;
+	unsigned int ctr=0;
+	double eps = 1.0e-12;
+	while(crit >= 1.0e-12)
+	{
+
+		// apply double shift
+		s = trace(T(m-2, m-1, n-2, n-1)); 	// trace of submatrix
+		t = det2x2(T(m-2, m-1, n-2, n-1));	// det of submatrix
+		x = T(0,0)*T(0,0) + T(0,1)*T(1,0) - s*T(0,0) + t;
+		y = T(1,0)*(T(0,0)+T(1,1)-s);
+		z = T(1,0)*T(2,1);
+
+		// first householder projector
+		
+		// chase the bulge
+		for (std::size_t k=0; k<m-2; k++){
+			v(0) = x;
+			v(1) = y;
+			v(2) = z;
+			householder_reflect_to_e1(v, u, b);
+
+			// apply to left
+			r = std::max(std::size_t(1),k);
+			T(k, k+2, r-1,n-1) -= 2.0*u*(~u*T(k, k+2, r-1, n-1));
+			// apply to right
+			r = std::min(k+4, m);
+			T(0, r-1, k, k+2) -= 2.0*(T(0, r-1, k, k+2)*u)*~u;
+
+			// calc new x, y, z
+			x = T(k+1, k);
+			y = T(k+2, k);
+
+			if (k<m-3) z=T(k+3, k);
+		}
+
+		// givens rotation P for final submatrix (or householder)
+		q(0) = x;
+		q(1) = y;
+		householder_reflect_to_e1(q, uq, b);
+		// apply to left
+		T(m-2, m-1, n-3,n-1) -= 2.0*uq*(~uq*T(m-2, m-1, n-3, n-1));
+		// apply to right
+		T(0,n-1, n-2, n-1) -= 2.0*(T(0, n-1, n-2, n-1)*uq)*~uq;
+
+
+		// determine if solution meets criteria
+		if (abs(T(m-1, m-2)) < eps*(abs(T(m-2, m-2)) + abs(T(m-1, m-1)))) break;
+		else if (abs(T(m-2, m-3)) < eps*(abs(T(m-3, m-3)) + abs(T(m-2, m-2)))) break;
 	}
 
 	swap(T,Tout);

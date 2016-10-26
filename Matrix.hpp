@@ -146,6 +146,8 @@ public:
 
 	Vector_Proxy & operator=(const Vector & vct);
 
+	Vector_Proxy & operator-=(const Vector & vct);
+
 	Vector operator*(double val);
 
 	Vector operator/(double val);
@@ -179,6 +181,15 @@ public:
 			m_dataptr[i*m_stride] = vctp.m_dataptr[i*vctp.m_stride];
 		}
 	}
+
+	void operator-=(Vector_Proxy & vctp)
+	{
+		for (auto i=0; i<m_length; i++)
+		{
+			m_dataptr[i*m_stride] -= vctp.m_dataptr[i*vctp.m_stride];
+		}
+	}
+
 
 	std::size_t length() const {return m_length;}; 
 
@@ -323,6 +334,26 @@ public:
 		Matrix m(*this);
 		m.transpose();
 		return m;
+	}
+
+
+	// Matrix assignment
+	Matrix operator=(const Matrix & A) const
+	{
+		if (m_ncols != A.m_mrows)
+		{
+			throw "Matrix dimensions do not match!";
+		}
+
+		Matrix out(m_mrows, A.m_ncols);
+		for (auto i=0; i<m_mrows; i++)
+		{
+			for (auto j=0; j<A.m_ncols; j++)
+			{
+				out(i,j) = A(i,j);
+			}
+		}
+		return out;
 	}
 
 	// Matrix-Matrix multiplication
@@ -1164,6 +1195,17 @@ Vector_Proxy & Vector_Proxy::operator=(const Vector & vct)
 	for (auto i=0; i<m_length; i++)
 	{
 		*(m_dataptr + i*m_stride) = vct(i);
+	}
+
+	return *this;
+}
+
+
+Vector_Proxy & Vector_Proxy::operator-=(const Vector & vct)
+{
+	for (auto i=0; i<m_length; i++)
+	{
+		*(m_dataptr+i*m_stride) -= vct(i);
 	}
 
 	return *this;
