@@ -345,14 +345,14 @@ public:
 			throw "Matrix dimensions do not match!";
 		}
 
-		Matrix out(m_mrows, A.m_ncols);
-		for (auto i=0; i<m_mrows; i++)
-		{
-			for (auto j=0; j<A.m_ncols; j++)
-			{
-				out(i,j) = A(i,j);
-			}
-		}
+		Matrix out(A);
+		// for (auto i=0; i<m_mrows; i++)
+		// {
+		// 	for (auto j=0; j<A.m_ncols; j++)
+		// 	{
+		// 		out(i,j) = A(i,j);
+		// 	}
+		// }
 		return out;
 	}
 

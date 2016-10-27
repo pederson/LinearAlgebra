@@ -246,9 +246,11 @@ int main(int argc, char * argv[]){
 	hessenberg(Eg2, T2);
 	qr_alg_double_shifted(T2, Tnew2);
 	complex<double> eig1, eig2;
-	eig2x2(Tnew2(4,5,4,5), eig1, eig2);
+	eig2x2(Tnew2(Tnew2.rows()-2, Tnew2.rows()-1, Tnew2.cols()-2, Tnew2.cols()-1), eig1, eig2);
 	cout << "************************** QR DOUBLE SHIFT ALGORITHM:" << endl;
+	cout << "A: " << Eg2 << endl;
 	cout << "Tnew: " << Tnew2 << endl;
+	cout << "subTnew: " << Tnew2(0,1,0,1) << endl;
 	cout << "eigs: " << eig1 << ", " << eig2 << endl;
 
 	// check symmetric eigenvalue decomp
@@ -259,10 +261,13 @@ int main(int argc, char * argv[]){
 
 
 	// check eigenvalue decomp
-	Matrix eigsc;
-	eig(Eg2, eigsc);
+	Matrix Teigsc;
+	vector<complex<double>> eigsc;
+	eig(Eg2, Teigsc, eigsc);
 	cout << "************************** COMPLEX EIGENVALUES:" << endl;
-	cout << "eigs: " << eigsc << endl;
+	cout << "eigs: " << endl;
+	for (auto i=0; i<eigsc.size(); i++) cout << eigsc[i] << ", " ;
+	cout << endl;
 
 	//***************************************************//
 

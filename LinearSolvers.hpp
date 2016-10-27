@@ -140,8 +140,8 @@ void eig2x2(const Matrix & A, std::complex<double> & l1, std::complex<double> & 
 		throw "Matrix is not 2x2!";
 	}
 
-	l1 = 0.5*(A(0,0)+A(1,1)) + 0.5*sqrt((A(0,0)+A(1,1))*(A(0,0)+A(1,1)) - 1*(A(0,0)*A(1,1)-A(0,1)*A(1,0)));
-	l2 = 0.5*(A(0,0)+A(1,1)) - 0.5*sqrt((A(0,0)+A(1,1))*(A(0,0)+A(1,1)) - 1*(A(0,0)*A(1,1)-A(0,1)*A(1,0)));
+	l1 = 0.5*(A(0,0)+A(1,1)) + 0.5*sqrt(std::complex<double>((A(0,0)+A(1,1))*(A(0,0)+A(1,1)) - 4*(A(0,0)*A(1,1)-A(0,1)*A(1,0))));
+	l2 = 0.5*(A(0,0)+A(1,1)) - 0.5*sqrt(std::complex<double>((A(0,0)+A(1,1))*(A(0,0)+A(1,1)) - 4*(A(0,0)*A(1,1)-A(0,1)*A(1,0))));
 }
 
 // collection of solvers for linear algebra problems
@@ -733,7 +733,7 @@ void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
 	A.size(m,n);
 
 	Matrix T(A);
-	double crit = abs(T(m-1, m-2));
+	// double crit = abs(T(m-1, m-2));
 	double delta, mu;
 
 	double s, t, x, y, z;
@@ -743,10 +743,13 @@ void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
 
 	Matrix Q, R, U;
 	unsigned int ctr=0;
-	double eps = 1.0e-12;
+	double eps = 1.0e-16;
 	std::size_t p = n, q;
 	while(p > 2)
 	{
+
+		// std::cout << "H(" << ctr << "): " << T << '\n' << std::endl;
+		
 		q = p-1;
 
 		// apply double shift
@@ -756,10 +759,12 @@ void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
 		y = T(1,0)*(T(0,0)+T(1,1)-s);
 		z = T(1,0)*T(2,1);
 
-		// first householder projector
-		
 		// chase the bulge ... heh
-		for (std::size_t k=0; k<p-2; k++){
+		for (std::size_t k=0; k<=p-3; k++){
+
+			// std::cout << "p: " << p << std::endl;
+
+
 			v(0) = x;
 			v(1) = y;
 			v(2) = z;
@@ -772,34 +777,44 @@ void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
 			r = std::min(k+4, p);
 			T(0, r-1, k, k+2) -= 2.0*(T(0, r-1, k, k+2)*u)*~u;
 
+			// std::cout << "b: " << b << std::endl;
+
 			// calc new x, y, z
 			x = T(k+1, k);
 			y = T(k+2, k);
 
-			if (k<m-3) z=T(k+3, k);
+			if (k<p-3) z=T(k+3, k);
 		}
 
-		// givens rotation P for final submatrix (or householder)
-		w(0) = x;
-		w(1) = y;
-		householder_reflect_to_e1(w, uw, b);
-		// apply to left
-		T(q-1, p-1, p-3,n-1) -= 2.0*uw*(~uw*T(q-1, p-1, p-3, n-1));
-		// apply to right
-		T(0,p-1, p-2, p-1) -= 2.0*(T(0, p-1, p-2, p-1)*uw)*~uw;
+		// // givens rotation P for final submatrix (or householder)
+		// w(0) = x;
+		// w(1) = y;
+		// householder_reflect_to_e1(w, uw, b);
+		// // apply to left
+		// T(q-1, p-1, p-3,n-1) -= 2.0*uw*((~uw)*T(q-1, p-1, p-3, n-1));
+		// // apply to right
+		// T(0,p-1, p-2, p-1) -= 2.0*(T(0, p-1, p-2, p-1)*uw)*~uw;
 
 
 		// determine if solution meets criteria
 		if (abs(T(p-1, q-2)) < eps*(abs(T(q-1, q-1)) + abs(T(p-1, p-1)))){
-			T(p-1, q-1) = 0;
-			p--;
-			q = p-1;
+			
+			if (abs(T(p-1, q-1) < eps)){
+				T(p-1, q-1) = 0;
+				p--;
+			}
+			else{
+				T(p-2, q-2) = 0;
+				p -=2;
+			}
+			// q = p-1;
 		}
 		else if (abs(T(p-2, q-2)) < eps*(abs(T(q-2, q-2)) + abs(T(q-1, q-1)))){
 			T(p-2, q-2) = 0;
 			p -= 2;
-			q = p-1;
+			// q = p-1;
 		}
+		ctr++;
 	}
 
 	swap(T,Tout);
@@ -839,7 +854,7 @@ void eig_symm(const Matrix & A, Matrix & Lout)
 
 
 // real, nonhermitian matrix eigenvalue decomp
-void eig(const Matrix & A, Matrix & Lout)
+void eig(const Matrix & A, Matrix & Lout, std::vector<std::complex<double>> & eigout)
 {
 
 	std::size_t m,n;
@@ -848,43 +863,38 @@ void eig(const Matrix & A, Matrix & Lout)
 	Matrix L = eye(n,n);
 
 	// hessenberg form
-	Matrix T, Tnew;
-	hessenberg(A, T);
+	Matrix T, H;
+	hessenberg(A, H);
+
+	qr_alg_double_shifted(H, T);
+
+	std::vector<std::complex<double>> eigs(n);
+	std::complex<double> l1, l2;
+	unsigned int i=0;
+	unsigned int block;
+	while (i<T.rows()){
+		if (i==T.rows()-1){
+			eigs[i] = T(i,i);
+			break;
+		}
 
 
-
-
-	for (auto i=0; i<m; i++)
-	{
-		// get eigenvalue
-		qr_alg_double_shifted(T, Tnew);
-		
-
-		// capture eigenvalue
-		if (abs(Tnew(1,0)) > 1.0e-12){
-			std::cout << "got complex eig" << std::endl;
-			L(i, i) = Tnew(0,0);
-			L(i, i+1) = Tnew(0,1);
-			L(i+1, i) = Tnew(1,0);
-			L(i+1, i+1) = Tnew(1,1);
-
-			T = Tnew(2, Tnew.rows()-1, 2, Tnew.cols()-1);
+		if (abs(T(i+1, i)) < 1.0e-16){
+			block = 1;
+			eigs[i] = T(i,i);
 			i++;
-		}
+		} 
 		else{
-			L(i,i) = Tnew(0,0);
-			T = Tnew(1, Tnew.rows()-1, 1, Tnew.cols()-1);
+			block = 2;
+			eig2x2(T(i, i+1, i, i+1), l1, l2);
+			eigs[i] = l1;
+			eigs[i+1] = l2;
+			i+=2;
 		}
-		
-		std::cout << "Tnew size: " << T.rows() << ", " << T.cols() << std::endl;
-
-		// deflate
-		//swap(T, Tnew);
-		//T = Tnew(0,m-i-2, 0, m-i-2);
 	}
-	// L(0,0) = T(0,0);
-
+	
 	swap(T, Lout);
+	eigout = eigs;
 	return;
 }
 
