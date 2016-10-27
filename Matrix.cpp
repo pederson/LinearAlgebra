@@ -235,7 +235,7 @@ int main(int argc, char * argv[]){
 
 
 	// test QR double shift algorithm once
-	Matrix Eg2 = hilb(6);
+	Matrix Eg2 = hilb(5);
 	// Eg2(0,0) = 7; Eg2(0,1) = 3; Eg2(0,2) = 4; Eg2(0,3) = -11; Eg2(0,4) = -9; Eg2(0,5) = -2;
 	// Eg2(1,0) = -6; Eg2(1,1) = 4; Eg2(1,2) = -5; Eg2(1,3) = 7; Eg2(1,4) = 1; Eg2(1,5) = 12;
 	// Eg2(2,0) = -1; Eg2(2,1) = -5; Eg2(2,2) = 2; Eg2(2,3) = 2; Eg2(2,4) = 9; Eg2(2,5) = 1;

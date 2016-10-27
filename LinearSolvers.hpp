@@ -737,27 +737,29 @@ void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
 	double delta, mu;
 
 	double s, t, x, y, z;
-	Vector u, v(3), q(2), uq;
+	Vector u, v(3), w(2), uw;
 	double b;
 	unsigned int r;
 
 	Matrix Q, R, U;
 	unsigned int ctr=0;
 	double eps = 1.0e-12;
-	while(crit >= 1.0e-12)
+	std::size_t p = n, q;
+	while(p > 2)
 	{
+		q = p-1;
 
 		// apply double shift
-		s = trace(T(m-2, m-1, n-2, n-1)); 	// trace of submatrix
-		t = det2x2(T(m-2, m-1, n-2, n-1));	// det of submatrix
+		s = trace(T(q-1, p-1, q-1, p-1)); 	// trace of submatrix
+		t = det2x2(T(q-1, p-1, q-1, p-1));	// det of submatrix
 		x = T(0,0)*T(0,0) + T(0,1)*T(1,0) - s*T(0,0) + t;
 		y = T(1,0)*(T(0,0)+T(1,1)-s);
 		z = T(1,0)*T(2,1);
 
 		// first householder projector
 		
-		// chase the bulge
-		for (std::size_t k=0; k<m-2; k++){
+		// chase the bulge ... heh
+		for (std::size_t k=0; k<p-2; k++){
 			v(0) = x;
 			v(1) = y;
 			v(2) = z;
@@ -767,7 +769,7 @@ void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
 			r = std::max(std::size_t(1),k);
 			T(k, k+2, r-1,n-1) -= 2.0*u*(~u*T(k, k+2, r-1, n-1));
 			// apply to right
-			r = std::min(k+4, m);
+			r = std::min(k+4, p);
 			T(0, r-1, k, k+2) -= 2.0*(T(0, r-1, k, k+2)*u)*~u;
 
 			// calc new x, y, z
@@ -778,18 +780,26 @@ void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
 		}
 
 		// givens rotation P for final submatrix (or householder)
-		q(0) = x;
-		q(1) = y;
-		householder_reflect_to_e1(q, uq, b);
+		w(0) = x;
+		w(1) = y;
+		householder_reflect_to_e1(w, uw, b);
 		// apply to left
-		T(m-2, m-1, n-3,n-1) -= 2.0*uq*(~uq*T(m-2, m-1, n-3, n-1));
+		T(q-1, p-1, p-3,n-1) -= 2.0*uw*(~uw*T(q-1, p-1, p-3, n-1));
 		// apply to right
-		T(0,n-1, n-2, n-1) -= 2.0*(T(0, n-1, n-2, n-1)*uq)*~uq;
+		T(0,p-1, p-2, p-1) -= 2.0*(T(0, p-1, p-2, p-1)*uw)*~uw;
 
 
 		// determine if solution meets criteria
-		if (abs(T(m-1, m-2)) < eps*(abs(T(m-2, m-2)) + abs(T(m-1, m-1)))) break;
-		else if (abs(T(m-2, m-3)) < eps*(abs(T(m-3, m-3)) + abs(T(m-2, m-2)))) break;
+		if (abs(T(p-1, q-2)) < eps*(abs(T(q-1, q-1)) + abs(T(p-1, p-1)))){
+			T(p-1, q-1) = 0;
+			p--;
+			q = p-1;
+		}
+		else if (abs(T(p-2, q-2)) < eps*(abs(T(q-2, q-2)) + abs(T(q-1, q-1)))){
+			T(p-2, q-2) = 0;
+			p -= 2;
+			q = p-1;
+		}
 	}
 
 	swap(T,Tout);
