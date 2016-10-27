@@ -313,6 +313,61 @@ void householder_reflect_to_e1(const Vector & w, Vector & uout, double & b)
 	return;
 }
 
+
+// givens utility function
+void givens_rotate_to_e1(double a, double b, double & c, double & s)
+{
+	double r, s;
+	if (b==0){
+		c=1; 
+		s=0;
+	}
+	else{
+		if (abs(b) > abs(a)){
+			r = -a/b;
+			s = 1.0/sqrt(1+r*r);
+			c = s*r;
+		}
+		else{
+			r = -b/a;
+			c = 1.0/sqrt(1+r*r);
+			s = c*r;
+		}
+	}
+	return;
+}
+
+
+
+// givens rotation matrix 
+// premultiplied on a matrix A -> G*A at position (i,k)
+// where i and k are indices STARTING AT 0
+void givens_premultiply(Matrix & A, double c, double s, std::size_t i, std::size_t k)
+{
+	double t1, t2;
+	for (auto j=0; j<A.cols(); j++){
+		t1 = A(i, j);
+		t2 = A(k, j);
+		A(1,j) = c*t1 - s*t2;
+		A(2,j) = s*t1 + c*t2;
+	}
+}
+
+
+// givens rotation matrix 
+// postmultiplied on a matrix A -> A*G at position (i,k)
+// where i and k are indices STARTING AT 0
+void givens_premultiply(Matrix & A, double c, double s, std::size_t i, std::size_t k)
+{
+	double t1, t2;
+	for (auto j=0; j<A.rows(); j++){
+		t1 = A(j,i);
+		t2 = A(j,k);
+		A(j,i) = c*t1 - s*t2;
+		A(j,k) = s*t1 + c*t2;
+	}
+}
+
 // qr factorization using Householder reflections (stable)
 void qr_householder(const Matrix & A, Matrix & Uout, Matrix & Rout)
 {
