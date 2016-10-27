@@ -584,23 +584,27 @@ void lu(const Matrix & A, Matrix & Lout, Matrix & Uout, Matrix & P);
 
 // cholesky factorization
 // only works for symmetric, positive definite matrices
-void cholesky(const Matrix & A, Matrix & Rout)
+void cholesky(const Matrix & A, Matrix & Lout)
 {
 
 	std::size_t m,n;
 	A.size(m,n);
 
-	Matrix R = A;
-	for (auto k=0; k<m; k++)
+	Matrix L(A);
+	for (auto k=1; k<=m; k++)
 	{
-		for (auto j=k+1; j<m; j++)
+		for (auto j=k+1; j<=m; j++)
 		{
-			R.subrow(j, j, m-1) -= R.subrow(k, j, m-1)*R(k,j)/R(k,k); 
+			L.subrow(j-1, j-1, m-1) -= L.subrow(k-1, j-1, m-1)*L(k-1,j-1)/L(k-1,k-1); 
 		}
-		R.subrow(k,k,m-1) /= sqrt(R(k,k));
+		L.subrow(k-1,k-1,m-1) = L.subrow(k-1,k-1,m-1)/sqrt(L(k-1,k-1));
 	}
 
-	swap(R, Rout);
+	for (auto k=1; k<n; k++){
+		L.subcol(k-1, k, m-1).fill(0);
+	}
+	L = ~L;
+	swap(L, Lout);
 }
 
 

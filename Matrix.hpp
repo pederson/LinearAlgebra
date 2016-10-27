@@ -190,6 +190,12 @@ public:
 		}
 	}
 
+	void fill(double d){
+		for (auto i=0; i<m_length; i++)
+		{
+			m_dataptr[i*m_stride] = d;
+		}
+	}
 
 	std::size_t length() const {return m_length;}; 
 
@@ -307,6 +313,15 @@ public:
 		return *this;
 	}
 
+	// Matrix assignment
+	Matrix & operator=(const Matrix & A)
+	{
+
+		Matrix out(A);
+		swap(*this, out);
+		return *this;
+	}
+
 	// overloaded assignment for submatrix assignment
 	Matrix & operator=(const Matrix_Proxy & mtxp)
 	{
@@ -337,24 +352,7 @@ public:
 	}
 
 
-	// Matrix assignment
-	Matrix operator=(const Matrix & A) const
-	{
-		if (m_ncols != A.m_mrows)
-		{
-			throw "Matrix dimensions do not match!";
-		}
-
-		Matrix out(A);
-		// for (auto i=0; i<m_mrows; i++)
-		// {
-		// 	for (auto j=0; j<A.m_ncols; j++)
-		// 	{
-		// 		out(i,j) = A(i,j);
-		// 	}
-		// }
-		return out;
-	}
+	
 
 	// Matrix-Matrix multiplication
 	Matrix operator*(const Matrix & A) const
