@@ -267,6 +267,16 @@ int main(int argc, char * argv[]){
 	cout << "************************** COMPLEX EIGENVALUES:" << endl;
 	cout << "eigs: " << endl;
 	for (auto i=0; i<eigsc.size(); i++) cout << eigsc[i] << ", " ;
+	cout << '\n' << endl;
+
+
+	
+	// check singular values of a matrix
+	Matrix Eg3 = hilb(6);
+	Matrix Sing;
+	singular_values_sq(Eg3, Sing);
+	cout << "************************** SINGULAR VALUES SQUARED:" << endl;
+	cout << "S: " << Sing << endl;
 	cout << endl;
 
 	//***************************************************//

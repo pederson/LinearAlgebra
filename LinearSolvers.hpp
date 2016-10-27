@@ -902,6 +902,15 @@ void eig(const Matrix & A, Matrix & Lout, std::vector<std::complex<double>> & ei
 	return;
 }
 
+
+void singular_values_sq(const Matrix & A, Matrix & Sout){
+	Matrix C = (~A)*A;
+
+	Matrix S;
+	eig_symm(C, S);
+	swap(S, Sout);
+}
+
 // *** iterative methods *** //
 
 // steepest descent
