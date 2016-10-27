@@ -837,6 +837,57 @@ void eig_symm(const Matrix & A, Matrix & Lout)
 	return;
 }
 
+
+// real, nonhermitian matrix eigenvalue decomp
+void eig(const Matrix & A, Matrix & Lout)
+{
+
+	std::size_t m,n;
+	A.size(m,n);
+
+	Matrix L = eye(n,n);
+
+	// hessenberg form
+	Matrix T, Tnew;
+	hessenberg(A, T);
+
+
+
+
+	for (auto i=0; i<m; i++)
+	{
+		// get eigenvalue
+		qr_alg_double_shifted(T, Tnew);
+		
+
+		// capture eigenvalue
+		if (abs(Tnew(1,0)) > 1.0e-12){
+			std::cout << "got complex eig" << std::endl;
+			L(i, i) = Tnew(0,0);
+			L(i, i+1) = Tnew(0,1);
+			L(i+1, i) = Tnew(1,0);
+			L(i+1, i+1) = Tnew(1,1);
+
+			T = Tnew(2, Tnew.rows()-1, 2, Tnew.cols()-1);
+			i++;
+		}
+		else{
+			L(i,i) = Tnew(0,0);
+			T = Tnew(1, Tnew.rows()-1, 1, Tnew.cols()-1);
+		}
+		
+		std::cout << "Tnew size: " << T.rows() << ", " << T.cols() << std::endl;
+
+		// deflate
+		//swap(T, Tnew);
+		//T = Tnew(0,m-i-2, 0, m-i-2);
+	}
+	// L(0,0) = T(0,0);
+
+	swap(T, Lout);
+	return;
+}
+
 // *** iterative methods *** //
 
 // steepest descent
