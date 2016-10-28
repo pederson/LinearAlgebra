@@ -317,7 +317,7 @@ void householder_reflect_to_e1(const Vector & w, Vector & uout, double & b)
 // givens utility function
 void givens_rotate_to_e1(double a, double b, double & c, double & s)
 {
-	double r, s;
+	double r;
 	if (b==0){
 		c=1; 
 		s=0;
@@ -348,8 +348,8 @@ void givens_premultiply(Matrix & A, double c, double s, std::size_t i, std::size
 	for (auto j=0; j<A.cols(); j++){
 		t1 = A(i, j);
 		t2 = A(k, j);
-		A(1,j) = c*t1 - s*t2;
-		A(2,j) = s*t1 + c*t2;
+		A(i,j) = c*t1 - s*t2;
+		A(k,j) = s*t1 + c*t2;
 	}
 }
 
@@ -357,7 +357,7 @@ void givens_premultiply(Matrix & A, double c, double s, std::size_t i, std::size
 // givens rotation matrix 
 // postmultiplied on a matrix A -> A*G at position (i,k)
 // where i and k are indices STARTING AT 0
-void givens_premultiply(Matrix & A, double c, double s, std::size_t i, std::size_t k)
+void givens_postmultiply(Matrix & A, double c, double s, std::size_t i, std::size_t k)
 {
 	double t1, t2;
 	for (auto j=0; j<A.rows(); j++){
@@ -854,10 +854,19 @@ void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
 		// // apply to right
 		// T(0,p-1, p-2, p-1) -= 2.0*(T(0, p-1, p-2, p-1)*uw)*~uw;
 
+		// double c,s;
+		// givens_rotate_to_e1(x, y, c, s);
+		// givens_premultiply(T, c, s, p-1, p-3);
+		// givens_postmultiply(T, c, s, p-1, p-3);
+
+
 
 		// determine if solution meets criteria
 		if (abs(T(p-1, q-2)) < eps*(abs(T(q-1, q-1)) + abs(T(p-1, p-1)))){
 			
+			// T(p-1, q-1) = 0;
+			// p--;
+
 			if (abs(T(p-1, q-1) < eps)){
 				T(p-1, q-1) = 0;
 				p--;
@@ -866,12 +875,11 @@ void qr_alg_double_shifted(const Matrix & A, Matrix & Tout)
 				T(p-2, q-2) = 0;
 				p -=2;
 			}
-			// q = p-1;
+
 		}
 		else if (abs(T(p-2, q-2)) < eps*(abs(T(q-2, q-2)) + abs(T(q-1, q-1)))){
 			T(p-2, q-2) = 0;
 			p -= 2;
-			// q = p-1;
 		}
 		ctr++;
 	}
