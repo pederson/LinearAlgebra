@@ -128,7 +128,8 @@ double trace(const Matrix & A){
 
 double det2x2(const Matrix & A){
 	if (A.rows() != 2 || A.cols() != 2){
-		throw "Matrix is not 2x2!";
+		std::cout << "Matrix is not 2x2" << std::endl;
+		throw -1;
 	}
 
 	return A(0,0)*A(1,1) - A(0,1)*A(1,0);
@@ -137,11 +138,23 @@ double det2x2(const Matrix & A){
 
 void eig2x2(const Matrix & A, std::complex<double> & l1, std::complex<double> & l2){
 	if (A.rows() != 2 || A.cols() != 2){
-		throw "Matrix is not 2x2!";
+		std::cout << "Matrix is not 2x2" << std::endl;
+		throw -1;
 	}
 
 	l1 = 0.5*(A(0,0)+A(1,1)) + 0.5*sqrt(std::complex<double>((A(0,0)+A(1,1))*(A(0,0)+A(1,1)) - 4*(A(0,0)*A(1,1)-A(0,1)*A(1,0))));
 	l2 = 0.5*(A(0,0)+A(1,1)) - 0.5*sqrt(std::complex<double>((A(0,0)+A(1,1))*(A(0,0)+A(1,1)) - 4*(A(0,0)*A(1,1)-A(0,1)*A(1,0))));
+}
+
+void invert2x2(const Matrix & A, Matrix & A_inv){
+	double d = det2x2(A);
+	Matrix inv(2,2);
+	inv(0,0) = A(1,1);
+	inv(1,1) = A(0,0);
+	inv(0,1) = -A(0,1);
+	inv(1,0) = -A(1,0);
+	inv = inv/d;
+	swap(inv, A_inv);
 }
 
 // collection of solvers for linear algebra problems
@@ -151,11 +164,13 @@ Vector upper_triangular_solve(const Matrix & U, const Vector & b)
 {
 	if (U.rows() != U.cols())
 	{
-		throw "Matrix is not square!";
+		std::cout << "Matrix must be square to upper triangular solve!" << std::endl;
+		throw -1;
 	}
 	if (b.length() != U.rows())
 	{
-		throw "Matrix-Vector dimensions do not match!";
+		std::cout << "Matrix-Vector dimensions do not match in upper triangular solve!" << std::endl;
+		throw -1;
 	}
 
 	Vector out(b);
@@ -972,6 +987,29 @@ void singular_values_sq(const Matrix & A, Matrix & Sout){
 	Matrix S;
 	eig_symm(C, S);
 	swap(S, Sout);
+}
+
+
+// use a QR decomposition to solve A*A_inv = I ----> Q*R*A_inv = I
+void invert(const Matrix & A, Matrix & A_inv){
+	// check dimensions
+	if (A.rows() != A.cols()){
+		std::cout << "Matrix must be square to invert!" << std::endl;
+		throw -1;
+	}
+
+	// first, QR factorize A
+	Matrix Q, R, U;
+	qr_householder(A, U, R, Q);
+	Matrix inv(A);
+	Vector rhs;
+
+	for (auto i=0; i<A.rows(); i++){
+		rhs = Q.subrow(i, 0, A.cols()-1);
+		inv.subcol(i, 0, A.rows()-1) = upper_triangular_solve(R, ~rhs);
+	}
+
+	swap(inv, A_inv);
 }
 
 // *** iterative methods *** //

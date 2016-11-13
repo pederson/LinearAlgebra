@@ -279,6 +279,16 @@ int main(int argc, char * argv[]){
 	cout << "S: " << Sing << endl;
 	cout << endl;
 
+
+
+	// invert a square matrix
+	Matrix Einv;
+	invert(Eg2, Einv);
+	cout << "************************** MATRIX INVERSE:" << endl;
+	cout << "M*M_inv: " << Eg2*Einv << endl;
+	cout << "M_inv*M: " << Einv*Eg2 << endl;
+	cout << endl;
+
 	//***************************************************//
 
 
