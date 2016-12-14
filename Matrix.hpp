@@ -4,6 +4,7 @@
 #include <math.h>
 #include <iostream>
 #include <stdlib.h>
+#include <map>
 
 
 // forward declare some classes
@@ -13,19 +14,42 @@ class Matrix_Proxy;
 class Vector_Proxy;
 
 
+
+// *******************************************************************************
+
+
+class Abstract_Vector
+{
+public:
+
+	virtual void size(std::size_t & rows, std::size_t & cols) const = 0;
+	virtual std::size_t length() const = 0;
+	virtual double norm() const = 0;
+	// virtual void transpose() = 0;
+
+protected:
+
+};
+
+
+
+// *******************************************************************************
+
+
 class Abstract_Matrix
 {
 public:
 
 	//virtual Abstract_Matrix & operator*(const Abstract_Matrix & vct) const = 0;
+	//virtual Abstract_Vector & operator*(const Abstract_Vector & vct) const = 0;
 	virtual void size(std::size_t & rows, std::size_t & cols) const = 0;
 	virtual std::size_t rows() const = 0;
 	virtual std::size_t cols() const = 0;
 	virtual double norm() const = 0;
-	virtual Vector_Proxy row(unsigned int i) = 0;
-	virtual const Vector_Proxy row(unsigned int i) const = 0;
-	virtual Vector_Proxy col(unsigned int j) = 0;
-	virtual const Vector_Proxy col(unsigned int j) const = 0;
+	// virtual Vector_Proxy row(unsigned int i) = 0;
+	// virtual const Vector_Proxy row(unsigned int i) const = 0;
+	// virtual Vector_Proxy col(unsigned int j) = 0;
+	// virtual const Vector_Proxy col(unsigned int j) const = 0;
 
 	// virtual void transpose() = 0;
 
@@ -36,6 +60,10 @@ protected:
 
 
 
+
+
+
+// *******************************************************************************
 
 
 class Matrix_Proxy
@@ -99,6 +127,8 @@ private:
 
 
 
+
+// *******************************************************************************
 
 
 class Vector_Proxy{
@@ -235,6 +265,10 @@ std::ostream& operator<<(std::ostream & os, const Vector_Proxy & vctp)
 	return os;
 }
 
+
+
+
+// *******************************************************************************
 
 
 class Matrix : public Abstract_Matrix
@@ -653,6 +687,9 @@ std::ostream& operator<<(std::ostream & os, const Matrix & mtx)
 	return os;
 }
 
+
+
+// *******************************************************************************
 
 
 // vector is derived from matrix. Has either 1 column or 1 row
@@ -1281,5 +1318,309 @@ Vector Matrix::operator*(const Vector & v) const
 }
 
 
+
+
+
+// *******************************************************************************
+
+
+class SparseVector : public Abstract_Vector
+{
+public:
+
+	SparseVector()
+		: m_length 	(0)
+		, m_default_value	(0)
+	{
+	}
+
+	// create and allocate a new sparse vector
+	SparseVector(unsigned int length, double default_value)
+		: m_length 	(length)
+		, m_default_value	(default_value)
+	{
+	}
+
+	// create a sparse vector initialized by existing data
+	SparseVector(unsigned int length, double default_value, 
+				 unsigned int num_vals, const unsigned int * inds, const double * data)
+		: m_length 	(length)
+		, m_default_value	(default_value)
+	{
+		for (auto i=0; i<num_vals; i++){
+			m_data[inds[i]] = data[i];
+		}
+	}
+
+	// copy constructor
+	SparseVector(const SparseVector & sv)
+		: m_length 	(sv.m_length)
+		, m_data 	(sv.m_data)
+		, m_default_value	(sv.m_default_value)
+	{
+	}
+
+	// destructor
+	~SparseVector()
+	{
+	}
+
+	friend void swap(SparseVector & sv1, SparseVector & sv2)
+	{
+		using std::swap;
+		swap(sv1.m_length, sv2.m_length);
+		swap(sv1.m_data, sv2.m_data);
+		swap(sv1.m_default_value, sv2.m_default_value);
+
+	}
+
+
+	// SparseVector-SparseVector addition
+	SparseVector operator+(const SparseVector & vct) const
+	{
+		if (m_length != vct.m_length)
+		{
+			std::cout << "SparseVector dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		SparseVector out(vct);
+
+		// first merge the two maps
+		out.m_data.insert(m_data.begin(), m_data.end());
+
+		// find all common elements of the two maps and adjust accordingly
+		for (auto it=m_data.begin(); it!=m_data.end(); it++)
+		{
+			auto fit = vct.m_data.find(it->first);
+			if (fit != vct.m_data.end()){
+				out.m_data[it->first] += m_data.at(it->first);
+			}
+		}
+
+		// then take care of the default value
+		out.m_default_value = m_default_value+vct.m_default_value;
+
+		return out;
+	}
+
+	// SparseVector-SparseVector subtraction
+	SparseVector operator-(const SparseVector & vct) const
+	{
+		if (m_length != vct.m_length)
+		{
+			std::cout << "SparseVector dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		SparseVector out(vct*-1);
+
+		// first merge the two maps
+		out.m_data.insert(m_data.begin(), m_data.end());
+
+		// find all common elements of the two maps and adjust accordingly
+		for (auto it=m_data.begin(); it!=m_data.end(); it++)
+		{
+			auto fit = vct.m_data.find(it->first);
+			if (fit != vct.m_data.end()){
+				out.m_data[it->first] += m_data.at(it->first);
+			}
+		}
+
+		// then take care of the default value
+		out.m_default_value = m_default_value-vct.m_default_value;
+
+		return out;
+	}
+
+	// SparseVector-SparseVector addition shorthand
+	SparseVector & operator+=(const SparseVector & vct)
+	{
+		if (m_length != vct.m_length)
+		{
+			std::cout << "SparseVector dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		// first merge the two maps
+		m_data.insert(vct.m_data.begin(), vct.m_data.end());
+
+		// find all common elements of the two maps and adjust accordingly
+		for (auto it=m_data.begin(); it!=m_data.end(); it++)
+		{
+			auto fit = vct.m_data.find(it->first);
+			if (fit != vct.m_data.end()){
+				m_data[it->first] += vct.m_data.at(it->first);
+			}
+		}
+
+		// then take care of the default value
+		m_default_value += vct.m_default_value;
+
+		return *this;
+	}
+
+	// SparseVector-SparseVector subtraction shorthand
+	SparseVector & operator-=(const SparseVector & vct)
+	{
+		if (m_length != vct.m_length)
+		{
+			std::cout << "SparseVector dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		SparseVector nvct = vct*-1;
+
+		// first merge the two maps
+		m_data.insert(nvct.m_data.begin(), nvct.m_data.end());
+
+		// find all common elements of the two maps and adjust accordingly
+		for (auto it=m_data.begin(); it!=m_data.end(); it++)
+		{
+			auto fit = nvct.m_data.find(it->first);
+			if (fit != nvct.m_data.end()){
+				m_data[it->first] += nvct.m_data[it->first];
+			}
+		}
+
+		// then take care of the default value
+		m_default_value -= vct.m_default_value;
+
+		return *this;
+	}
+
+
+
+
+
+
+
+
+
+
+
+	// scalar multiplication
+	SparseVector operator*(double val) const
+	{
+		SparseVector out(*this);
+		out.m_default_value *= val;
+		for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
+			out.m_data[it->first]*=val;
+		}
+		return out;
+	}
+
+	// scalar division
+	SparseVector operator/(double val) const
+	{
+		SparseVector out(*this);
+		out.m_default_value /= val;
+		for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
+			out.m_data[it->first]/=val;
+		}
+	}
+
+	// scalar addition
+	SparseVector operator+(double val) const
+	{
+		SparseVector out(*this);
+		out.m_default_value += val;
+		for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
+			out.m_data[it->first]+=val;
+		}
+	}
+
+	// scalar subtraction
+	SparseVector operator-(double val) const
+	{
+		SparseVector out(*this);
+		out.m_default_value -= val;
+		for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
+			out.m_data[it->first]-=val;
+		}
+	}
+
+	// scalar multiplication
+	SparseVector & operator*=(double val)
+	{
+		m_default_value *= val;
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			m_data[it->first]*=val;
+		}
+		return *this;
+	}
+
+	// scalar division
+	SparseVector & operator/=(double val)
+	{
+		m_default_value /= val;
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			m_data[it->first]/=val;
+		}
+		return *this;
+	}
+
+	// scalar addition
+	SparseVector & operator+=(double val)
+	{
+		m_default_value += val;
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			m_data[it->first]+=val;
+		}
+		return *this;
+	}
+
+	// scalar subtraction
+	SparseVector & operator-=(double val)
+	{
+		m_default_value -= val;
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			m_data[it->first]-=val;
+		}
+		return *this;
+	}
+
+
+	// set index i to val
+	void set(unsigned int i, double val){
+		m_data[i] = val;
+	}
+
+	// add val to index i
+	void add(unsigned int i, double val){
+		int r = m_data.count(i);
+		if (r == 0) m_data[i] = m_default_value + val;
+		else m_data[i] += val;
+	}
+
+	// get value at index i
+	double get(unsigned int i) const{
+		int r = m_data.count(i);
+		if (r==0) return m_default_value;
+		return m_data.at(i);
+	}
+
+	void size(std::size_t & rows, std::size_t & cols) const{
+		rows = m_length; cols = 1;
+	};
+
+	std::size_t length() const{return m_length;};
+
+	double norm() const{
+		double val = double(m_length-m_data.size())*m_default_value;
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			val += it->second;
+		}
+		return val;
+	};
+
+
+protected:
+
+	std::size_t m_length;
+	std::map<unsigned int, double> m_data;
+	double m_default_value;
+
+};
 
 #endif
