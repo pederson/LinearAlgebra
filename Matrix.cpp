@@ -1,4 +1,5 @@
 #include "Matrix.hpp"
+#include "SparseVector.hpp"
 
 
 using namespace std;
@@ -322,6 +323,39 @@ int main(int argc, char * argv[]){
 
 	//***************************************************//
 
+
+
+	//*************** SPARSE VECTOR TESTS ***************//
+	cout << "************************** SPARSE VECTORS:" << endl;
+	SparseVector sv(20, 0);
+	sv.set(10, 3.0);
+	sv.set(19, -10.0);
+	sv.set(0, 111.0);
+	sv.set(1, 1.0);
+	cout << "\nsv: " << endl;
+	cout << "length: " << sv.length() << endl;
+	cout << "nnz: " << sv.support_size() << endl;
+	cout << "norm: " << sv.norm() << endl;
+	cout << sv << endl;
+
+	SparseVector sv2(20, -1);
+	sv2.set(0, 111.0);
+	sv2.set(1, 3.0);
+	sv2.set(11, 3.0);
+	sv2.set(18, -10.0);
+	cout << "sv2: " << sv2 << endl;
+
+	// sparse addition
+	SparseVector sv3 = sv2 + sv;
+	cout << "sv2+sv: " << sv3 << endl;
+	
+	// sparse subtraction
+	SparseVector sv4 = sv - sv2;
+	cout << "sv-sv2: " << sv4 << endl;
+
+	// scalar multiplication, subtraction, addition, division
+	SparseVector sv5 = (((sv2*0.5)/2.0) + 10) - 2.5;
+	cout << "(((sv2*0.5)/2.0) + 10) - 2.5 : " << sv5 << endl;
 
 	return 0;
 }
