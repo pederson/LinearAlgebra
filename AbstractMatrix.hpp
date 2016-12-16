@@ -23,10 +23,11 @@ class AbstractVector
 {
 public:
 
+	//virtual static double dot(const AbstractVector & av1, const AbstractVector & av2) const = 0;
 	virtual void size(std::size_t & rows, std::size_t & cols) const = 0;
 	virtual std::size_t length() const = 0;
 	virtual double norm() const = 0;
-	// virtual void transpose() = 0;
+	virtual void transpose() = 0;
 
 protected:
 
@@ -41,13 +42,14 @@ class AbstractMatrix
 {
 public:
 
-	//virtual Abstract_Matrix & operator*(const Abstract_Matrix & vct) const = 0;
-	//virtual Abstract_Vector & operator*(const Abstract_Vector & vct) const = 0;
+	//virtual AbstractMatrix & operator*(const AbstractMatrix & vct) const = 0;
+	virtual Vector operator*(const Vector & vct) const = 0;
+	//virtual SparseVector operator*(const SparseVector & vct) const = 0;
 	virtual void size(std::size_t & rows, std::size_t & cols) const = 0;
 	virtual std::size_t rows() const = 0;
 	virtual std::size_t cols() const = 0;
-	virtual double norm() const = 0;
-	// virtual void transpose() = 0;
+	//virtual double norm() const = 0;
+	virtual void transpose() = 0;
 
 protected:
 

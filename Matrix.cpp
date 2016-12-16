@@ -1,5 +1,6 @@
 #include "Matrix.hpp"
 #include "SparseVector.hpp"
+#include "SparseMatrix.hpp"
 
 
 using namespace std;
@@ -328,10 +329,10 @@ int main(int argc, char * argv[]){
 	//*************** SPARSE VECTOR TESTS ***************//
 	cout << "************************** SPARSE VECTORS:" << endl;
 	SparseVector sv(20, 0);
-	sv.set(10, 3.0);
-	sv.set(19, -10.0);
-	sv.set(0, 111.0);
-	sv.set(1, 1.0);
+	sv(10) = 3.0;
+	sv(19) = -10.0;
+	sv(0) = 111.0;
+	sv(1) = 1.0;
 	cout << "\nsv: " << endl;
 	cout << "length: " << sv.length() << endl;
 	cout << "nnz: " << sv.support_size() << endl;
@@ -339,10 +340,10 @@ int main(int argc, char * argv[]){
 	cout << sv << endl;
 
 	SparseVector sv2(20, -1);
-	sv2.set(0, 111.0);
-	sv2.set(1, 3.0);
-	sv2.set(11, 3.0);
-	sv2.set(18, -10.0);
+	sv2(0) = 111.0;
+	sv2(1) = 3.0;
+	sv2(11) =  3.0;
+	sv2(18) =  -10.0;
 	cout << "sv2: " << sv2 << endl;
 
 	// sparse addition
@@ -356,6 +357,81 @@ int main(int argc, char * argv[]){
 	// scalar multiplication, subtraction, addition, division
 	SparseVector sv5 = (((sv2*0.5)/2.0) + 10) - 2.5;
 	cout << "(((sv2*0.5)/2.0) + 10) - 2.5 : " << sv5 << endl;
+
+	// dot product
+	double sparse_dot = SparseVector::dot(sv,sv2);
+	cout << "sv'*sv2 : " << sparse_dot << endl;
+
+	// verify with dense dot product
+	Vector dsv = sv.densify();
+	Vector dsv2 = sv2.densify();
+	double dense_dot = Vector::dot(dsv, dsv2);
+	cout << "dense sv'*sv2 : " << dense_dot << endl;
+
+
+
+
+
+	//*************** SPARSE MATRIX TESTS ***************//
+	cout << "************************** SPARSE MATRICES:" << endl;
+	SparseMatrix sm(5,5);
+	sm.set(0,0, 3.0);
+	sm.set(1,3, -10.0);
+	sm.set(2,2, 111.0);
+	sm.set(3,3, 1.0);
+	sm.set(1,1, 2.0);
+	cout << "\nsm: " << endl;
+	cout << "nnz: " << sm.nnz() << endl;
+	//cout << "norm: " << sm.norm() << endl;
+	cout << sm << endl;
+
+	/*
+	// matrix transpose
+	SparseMatrix sm2(5,5);
+	//sm2.set(0,0, 0.0);
+	sm2.set(1,1, 1.0);
+	sm2.set(2,2, 1.0);
+	sm2.set(3,3, 1.0);
+	sm2.set(4,4, 1.0);
+	sm2.set(0,2, 1.0);
+	sm2.set(0,4, 1.0);
+	// sm2.set(2,0, 2.0);
+	// sm2.set(4,0, 4.0);
+	cout << "sm2: " << sm2 << endl;
+	cout << "transposed: " << endl;
+	sm2.transpose();
+	cout << sm2.rows() << ", " << sm2.cols() << endl;
+	cout << sm2.nnz() << endl;
+	cout << sm2 << endl;
+	*/
+
+
+
+	// sparsematrix-vector product
+	Vector dv2(5);
+	dv2.fill(3);
+	Vector dv3 = sm*dv2;
+	cout << "SparseMatrix-Vector product: " << dv3 << endl;
+
+	// // sparse addition
+	// SparseVector sv3 = sv2 + sv;
+	// cout << "sv2+sv: " << sv3 << endl;
+	
+	// // sparse subtraction
+	// SparseVector sv4 = sv - sv2;
+	// cout << "sv-sv2: " << sv4 << endl;
+
+	// // scalar multiplication, subtraction, addition, division
+	// SparseVector sv5 = (((sv2*0.5)/2.0) + 10) - 2.5;
+	// cout << "(((sv2*0.5)/2.0) + 10) - 2.5 : " << sv5 << endl;
+
+	// // dot product
+	// double sparse_dot = SparseVector::dot(sv,sv2);
+	// cout << "sv'*sv2 : " << sparse_dot << endl;
+
+	// verify dense matrix conversion
+	Matrix dm = sm.densify();
+	cout << "dense sm : " << dm << endl;
 
 	return 0;
 }

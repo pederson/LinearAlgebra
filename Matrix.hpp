@@ -7,64 +7,6 @@
 
 #include "AbstractMatrix.hpp"
 
-/*
-// forward declare some classes
-class Matrix;
-class Vector;
-class Matrix_Proxy;
-class Vector_Proxy;
-// class SparseMatrix;
-class SparseVector;
-
-
-
-// *******************************************************************************
-
-
-class Abstract_Vector
-{
-public:
-
-	virtual void size(std::size_t & rows, std::size_t & cols) const = 0;
-	virtual std::size_t length() const = 0;
-	virtual double norm() const = 0;
-	// virtual void transpose() = 0;
-
-protected:
-
-};
-
-
-
-// *******************************************************************************
-
-
-class Abstract_Matrix
-{
-public:
-
-	//virtual Abstract_Matrix & operator*(const Abstract_Matrix & vct) const = 0;
-	//virtual Abstract_Vector & operator*(const Abstract_Vector & vct) const = 0;
-	virtual void size(std::size_t & rows, std::size_t & cols) const = 0;
-	virtual std::size_t rows() const = 0;
-	virtual std::size_t cols() const = 0;
-	virtual double norm() const = 0;
-	// virtual Vector_Proxy row(unsigned int i) = 0;
-	// virtual const Vector_Proxy row(unsigned int i) const = 0;
-	// virtual Vector_Proxy col(unsigned int j) = 0;
-	// virtual const Vector_Proxy col(unsigned int j) const = 0;
-
-	// virtual void transpose() = 0;
-
-protected:
-
-};
-
-*/
-
-
-
-
 
 // *******************************************************************************
 
@@ -659,7 +601,7 @@ public:
 	void size(std::size_t & rows, std::size_t & cols) const {rows = m_mrows; cols = m_ncols; return;};
 	std::size_t rows() const {return m_mrows;};
 	std::size_t cols() const {return m_ncols;};
-	double norm() const {return 0;};
+	//double norm() const {return 0;};
 
 	const double * data() const {return m_data;};
 
@@ -696,7 +638,7 @@ std::ostream& operator<<(std::ostream & os, const Matrix & mtx)
 
 
 // vector is derived from matrix. Has either 1 column or 1 row
-class Vector : public Matrix{
+class Vector : public Matrix, public AbstractVector{
 public:
 
 	Vector()
@@ -1013,7 +955,9 @@ public:
 		return result;
 	}
 
-	double length() const {return m_len;};
+	void size(std::size_t & rows, std::size_t & cols) const {rows = m_mrows; cols = m_ncols; return;};
+
+	std::size_t length() const {return m_len;};
 
 	double norm() const 
 	{

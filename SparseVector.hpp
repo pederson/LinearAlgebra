@@ -287,6 +287,67 @@ public:
 		return *this;
 	}
 
+	// value access
+	// WARNING: will insert new element if it doesn't already exist
+	double & operator()(unsigned int i)
+	{
+		return m_data[i];
+	}
+
+	// const value access
+	double operator()(unsigned int i) const
+	{
+		int r = m_data.count(i);
+		if (r==0) return m_default_value;
+		return m_data.at(i);
+	}
+
+	// dot product of two sparse vectors
+	static double dot(const SparseVector & v1, const SparseVector & v2)
+	{
+		if (v1.m_len != v2.m_len){
+			std::cout << "SparseVectors must be of same size to dot them!" << std::endl;
+			throw -1;
+		}
+
+		
+		double def1 = v1.m_default_value;
+		double def2 = v2.m_default_value;
+
+		double result = v1.m_len*def1*def2;
+
+		// add the cross terms
+		if (def1 != 0){
+			for (auto it=v2.m_data.begin(); it!=v2.m_data.end(); it++){
+				result += def1*(it->second-def2);
+			}
+		}
+		if (def2 != 0){
+			for (auto it=v1.m_data.begin(); it!=v1.m_data.end(); it++){
+				result += def2*(it->second-def1);
+			}
+		}
+
+		auto il = v1.m_data.begin();
+		auto ir = v2.m_data.begin();
+		// add the intersection terms
+		while (il != v1.m_data.end() && ir != v2.m_data.end())
+	    {
+	        if (il->first < ir->first)
+	            ++il;
+	        else if (ir->first < il->first)
+	            ++ir;
+	        else
+	        {
+	            result += (il->second-def1)*(ir->second-def2);
+	            ++il;
+	            ++ir;
+	        }
+	    }
+
+		return result;
+	}
+
 	// access data
 	const std::map<unsigned int, double> & data() const{return m_data;};
 
@@ -339,6 +400,16 @@ public:
 	};
 
 	void transpose() {std::swap(m_mrows, m_ncols);};
+
+	// return a dense vector version
+	Vector densify() const{
+		Vector out(m_len);
+		out.fill(m_default_value);
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			out(it->first) = it->second;
+		}
+		return out;
+	}
 
 
 protected:
