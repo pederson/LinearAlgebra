@@ -413,6 +413,12 @@ public:
 		return out;
 	}
 
+	// Matrix-SparseMatrix addition
+	Matrix operator+(const SparseMatrix & mtx) const;
+
+	// Matrix-SparseMatrix subtraction
+	Matrix operator-(const SparseMatrix & mtx) const;
+
 	// Matrix-Matrix addition shorthand
 	Matrix & operator+=(const Matrix & mtx)
 	{

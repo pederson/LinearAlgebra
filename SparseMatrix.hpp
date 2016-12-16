@@ -50,9 +50,16 @@ public:
 		: m_len 	(sm.m_len)
 		, m_mrows 	(sm.m_mrows)
 		, m_ncols 	(sm.m_ncols)
-		, m_data 	(sm.m_data)
-		, m_row_ptr (sm.m_row_ptr)
 	{
+		m_row_ptr.assign(m_mrows+1, m_data.begin());
+		// add each component of mtx one by one
+		for (auto i=0; i<sm.m_mrows; i++){
+			auto it = sm.m_row_ptr[i];
+			while (it != sm.m_row_ptr[i+1] && it !=sm.m_data.end()){
+				set(i,it->first, it->second);
+				it++;
+			}
+		}
 	}
 
 	// destructor
@@ -68,17 +75,13 @@ public:
 		swap(sm1.m_ncols, sm2.m_ncols);
 		swap(sm1.m_data, sm2.m_data);
 		swap(sm1.m_row_ptr, sm2.m_row_ptr);
-		// sm1.m_row_ptr.swap(sm2.m_row_ptr);
-		// sm1.m_data.swap(sm2.m_data);
 
-
-		// sm1.m_row_ptr[sm1.m_mrows] = sm1.m_data.end();
-		// sm2.m_row_ptr[sm2.m_mrows] = sm2.m_data.end();
-
-
+		std::cout << "SWAP OPERATION ISNT WORKING ON SPARSE MATRICES" << std::endl;
+		throw -1;
 	}
 
 
+	// SparseMatrix-Vector product
 	Vector operator*(const Vector & vct) const{
 		Vector out(m_mrows);
 		out.fill(0);
@@ -96,218 +99,184 @@ public:
 	}
 
 
-	// // SparseMatrix-SparseMatrix addition
-	// SparseMatrix operator+(const SparseMatrix & vct) const
-	// {
-	// 	if (m_len != vct.m_len)
-	// 	{
-	// 		std::cout << "SparseMatrix dimensions do not match!" << std::endl;
-	// 		throw -1;
-	// 	}
+	// SparseMatrix-SparseMatrix addition
+	SparseMatrix operator+(const SparseMatrix & mtx) const
+	{
+		if (m_mrows != mtx.m_mrows || m_ncols != mtx.m_ncols)
+		{
+			std::cout << "SparseMatrix dimensions do not match!" << std::endl;
+			throw -1;
+		}
 
-	// 	SparseMatrix out(vct);
+		SparseMatrix out(*this);
 
-	// 	// first merge the two maps
-	// 	out.m_data.insert(m_data.begin(), m_data.end());
+		// add each component of mtx one by one
+		for (auto i=0; i<mtx.m_mrows; i++){
+			auto it = mtx.m_row_ptr[i];
+			while (it != mtx.m_row_ptr[i+1] && it !=mtx.m_data.end()){
+				out.add(i,it->first, it->second);
+				it++;
+			}
+		}
 
-	// 	// find all common elements of the two maps and adjust accordingly
-	// 	for (auto it=m_data.begin(); it!=m_data.end(); it++)
-	// 	{
-	// 		auto fit = vct.m_data.find(it->first);
-	// 		if (fit != vct.m_data.end()){
-	// 			out.m_data[it->first] += m_data.at(it->first);
-	// 		}
-	// 	}
+		return out;
+	}
 
-	// 	// then take care of the default value
-	// 	out.m_default_value = m_default_value+vct.m_default_value;
+	// SparseMatrix-SparseMatrix subtraction
+	SparseMatrix operator-(const SparseMatrix & mtx) const
+	{
+		if (m_mrows != mtx.m_mrows || m_ncols != mtx.m_ncols)
+		{
+			std::cout << "SparseMatrix dimensions do not match!" << std::endl;
+			throw -1;
+		}
 
-	// 	return out;
-	// }
+		SparseMatrix out(*this);
 
-	// // SparseMatrix-SparseMatrix subtraction
-	// SparseMatrix operator-(const SparseMatrix & vct) const
-	// {
-	// 	if (m_len != vct.m_len)
-	// 	{
-	// 		std::cout << "SparseMatrix dimensions do not match!" << std::endl;
-	// 		throw -1;
-	// 	}
+		// add each component of mtx one by one
+		for (auto i=0; i<mtx.m_mrows; i++){
+			auto it = mtx.m_row_ptr[i];
+			while (it != mtx.m_row_ptr[i+1] && it !=mtx.m_data.end()){
+				out.add(i,it->first, -it->second);
+				it++;
+			}
+		}
 
-	// 	SparseMatrix out(vct*-1);
+		return out;
+	}
 
-	// 	// first merge the two maps
-	// 	out.m_data.insert(m_data.begin(), m_data.end());
-
-	// 	// find all common elements of the two maps and adjust accordingly
-	// 	for (auto it=m_data.begin(); it!=m_data.end(); it++)
-	// 	{
-	// 		auto fit = vct.m_data.find(it->first);
-	// 		if (fit != vct.m_data.end()){
-	// 			out.m_data[it->first] += m_data.at(it->first);
-	// 		}
-	// 	}
-
-	// 	// then take care of the default value
-	// 	out.m_default_value = m_default_value-vct.m_default_value;
-
-	// 	return out;
-	// }
-
-	// // SparseMatrix-SparseMatrix addition shorthand
-	// SparseMatrix & operator+=(const SparseMatrix & vct)
-	// {
-	// 	if (m_len != vct.m_len)
-	// 	{
-	// 		std::cout << "SparseMatrix dimensions do not match!" << std::endl;
-	// 		throw -1;
-	// 	}
-
-	// 	// first merge the two maps
-	// 	m_data.insert(vct.m_data.begin(), vct.m_data.end());
-
-	// 	// find all common elements of the two maps and adjust accordingly
-	// 	for (auto it=m_data.begin(); it!=m_data.end(); it++)
-	// 	{
-	// 		auto fit = vct.m_data.find(it->first);
-	// 		if (fit != vct.m_data.end()){
-	// 			m_data[it->first] += vct.m_data.at(it->first);
-	// 		}
-	// 	}
-
-	// 	// then take care of the default value
-	// 	m_default_value += vct.m_default_value;
-
-	// 	return *this;
-	// }
-
-	// // SparseMatrix-SparseMatrix subtraction shorthand
-	// SparseMatrix & operator-=(const SparseMatrix & vct)
-	// {
-	// 	if (m_len != vct.m_len)
-	// 	{
-	// 		std::cout << "SparseMatrix dimensions do not match!" << std::endl;
-	// 		throw -1;
-	// 	}
-
-	// 	SparseMatrix nvct = vct*-1;
-
-	// 	// first merge the two maps
-	// 	m_data.insert(nvct.m_data.begin(), nvct.m_data.end());
-
-	// 	// find all common elements of the two maps and adjust accordingly
-	// 	for (auto it=m_data.begin(); it!=m_data.end(); it++)
-	// 	{
-	// 		auto fit = nvct.m_data.find(it->first);
-	// 		if (fit != nvct.m_data.end()){
-	// 			m_data[it->first] += nvct.m_data[it->first];
-	// 		}
-	// 	}
-
-	// 	// then take care of the default value
-	// 	m_default_value -= vct.m_default_value;
-
-	// 	return *this;
-	// }
-
-	// // transpose
-	// SparseMatrix operator~() const
-	// {
-	// 	SparseMatrix sv(*this);
-	// 	sv.transpose();
-	// 	return sv;
-	// }
+	// SparseMatrix-SparseMatrix addition shorthand
+	SparseMatrix & operator+=(const SparseMatrix & mtx)
+	{
+		if (m_mrows != mtx.m_mrows || m_ncols != mtx.m_ncols)
+		{
+			std::cout << "SparseMatrix dimensions do not match!" << std::endl;
+			throw -1;
+		}
 
 
-	// Vector operator+(const Vector & vct) const;
+		// add each component of mtx one by one
+		for (auto i=0; i<mtx.m_mrows; i++){
+			auto it = mtx.m_row_ptr[i];
+			while (it != mtx.m_row_ptr[i+1] && it !=mtx.m_data.end()){
+				add(i,it->first, it->second);
+				it++;
+			}
+		}
+
+		return *this;
+	}
+
+	// SparseMatrix-SparseMatrix subtraction shorthand
+	SparseMatrix & operator-=(const SparseMatrix & mtx)
+	{
+		if (m_mrows != mtx.m_mrows || m_ncols != mtx.m_ncols)
+		{
+			std::cout << "SparseMatrix dimensions do not match!" << std::endl;
+			throw -1;
+		}
 
 
-	// Vector operator-(const Vector & vct) const;
+		// add each component of mtx one by one
+		for (auto i=0; i<mtx.m_mrows; i++){
+			auto it = mtx.m_row_ptr[i];
+			while (it != mtx.m_row_ptr[i+1] && it !=mtx.m_data.end()){
+				add(i,it->first, -it->second);
+				it++;
+			}
+		}
+
+		return *this;
+	}
+
+	// transpose
+	SparseMatrix operator~() const
+	{
+		SparseMatrix sv(*this);
+		sv.transpose();
+		return sv;
+	}
+
+	Matrix operator+(const Matrix & mtx) const;
+
+	Matrix operator-(const Matrix & mtx) const;
 
 
-	// // scalar multiplication
-	// SparseMatrix operator*(double val) const
-	// {
-	// 	SparseMatrix out(*this);
-	// 	out.m_default_value *= val;
-	// 	for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
-	// 		out.m_data[it->first]*=val;
-	// 	}
-	// 	return out;
-	// }
+	// scalar multiplication
+	SparseMatrix operator*(double val) const
+	{
+		SparseMatrix out(*this);
+		for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
+			it->second *=val;
+		}
+		return out;
+	}
 
-	// // scalar division
-	// SparseMatrix operator/(double val) const
-	// {
-	// 	SparseMatrix out(*this);
-	// 	out.m_default_value /= val;
-	// 	for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
-	// 		out.m_data[it->first]/=val;
-	// 	}
-	// 	return out;
-	// }
+	// scalar division
+	SparseMatrix operator/(double val) const
+	{
+		SparseMatrix out(*this);
+		for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
+			it->second /=val;
+		}
+		return out;
+	}
 
-	// // scalar addition
-	// SparseMatrix operator+(double val) const
-	// {
-	// 	SparseMatrix out(*this);
-	// 	out.m_default_value += val;
-	// 	for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
-	// 		out.m_data[it->first]+=val;
-	// 	}
-	// 	return out;
-	// }
+	// scalar addition
+	SparseMatrix operator+(double val) const
+	{
+		SparseMatrix out(*this);
+		for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
+			it->second +=val;
+		}
+		return out;
+	}
 
-	// // scalar subtraction
-	// SparseMatrix operator-(double val) const
-	// {
-	// 	SparseMatrix out(*this);
-	// 	out.m_default_value -= val;
-	// 	for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
-	// 		out.m_data[it->first]-=val;
-	// 	}
-	// 	return out;
-	// }
+	// scalar subtraction
+	SparseMatrix operator-(double val) const
+	{
+		SparseMatrix out(*this);
+		for (auto it=out.m_data.begin(); it!=out.m_data.end(); it++){
+			it->second -=val;
+		}
+		return out;
+	}
 
-	// // scalar multiplication
-	// SparseMatrix & operator*=(double val)
-	// {
-	// 	m_default_value *= val;
-	// 	for (auto it=m_data.begin(); it!=m_data.end(); it++){
-	// 		m_data[it->first]*=val;
-	// 	}
-	// 	return *this;
-	// }
+	// scalar multiplication
+	SparseMatrix & operator*=(double val)
+	{
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			it->second*=val;
+		}
+		return *this;
+	}
 
-	// // scalar division
-	// SparseMatrix & operator/=(double val)
-	// {
-	// 	m_default_value /= val;
-	// 	for (auto it=m_data.begin(); it!=m_data.end(); it++){
-	// 		m_data[it->first]/=val;
-	// 	}
-	// 	return *this;
-	// }
+	// scalar division
+	SparseMatrix & operator/=(double val)
+	{
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			it->second/=val;
+		}
+		return *this;
+	}
 
-	// // scalar addition
-	// SparseMatrix & operator+=(double val)
-	// {
-	// 	m_default_value += val;
-	// 	for (auto it=m_data.begin(); it!=m_data.end(); it++){
-	// 		m_data[it->first]+=val;
-	// 	}
-	// 	return *this;
-	// }
+	// scalar addition
+	SparseMatrix & operator+=(double val)
+	{
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			it->second+=val;
+		}
+		return *this;
+	}
 
-	// // scalar subtraction
-	// SparseMatrix & operator-=(double val)
-	// {
-	// 	m_default_value -= val;
-	// 	for (auto it=m_data.begin(); it!=m_data.end(); it++){
-	// 		m_data[it->first]-=val;
-	// 	}
-	// 	return *this;
-	// }
+	// scalar subtraction
+	SparseMatrix & operator-=(double val)
+	{
+		for (auto it=m_data.begin(); it!=m_data.end(); it++){
+			it->second-=val;
+		}
+		return *this;
+	}
 
 	// // value access
 	// // WARNING: will insert new element if it doesn't already exist
@@ -324,51 +293,7 @@ public:
 	// 	return m_data.at(i);
 	// }
 
-	// // dot product of two sparse vectors
-	// static double dot(const SparseMatrix & v1, const SparseMatrix & v2)
-	// {
-	// 	if (v1.m_len != v2.m_len){
-	// 		std::cout << "SparseMatrixs must be of same size to dot them!" << std::endl;
-	// 		throw -1;
-	// 	}
 
-		
-	// 	double def1 = v1.m_default_value;
-	// 	double def2 = v2.m_default_value;
-
-	// 	double result = v1.m_len*def1*def2;
-
-	// 	// add the cross terms
-	// 	if (def1 != 0){
-	// 		for (auto it=v2.m_data.begin(); it!=v2.m_data.end(); it++){
-	// 			result += def1*(it->second-def2);
-	// 		}
-	// 	}
-	// 	if (def2 != 0){
-	// 		for (auto it=v1.m_data.begin(); it!=v1.m_data.end(); it++){
-	// 			result += def2*(it->second-def1);
-	// 		}
-	// 	}
-
-	// 	auto il = v1.m_data.begin();
-	// 	auto ir = v2.m_data.begin();
-	// 	// add the intersection terms
-	// 	while (il != v1.m_data.end() && ir != v2.m_data.end())
-	//     {
-	//         if (il->first < ir->first)
-	//             ++il;
-	//         else if (ir->first < il->first)
-	//             ++ir;
-	//         else
-	//         {
-	//             result += (il->second-def1)*(ir->second-def2);
-	//             ++il;
-	//             ++ir;
-	//         }
-	//     }
-
-	// 	return result;
-	// }
 
 	// access data
 	const std::list<std::pair<unsigned int, double>> & data() const{return m_data;};
@@ -377,14 +302,19 @@ public:
 	// number of "nonzeros"
 	std::size_t nnz() const {return m_data.size();};
 
-	// // return vector of "nonempty" indices
-	// std::vector<unsigned int> support() const{
-	// 	std::vector<unsigned int> v;
-	// 	for(auto it = m_data.begin(); it != m_data.end(); it++) {
-	// 	  v.push_back(it->first);
-	// 	}
-	// 	return v;
-	// }
+	// return vector of "nonempty" index pairs
+	std::vector<std::pair<unsigned int, unsigned int>> support() const{
+		std::vector<std::pair<unsigned int, unsigned int>> v;
+
+		for (auto i=0; i<m_mrows; i++){
+			auto it = m_row_ptr[i];
+			while (it != m_row_ptr[i+1] && it !=m_data.end()){
+				v.push_back(std::pair<unsigned int, unsigned int>(i,it->first));
+				it++;
+			}
+		}
+		return v;
+	}
 
 	// set index i,j to val
 	void set(unsigned int i, unsigned int j, double val){
@@ -409,7 +339,10 @@ public:
 		}
 		if (it == m_row_ptr[i+1]) m_data.emplace(it, std::pair<unsigned int, double> (j,val));
 		else{
-			if (it->first == j) it->second = val;
+			if (it->first == j){
+				it->second = val;
+				ct=1;
+			}
 			else m_data.emplace(it, std::pair<unsigned int, double> (j,val));
 		}
 
@@ -421,12 +354,49 @@ public:
 
 	}
 
-	// // add val to index i
-	// void add(unsigned int i, double val){
-	// 	int r = m_data.count(i);
-	// 	if (r == 0) m_data[i] = m_default_value + val;
-	// 	else m_data[i] += val;
-	// }
+
+
+	// add val to index i,j
+	void add(unsigned int i, unsigned int j, double val){
+		auto row_it = m_row_ptr[i];
+		auto it=m_row_ptr[i];
+
+		// find the minimum row that has the same iterator
+		unsigned int minrow = i;
+		for (auto ro=0; ro<=i; ro++){
+			if (m_row_ptr[ro] == m_row_ptr[i]){
+				minrow = ro;
+				break;
+
+			}
+		}
+		// std::cout << "adding: " << i << ", " << j << " = " << val << std::endl;
+		// std::cout << "minrow: " << minrow << std::endl;
+
+		unsigned int ct=0;
+		while(it->first < j && it != m_row_ptr[i+1]){
+			it++;
+			ct++;
+		}
+		if (it == m_row_ptr[i+1]) m_data.emplace(it, std::pair<unsigned int, double> (j,val));
+		else{
+			if (it->first == j){
+				// std::cout << "adding to value: " << it->second << std::endl;
+				it->second += val;
+				ct=1;
+				// std::cout << "result: " << it->second << std::endl;
+			}
+			else m_data.emplace(it, std::pair<unsigned int, double> (j,val));
+		}
+
+		// adjust the row iterator if necessary
+		--it;
+		// std::cout << "ct: " << ct << std::endl;
+		if (ct==0){
+			for (auto ro=minrow; ro<=i; ro++) m_row_ptr[ro] = it;
+		}
+
+	}
 
 	// // get value at index i
 	// double get(unsigned int i) const{
@@ -525,27 +495,6 @@ std::ostream& operator<<(std::ostream & os, const SparseMatrix & mtx)
 	auto data = mtx.data();
 	auto rowptr = mtx.row_ptr();
 
-	// std::cout << rowptr.size() << std::endl;
-	// for (auto i=0; i<rowptr.size()-1; i++){
-	// 	std::cout << "(" << i << ", " << rowptr[i]->first << "): " << rowptr[i]->second << std::endl;
-	// }
-
-	// std::cout << std::endl;
-	// for (auto it=data.begin(); it!=data.end(); it++){
-	// 	std::cout << "(" << it->first << "," << it->second << ") " << std::endl;
-	// }
-	// auto it=data.end();
-	// std::cout << "(" << it->first << "," << it->second << ") " << std::endl;
-	// it=data.begin();
-	// std::cout << "(" << it->first << "," << it->second << ") " << std::endl;
-
-	// for (auto i=0; i<mtx.rows(); i++){
-	// 	for (auto it = rowptr[i]; (it !=rowptr[i+1] && it != data.end()); it++){
-	// 		os << "(" << i << "," << it->first << ") : " << it->second << std::endl;
-	// 	}
-	// }
-
-	
 	for (auto i=0; i<mtx.rows(); i++){
 		auto it = rowptr[i];
 		while (it != rowptr[i+1] && it !=data.end()){
@@ -560,165 +509,150 @@ std::ostream& operator<<(std::ostream & os, const SparseMatrix & mtx)
 
 
 
-// // SparseMatrix-Vector addition
-// Vector SparseMatrix::operator+(const Vector & vct) const
-// {
-// 	if (m_len != vct.length())
-// 	{
-// 		std::cout << "SparseMatrix dimensions do not match!" << std::endl;
-// 		throw -1;
-// 	}
+// SparseMatrix-Matrix addition
+Matrix SparseMatrix::operator+(const Matrix & mtx) const
+{
+	if (m_mrows != mtx.rows() || m_ncols != mtx.cols())
+	{
+		std::cout << "SparseMatrix-Matrix dimensions do not match!" << std::endl;
+		throw -1;
+	}
 
-// 	Vector out(vct);
+	Matrix out(mtx);
 
-// 	// iterate through the map, ordered by key
-// 	unsigned int i=0;
-// 	for (auto it=m_data.begin(); it!=m_data.end(); it++)
-// 	{
-// 		while (i < it->first ){
-// 			out(i) += m_default_value;
-// 			i++;
-// 		}
-// 		out(i) += it->second;
-// 		i++;
-// 	}
-// 	while (i < out.length()){
-// 		out(i) += m_default_value;
-// 		i++;
-// 	}
+	for (auto i=0; i<mtx.rows(); i++){
+		auto it = m_row_ptr[i];
+		while (it != m_row_ptr[i+1] && it !=m_data.end()){
+			out(i,it->first) += it->second;
+			it++;
+		}
+	}
 
-// 	return out;
-// }
+	return out;
+}
 
-// // SparseMatrix-Vector subtraction
-// Vector SparseMatrix::operator-(const Vector & vct) const
-// {
-// 	if (m_len != vct.length())
-// 	{
-// 		std::cout << "SparseMatrix dimensions do not match!" << std::endl;
-// 		throw -1;
-// 	}
+// SparseMatrix-Matrix subtraction
+Matrix SparseMatrix::operator-(const Matrix & mtx) const
+{
+	if (m_mrows != mtx.rows() || m_ncols != mtx.cols())
+	{
+		std::cout << "SparseMatrix-Matrix dimensions do not match!" << std::endl;
+		throw -1;
+	}
 
-// 	Vector out(vct);
+	Matrix out = -1*mtx;
 
-// 	// iterate through the map, ordered by key
-// 	unsigned int i=0;
-// 	for (auto it=m_data.begin(); it!=m_data.end(); it++)
-// 	{
-// 		while (i < it->first ){
-// 			out(i) = m_default_value - out(i);
-// 			i++;
-// 		}
-// 		out(i) = it->second - out(i);
-// 		i++;
-// 	}
-// 	while (i < out.length()){
-// 		out(i) = m_default_value - out(i);
-// 		i++;
-// 	}
+	for (auto i=0; i<mtx.rows(); i++){
+		auto it = m_row_ptr[i];
+		while (it != m_row_ptr[i+1] && it !=m_data.end()){
+			out(i,it->first) += it->second;
+			it++;
+		}
+	}
 
-// 	return out;
-// }
+	return out;
+}
 
 
-// // Vector-SparseMatrix addition
-// Vector Vector::operator+(const SparseMatrix & vct) const
-// {
-// 	if (m_len != vct.length())
-// 	{
-// 		std::cout << "SparseMatrix dimensions do not match!" << std::endl;
-// 		throw -1;
-// 	}
+// Matrix-SparseMatrix addition
+Matrix Matrix::operator+(const SparseMatrix & mtx) const
+{
+	if (m_mrows != mtx.rows() || m_ncols != mtx.cols())
+	{
+		std::cout << "SparseMatrix-Matrix dimensions do not match!" << std::endl;
+		throw -1;
+	}
 
-// 	Vector out(*this);
-// 	const std::map<unsigned int, double> sdata = vct.data();
+	Matrix out(*this);
 
-// 	// iterate through the map, ordered by key
-// 	unsigned int i=0;
-// 	double defval = vct.default_value();
-// 	for (auto it=sdata.begin(); it!=sdata.end(); it++)
-// 	{
-// 		while (i < it->first ){
-// 			out(i) += defval;
-// 			i++;
-// 		}
-// 		out(i) += it->second;
-// 		i++;
-// 	}
-// 	while (i < out.length()){
-// 		out(i) += defval;
-// 		i++;
-// 	}
+	auto data = mtx.data();
+	auto rowptr = mtx.row_ptr();
 
-// 	return out;
-// }
+	for (auto i=0; i<mtx.rows(); i++){
+		auto it = rowptr[i];
+		while (it != rowptr[i+1] && it !=data.end()){
+			out(i,it->first) += it->second;
+			it++;
+		}
+	}
+
+	return out;
+}
 
 
-// // Vector-SparseMatrix subtraction
-// Vector Vector::operator-(const SparseMatrix & vct) const
-// {
-// 	if (m_len != vct.length())
-// 	{
-// 		std::cout << "SparseMatrix dimensions do not match!" << std::endl;
-// 		throw -1;
-// 	}
+// Matrix-SparseMatrix subtraction
+Matrix Matrix::operator-(const SparseMatrix & mtx) const
+{
+	if (m_mrows != mtx.rows() || m_ncols != mtx.cols())
+	{
+		std::cout << "SparseMatrix-Matrix dimensions do not match!" << std::endl;
+		throw -1;
+	}
 
-// 	Vector out(*this);
-// 	const std::map<unsigned int, double> sdata = vct.data();
+	Matrix out(*this);
 
-// 	// iterate through the map, ordered by key
-// 	unsigned int i=0;
-// 	double defval = vct.default_value();
-// 	for (auto it=sdata.begin(); it!=sdata.end(); it++)
-// 	{
-// 		while (i < it->first ){
-// 			out(i) -= defval;
-// 			i++;
-// 		}
-// 		out(i) -= it->second;
-// 		i++;
-// 	}
-// 	while (i < out.length()){
-// 		out(i) -= defval;
-// 		i++;
-// 	}
+	auto data = mtx.data();
+	auto rowptr = mtx.row_ptr();
 
-// 	return out;
-// }
+	for (auto i=0; i<mtx.rows(); i++){
+		auto it = rowptr[i];
+		while (it != rowptr[i+1] && it !=data.end()){
+			out(i,it->first) -= it->second;
+			it++;
+		}
+	}
+
+	return out;
+}
 
 
 
 
 
-// // global operators - SparseMatrix
-// SparseMatrix operator*(double val, const SparseMatrix & vct)
-// {
-// 	SparseMatrix out(vct.length(), val*vct.default_value());
-// 	auto data = vct.data();
-// 	for (auto it=data.begin(); it!=data.end(); it++){
-// 		out.set(it->first, val*it->second);
-// 	}
-// 	return out;
-// }
+// global operators - SparseMatrix
+SparseMatrix operator*(double val, const SparseMatrix & mtx)
+{
+	SparseMatrix out(mtx);
+	auto data = mtx.data();
+	auto rowptr = mtx.row_ptr();
+	for (auto i=0; i<mtx.rows(); i++){
+		auto it = rowptr[i];
+		while (it != rowptr[i+1] && it !=data.end()){
+			out.set(i, it->first, it->second*val);
+			it++;
+		}
+	}
+	return out;
+}
 
-// SparseMatrix operator+(double val, const SparseMatrix & vct)
-// {
-// 	SparseMatrix out(vct.length(), val+vct.default_value());
-// 	auto data = vct.data();
-// 	for (auto it=data.begin(); it!=data.end(); it++){
-// 		out.set(it->first, val+it->second);
-// 	}
-// 	return out;
-// }
+SparseMatrix operator+(double val, const SparseMatrix & mtx)
+{
+	SparseMatrix out(mtx);
+	auto data = mtx.data();
+	auto rowptr = mtx.row_ptr();
+	for (auto i=0; i<mtx.rows(); i++){
+		auto it = rowptr[i];
+		while (it != rowptr[i+1] && it !=data.end()){
+			out.set(i, it->first, it->second+val);
+			it++;
+		}
+	}
+	return out;
+}
 
-// SparseMatrix operator-(double val, const SparseMatrix & vct)
-// {
-// 	SparseMatrix out(vct.length(), val-vct.default_value());
-// 	auto data = vct.data();
-// 	for (auto it=data.begin(); it!=data.end(); it++){
-// 		out.set(it->first, val-it->second);
-// 	}
-// 	return out;
-// }
+SparseMatrix operator-(double val, const SparseMatrix & mtx)
+{
+	SparseMatrix out(mtx);
+	auto data = mtx.data();
+	auto rowptr = mtx.row_ptr();
+	for (auto i=0; i<mtx.rows(); i++){
+		auto it = rowptr[i];
+		while (it != rowptr[i+1] && it !=data.end()){
+			out.set(i, it->first, val-it->second);
+			it++;
+		}
+	}
+	return out;
+}
 
 #endif
