@@ -7,10 +7,73 @@
 #include <complex>
 
 #include "Matrix.hpp"
+#include "SparseVector.hpp"
+#include "SparseMatrix.hpp"
 
 // miscellaneous
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
+}
+
+
+Vector sign(const Vector & vct){
+	Vector out(vct);
+	for (auto i=0; i<out.length(); i++) out(i) = sgn(vct(i));
+	return out;
+}
+
+SparseVector sign(const SparseVector & vct){
+	SparseVector out(vct);
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		out(it->first) = sgn(it->second);
+	}
+	return out;
+}
+
+double norm_1(const Vector & vct){
+	double res=0;
+	for (auto i=0; i<vct.length(); i++) res += abs(vct(i));
+	return res;
+}
+
+double norm_1(const SparseVector & vct){
+	double res=0;
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		res += abs(it->second);
+	}
+	return res;
+}
+
+double norm_2(const Vector & vct){
+	double res=0;
+	for (auto i=0; i<vct.length(); i++) res += vct(i)*vct(i);
+	return res;
+}
+
+double norm_2(const SparseVector & vct){
+	double res=0;
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		res += it->second*it->second;
+	}
+	return res;
+}
+
+double norm_inf(const Vector & vct){
+	double res=0;
+	for (auto i=0; i<vct.length(); i++) res = std::max(res, abs(vct(i)));
+	return res;
+}
+
+double norm_inf(const SparseVector & vct){
+	double res=0;
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		res = std::max(res, abs(it->second));
+	}
+	return res;
 }
 
 

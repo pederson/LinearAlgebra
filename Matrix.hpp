@@ -867,6 +867,8 @@ public:
 
 	Vector operator-(const SparseVector & vct) const;
 
+	SparseVector get_support(const SparseVector & vct) const;
+
 	// scalar multiplication
 	Vector operator*(double val) const
 	{

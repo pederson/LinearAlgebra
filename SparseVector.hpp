@@ -26,6 +26,15 @@ public:
 	}
 
 	// create and allocate a new sparse vector
+	SparseVector(unsigned int length)
+		: m_len 	(length)
+		, m_mrows 	(length)
+		, m_ncols 	(1)
+		, m_default_value	(0)
+	{
+	}
+
+	// create and allocate a new sparse vector
 	SparseVector(unsigned int length, double default_value)
 		: m_len 	(length)
 		, m_mrows 	(length)
@@ -565,6 +574,16 @@ Vector Vector::operator-(const SparseVector & vct) const
 	return out;
 }
 
+
+// get support of sparse vector 
+SparseVector Vector::get_support(const SparseVector & vct) const{
+	std::vector<unsigned int> sup = vct.support();
+	SparseVector out(m_len);
+	for (auto it=sup.begin(); it!=sup.end(); it++){
+		out(*it) = m_data[*it];
+	}
+	return out;
+}
 
 
 
