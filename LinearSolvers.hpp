@@ -64,7 +64,7 @@ double norm_2(const SparseVector & vct){
 
 double norm_inf(const Vector & vct){
 	double res=0;
-	for (auto i=0; i<vct.length(); i++) res = std::max(res, abs(vct(i)));
+	for (auto i=0; i<vct.length(); i++) res = std::max(res, fabs(vct(i)));
 	return res;
 }
 
@@ -72,7 +72,7 @@ double norm_inf(const SparseVector & vct){
 	double res=0;
 	auto dat = vct.data();
 	for (auto it=dat.begin(); it!=dat.end(); it++){
-		res = std::max(res, abs(it->second));
+		res = std::max(res, fabs(it->second));
 	}
 	return res;
 }
