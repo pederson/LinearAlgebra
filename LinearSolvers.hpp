@@ -141,6 +141,41 @@ Matrix randmatn(unsigned int rows, unsigned int cols)
 	return out;
 }
 
+
+// sparse random matrix uniformly distributed [0,1]
+// with a fill factor of fill
+SparseMatrix sprandmat(unsigned int rows, unsigned int cols, double fill=0.2)
+{
+	// seed
+	std::default_random_engine generator;
+	std::uniform_real_distribution<double> distrib(0.0,1.0);
+
+	SparseMatrix out(rows, cols);
+	for (auto i=0; i<rows; i++){
+		for (auto j=0; j<cols; j++){
+			if (distrib(generator) < fill) out.set(i,j, distrib(generator));
+		}
+	}
+
+	return out;
+}
+
+// sparse random matrix normally distributed
+SparseMatrix sprandmatn(unsigned int rows, unsigned int cols, double fill=0.2)
+{
+	std::default_random_engine generator;
+	std::normal_distribution<double> distrib(0.0,1.0);
+
+	SparseMatrix out(rows, cols);
+	for (auto i=0; i<rows; i++){
+		for (auto j=0; j<cols; j++){
+			if (distrib(generator) < fill) out.set(i,j, distrib(generator));
+		}
+	}
+
+	return out;
+}
+
 // random vector uniformly distributed [0,1]
 Vector randvec(unsigned int length)
 {
@@ -156,6 +191,36 @@ Vector randvecn(unsigned int length)
 	Vector out = m.col(0);
 	return out;
 }
+
+
+// sparse random vector uniformly distributed [0,1]
+SparseVector sprandvec(unsigned int length, double fill)
+{
+	// seed
+	std::default_random_engine generator;
+	std::uniform_real_distribution<double> distrib(0.0,1.0);
+
+	SparseVector out(length);
+	for (auto i=0; i<length; i++){
+		if (distrib(generator) < fill) out(i) = distrib(generator);
+	}
+	return out;
+}
+
+// random vector normally distributed
+SparseVector sprandvecn(unsigned int length, double fill)
+{
+	// seed
+	std::default_random_engine generator;
+	std::normal_distribution<double> distrib(0.0,1.0);
+
+	SparseVector out(length);
+	for (auto i=0; i<length; i++){
+		if (distrib(generator) < fill) out(i) = distrib(generator);
+	}
+	return out;
+}
+
 
 // return the diagonals of a matrix as a vector
 Vector diag(const Matrix & mtx)
