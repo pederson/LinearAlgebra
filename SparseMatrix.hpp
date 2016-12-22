@@ -6,8 +6,10 @@
 #include <stdlib.h>
 #include <list>
 #include <vector>
+#include <random>
 
 #include "Matrix.hpp"
+#include "SparseVector.hpp"
 
 
 // *******************************************************************************
@@ -398,6 +400,28 @@ public:
 
 	}
 
+	// retrieve a row of the matrix as a sparse row vector
+	SparseVector row(unsigned int i) const{
+		SparseVector out(m_ncols);
+		auto it = m_row_ptr[i];
+		while (it != m_row_ptr[i+1] && it !=m_data.end()){
+			out(it->first) = it->second;
+			it++;
+		}
+		out.transpose();
+		return out;
+	}
+
+	// multiply matrix by a sparse vector
+	Vector operator*(const SparseVector & vct) const{
+		Vector out(m_mrows);
+		for (auto i=0; i<m_mrows; i++){
+			SparseVector r = row(i);
+			out(i) = SparseVector::dot(r,vct);
+		}
+		return out;
+	}
+
 	// // get value at index i
 	// double get(unsigned int i) const{
 	// 	int r = m_data.count(i);
@@ -652,6 +676,52 @@ SparseMatrix operator-(double val, const SparseMatrix & mtx)
 			it++;
 		}
 	}
+	return out;
+}
+
+// identity matrix
+SparseMatrix speye(unsigned int rows, unsigned int cols)
+{
+	SparseMatrix out(rows, cols);
+	unsigned int sz = std::min(rows,cols);
+	for (auto i=0; i<sz; i++)
+	{
+		out.set(i,i,1);
+	}
+	return out;
+}
+
+// sparse random matrix uniformly distributed [0,1]
+// with a fill factor of fill
+SparseMatrix sprandmat(unsigned int rows, unsigned int cols, double fill=0.2)
+{
+	// seed
+	std::default_random_engine generator;
+	std::uniform_real_distribution<double> distrib(0.0,1.0);
+
+	SparseMatrix out(rows, cols);
+	for (auto i=0; i<rows; i++){
+		for (auto j=0; j<cols; j++){
+			if (distrib(generator) < fill) out.set(i,j, distrib(generator));
+		}
+	}
+
+	return out;
+}
+
+// sparse random matrix normally distributed
+SparseMatrix sprandmatn(unsigned int rows, unsigned int cols, double fill=0.2)
+{
+	std::default_random_engine generator;
+	std::normal_distribution<double> distrib(0.0,1.0);
+
+	SparseMatrix out(rows, cols);
+	for (auto i=0; i<rows; i++){
+		for (auto j=0; j<cols; j++){
+			if (distrib(generator) < fill) out.set(i,j, distrib(generator));
+		}
+	}
+
 	return out;
 }
 

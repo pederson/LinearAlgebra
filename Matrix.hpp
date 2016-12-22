@@ -4,6 +4,7 @@
 #include <math.h>
 #include <iostream>
 #include <stdlib.h>
+#include <random>
 
 #include "AbstractMatrix.hpp"
 
@@ -863,6 +864,42 @@ public:
 		return *this;
 	}
 
+	// Vector-Vector elementwise multiply
+	Vector elem_mult(const Vector & vct) const
+	{
+		if (m_len != vct.m_len)
+		{
+			std::cout << "Vector dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		Vector out(m_len);
+		for (auto i=0; i<m_len; i++)
+		{
+			out(i) = m_data[i] * vct.m_data[i];
+		}
+
+		return out;
+	}
+
+	// Vector-Vector elementwise division
+	Vector elem_div(const Vector & vct) const
+	{
+		if (m_len != vct.m_len)
+		{
+			std::cout << "Vector dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		Vector out(m_len);
+		for (auto i=0; i<m_len; i++)
+		{
+			out(i) = m_data[i] / vct.m_data[i];
+		}
+
+		return out;
+	}
+
 	Vector operator+(const SparseVector & vct) const;
 
 	Vector operator-(const SparseVector & vct) const;
@@ -1035,6 +1072,67 @@ Matrix operator-(double val, const Matrix & mtx)
 	return out;
 }
 
+// identity matrix
+Matrix eye(unsigned int rows, unsigned int cols)
+{
+	Matrix out(rows, cols);
+	unsigned int sz = std::min(rows,cols);
+	out.fill(0);
+	for (auto i=0; i<sz; i++)
+	{
+		out(i,i) = 1;
+	}
+	return out;
+}
+
+// hilbert matrix
+// entries are H(i,j) = 1/(i+j+1) where i, j start at 0
+Matrix hilb(unsigned int rows)
+{
+	Matrix out(rows, rows);
+	for (auto i=0; i<rows; i++)
+	{
+		for (auto j=0; j<rows; j++)
+		{
+			out(i,j) = 1.0/(i+j+1);
+		}
+	}
+	return out;
+}
+
+// random matrix uniformly distributed [0,1]
+Matrix randmat(unsigned int rows, unsigned int cols)
+{
+	// seed
+	std::default_random_engine generator;
+	std::uniform_real_distribution<double> distrib(0.0,1.0);
+
+	Matrix out(rows, cols);
+	for (auto i=0; i<rows; i++){
+		for (auto j=0; j<cols; j++){
+			out(i,j) = distrib(generator);
+		}
+	}
+
+	return out;
+}
+
+// random matrix normally distributed
+Matrix randmatn(unsigned int rows, unsigned int cols)
+{
+	std::default_random_engine generator;
+	std::normal_distribution<double> distrib(0.0,1.0);
+
+	Matrix out(rows, cols);
+	for (auto i=0; i<rows; i++){
+		for (auto j=0; j<cols; j++){
+			out(i,j) = distrib(generator);
+		}
+	}
+
+	return out;
+}
+
 
 
 
@@ -1063,6 +1161,51 @@ Vector operator-(double val, const Vector & vct)
 	return out;
 }
 
+Vector sign(const Vector & vct){
+	Vector out(vct);
+	for (auto i=0; i<out.length(); i++) out(i) = sgn(vct(i));
+	return out;
+}
+
+Vector abs(const Vector & vct){
+	Vector out(vct);
+	for (auto i=0; i<out.length(); i++) out(i) = fabs(vct(i));
+	return out;
+}
+
+double norm_1(const Vector & vct){
+	double res=0;
+	for (auto i=0; i<vct.length(); i++) res += abs(vct(i));
+	return res;
+}
+
+double norm_2(const Vector & vct){
+	double res=0;
+	for (auto i=0; i<vct.length(); i++) res += vct(i)*vct(i);
+	return res;
+}
+
+double norm_inf(const Vector & vct){
+	double res=0;
+	for (auto i=0; i<vct.length(); i++) res = std::max(res, fabs(vct(i)));
+	return res;
+}
+
+// random vector uniformly distributed [0,1]
+Vector randvec(unsigned int length)
+{
+	Matrix m = randmat(length,1);
+	Vector out = m.col(0);
+	return out;
+}
+
+// random vector normally distributed
+Vector randvecn(unsigned int length)
+{
+	Matrix m=randmatn(length,1);
+	Vector out = m.col(0);
+	return out;
+}
 
 
 

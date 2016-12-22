@@ -197,6 +197,64 @@ public:
 		return *this;
 	}
 
+
+	// SparseVector-SparseVector elementwise multiply
+	SparseVector elem_mult(const SparseVector & vct) const{
+		if (m_len != vct.m_len)
+		{
+			std::cout << "SparseVector dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		SparseVector out(vct);
+
+		// first merge the two maps
+		out.m_data.insert(m_data.begin(), m_data.end());
+
+		// find all common elements of the two maps and adjust accordingly
+		for (auto it=m_data.begin(); it!=m_data.end(); it++)
+		{
+			auto fit = vct.m_data.find(it->first);
+			if (fit != vct.m_data.end()){
+				out.m_data[it->first] *= m_data.at(it->first);
+			}
+		}
+
+		// then take care of the default value
+		out.m_default_value = m_default_value*vct.m_default_value;
+
+		return out;
+	}
+
+	// SparseVector-SparseVector elementwise division
+	SparseVector elem_div(const SparseVector & vct) const{
+		if (m_len != vct.m_len)
+		{
+			std::cout << "SparseVector dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		SparseVector out(*this);
+		auto data = vct.data();
+
+		// first merge the two maps
+		out.m_data.insert(data.begin(), data.end());
+
+		// find all common elements of the two maps and adjust accordingly
+		for (auto it=data.begin(); it!=data.end(); it++)
+		{
+			auto fit = vct.m_data.find(it->first);
+			if (fit != vct.m_data.end()){
+				out.m_data[it->first] /= data.at(it->first);
+			}
+		}
+
+		// then take care of the default value
+		out.m_default_value = m_default_value*vct.m_default_value;
+
+		return out;
+	}
+
 	// transpose
 	SparseVector operator~() const
 	{
@@ -615,6 +673,82 @@ SparseVector operator-(double val, const SparseVector & vct)
 	auto data = vct.data();
 	for (auto it=data.begin(); it!=data.end(); it++){
 		out.set(it->first, val-it->second);
+	}
+	return out;
+}
+
+SparseVector sign(const SparseVector & vct){
+	double deft = sgn(vct.default_value());
+	SparseVector out(vct.length(), deft);
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		out(it->first) = sgn(it->second);
+	}
+	return out;
+}
+
+SparseVector abs(const SparseVector & vct){
+	double deft = fabs(vct.default_value());
+	SparseVector out(vct.length(), deft);
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		out(it->first) = fabs(it->second);
+	}
+	return out;
+}
+
+double norm_1(const SparseVector & vct){
+	double res=0;
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		res += abs(it->second);
+	}
+	return res;
+}
+
+double norm_2(const SparseVector & vct){
+	double res=0;
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		res += it->second*it->second;
+	}
+	return res;
+}
+
+double norm_inf(const SparseVector & vct){
+	double res=0;
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		res = std::max(res, fabs(it->second));
+	}
+	return res;
+}
+
+// collection of matrix/vector generators
+// sparse random vector uniformly distributed [0,1]
+SparseVector sprandvec(unsigned int length, double fill)
+{
+	// seed
+	std::default_random_engine generator;
+	std::uniform_real_distribution<double> distrib(0.0,1.0);
+
+	SparseVector out(length);
+	for (auto i=0; i<length; i++){
+		if (distrib(generator) < fill) out(i) = distrib(generator);
+	}
+	return out;
+}
+
+// random vector normally distributed
+SparseVector sprandvecn(unsigned int length, double fill)
+{
+	// seed
+	std::default_random_engine generator;
+	std::normal_distribution<double> distrib(0.0,1.0);
+
+	SparseVector out(length);
+	for (auto i=0; i<length; i++){
+		if (distrib(generator) < fill) out(i) = distrib(generator);
 	}
 	return out;
 }
