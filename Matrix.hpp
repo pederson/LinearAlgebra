@@ -1207,6 +1207,30 @@ Vector randvecn(unsigned int length)
 	return out;
 }
 
+unsigned int argmin(const Vector & vct){
+	unsigned int res=0;
+	double mv = vct(0);
+	for (auto i=0; i<vct.length(); i++){
+		if (vct(i) < mv){
+			res = i;
+			mv = vct(i);
+		}
+	}
+	return res;
+}
+
+unsigned int argmax(const Vector & vct){
+	unsigned int res=0;
+	double mv = vct(0);
+	for (auto i=0; i<vct.length(); i++){
+		if (vct(i) > mv){
+			res = i;
+			mv = vct(i);
+		}
+	}
+	return res;
+}
+
 
 
 
