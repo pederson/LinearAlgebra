@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <random>
+#include <chrono>
 
 #include "AbstractMatrix.hpp"
 
@@ -1104,7 +1105,9 @@ Matrix hilb(unsigned int rows)
 Matrix randmat(unsigned int rows, unsigned int cols)
 {
 	// seed
-	std::default_random_engine generator;
+	// std::default_random_engine generator;
+	unsigned int seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+	std::minstd_rand0 generator(seed1);
 	std::uniform_real_distribution<double> distrib(0.0,1.0);
 
 	Matrix out(rows, cols);
@@ -1120,7 +1123,9 @@ Matrix randmat(unsigned int rows, unsigned int cols)
 // random matrix normally distributed
 Matrix randmatn(unsigned int rows, unsigned int cols)
 {
-	std::default_random_engine generator;
+	// std::default_random_engine generator;
+	unsigned int seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+	std::minstd_rand0 generator(seed1);
 	std::normal_distribution<double> distrib(0.0,1.0);
 
 	Matrix out(rows, cols);

@@ -696,7 +696,9 @@ SparseMatrix speye(unsigned int rows, unsigned int cols)
 SparseMatrix sprandmat(unsigned int rows, unsigned int cols, double fill=0.2)
 {
 	// seed
-	std::default_random_engine generator;
+	// std::default_random_engine generator;
+	unsigned int seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+	std::minstd_rand0 generator(seed1);
 	std::uniform_real_distribution<double> distrib(0.0,1.0);
 
 	SparseMatrix out(rows, cols);
@@ -712,7 +714,9 @@ SparseMatrix sprandmat(unsigned int rows, unsigned int cols, double fill=0.2)
 // sparse random matrix normally distributed
 SparseMatrix sprandmatn(unsigned int rows, unsigned int cols, double fill=0.2)
 {
-	std::default_random_engine generator;
+	// std::default_random_engine generator;
+	unsigned int seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+	std::minstd_rand0 generator(seed1);
 	std::normal_distribution<double> distrib(0.0,1.0);
 
 	SparseMatrix out(rows, cols);
