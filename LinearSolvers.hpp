@@ -935,6 +935,12 @@ void invert(const Matrix & A, Matrix & A_inv){
 	swap(inv, A_inv);
 }
 
+Matrix inv(const Matrix & A){
+	Matrix out(A);
+	invert(A, out);
+	return out;
+}
+
 // *** iterative methods *** //
 
 // steepest descent
