@@ -1316,6 +1316,20 @@ Vector operator-(double val, const Vector_Proxy & vct)
 	return out;
 }
 
+Vector operator+(const Vector_Proxy & vct, const Vector & v)
+{
+	Vector out(vct);
+	for (auto i=0; i<vct.length(); i++) out(i) += v(i);
+	return out;
+}
+
+Vector operator-(const Vector_Proxy & vct, const Vector & v)
+{
+	Vector out(vct);
+	for (auto i=0; i<vct.length(); i++) out(i) -= v(i);
+	return out;
+}
+
 
 // things that can't be defined until everything has been defined
 
