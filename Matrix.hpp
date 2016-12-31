@@ -3,6 +3,10 @@
 
 #include <math.h>
 #include <iostream>
+#include <fstream>
+#include <istream>
+#include <sstream>
+#include <string>
 #include <stdlib.h>
 #include <random>
 #include <chrono>
@@ -1135,6 +1139,54 @@ Matrix randmatn(unsigned int rows, unsigned int cols)
 		}
 	}
 
+	return out;
+}
+
+
+Matrix dlmread(std::string filename, std::string delimiter=",", unsigned int headerlines=0){
+	// open the file as a stream
+	std::ifstream file(filename);
+	const char * dlm = delimiter.c_str();
+
+	// read the number of rows
+	unsigned int nrows = 0;
+	std::string line;
+	for (auto i=0; i<headerlines; i++) std::getline(file, line);
+	while (getline(file,line)) nrows++;
+
+	// read the number of columns
+	file.clear();
+	file.seekg(0, std::ios::beg);
+	for (auto i=0; i<headerlines; i++) std::getline(file, line);
+	std::getline(file,line);
+	std::stringstream ss(line);
+	std::string field;
+	unsigned int ncols=0;
+	//std::cout << "first line: " << line << std::endl;
+	while(std::getline(ss,field,*dlm)) ncols++;
+
+	// std::cout << "(" << nrows << " x " << ncols << ") " << std::endl;
+	// std::cout << "delimiter: " << dlm << std::endl;
+
+	// read the data
+	Matrix out(nrows,ncols);
+	file.clear();
+	file.seekg(0, file.beg);
+	for (auto i=0; i<headerlines; i++) std::getline(file, line);
+	unsigned int i=0,j;
+	while (std::getline(file,line)){
+		std::stringstream ss(line);
+		std::string field;
+		j=0;
+		while(std::getline(ss,field,*dlm)){
+			std::stringstream fs(field);
+			double f=0.0;
+			fs >> f;
+			out(i,j) = f;
+			j++;
+		}
+		i++;
+	}
 	return out;
 }
 
