@@ -296,14 +296,51 @@ int main(int argc, char * argv[]){
 
 
 	//************* ITERATIVE LINEAR SOLVER TESTS ***********//
+
+	// jacobi
+	cout << "************************** JACOBI ITERATION:" << endl;
+	Matrix ddom = hilb(6);
+	Vector dg(6); dg.fill(10);
+	Matrix dgm = diag(dg);
+	ddom = ddom + dgm;
+	Vector rndx1 = randvecn(6);
+	Vector ddomb = ddom*rndx1;
+	Vector ddomx;
+	jacobi(ddom, ddomb, ddomx, 100);
+	cout << "A: " << ddom << endl;
+	cout << "b: " << ddomb << endl;
+	cout << "x_exact: " << rndx1 << endl;
+	cout << "x_calc : " << ddomx << endl;
+	cout << "error: " << (rndx1-ddomx).norm() << endl;
+
+	// gauss-seidel
+	cout << "************************** GAUSS-SEIDEL ITERATION:" << endl;
+	Vector ddomx1;
+	gauss_seidel(ddom, ddomb, ddomx1, 100);
+	cout << "A: " << ddom << endl;
+	cout << "b: " << ddomb << endl;
+	cout << "x_exact: " << rndx1 << endl;
+	cout << "x_calc : " << ddomx1 << endl;
+	cout << "error: " << (rndx1-ddomx1).norm() << endl;
+
+	// successive over-relaxation
+	cout << "************************** SOR ITERATION:" << endl;
+	Vector ddomx2;
+	sor(ddom, ddomb, ddomx2, 1.5, 100);
+	cout << "A: " << ddom << endl;
+	cout << "b: " << ddomb << endl;
+	cout << "x_exact: " << rndx1 << endl;
+	cout << "x_calc : " << ddomx2 << endl;
+	cout << "error: " << (rndx1-ddomx2).norm() << endl;
+
 	// steepest descent
+	cout << "************************** STEEPEST DESCENT:" << endl;
 	Matrix spd = hilb(6);
 	Vector rndx = randvecn(6);
 	Vector solnb = spd*rndx;
 	Vector solncalc(6);
 	solncalc.fill(0);
 	steepest_descent(spd, solnb, solncalc);
-	cout << "************************** STEEPEST DESCENT:" << endl;
 	cout << "A: " << spd << endl;
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;
@@ -311,10 +348,10 @@ int main(int argc, char * argv[]){
 	cout << "error: " << (rndx-solncalc).norm() << endl;
 
 	// conjugate gradient
+	cout << "************************** CONJUGATE GRADIENT:" << endl;
 	Vector solncalc2(6);
 	solncalc2.fill(0);
 	conjugate_gradient(spd, solnb, solncalc2);
-	cout << "************************** CONJUGATE GRADIENT:" << endl;
 	cout << "A: " << spd << endl;
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;

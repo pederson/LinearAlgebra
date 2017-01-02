@@ -41,6 +41,18 @@ Matrix diag(const Vector & vct)
 	return out;
 }
 
+// return strictly upper triangular part of a matrix
+Matrix strictly_upper(const Matrix & mtx){
+	Matrix out(mtx.rows(), mtx.cols());
+	out.fill(0);
+	for (auto i=0; i<mtx.rows(); i++){
+		for (auto j=i+1; j<mtx.cols(); j++){
+			out(i,j) = mtx(i,j);
+		}
+	}
+	return out;
+}
+
 
 double trace(const Matrix & A){
 	double s=0;
@@ -942,6 +954,91 @@ Matrix inv(const Matrix & A){
 }
 
 // *** iterative methods *** //
+
+// jacobi iteration
+// for square diagonally dominant matrices
+void jacobi(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+
+	// decompose the matrix A
+	Vector dg = diag(A);
+	Matrix D = diag(dg);
+	Matrix R = A - D;
+	Vector xk(b); xk.fill(0);
+
+	double resid = 1.0;
+	unsigned int it = 0;
+	Vector r;
+	Vector d;
+	while (resid > res_thresh && it < max_iters){
+		d = b - R*xk;
+		xk = diagonal_solve(D, d);
+
+		it++;
+		r = b - A*xk;
+		resid = norm_2(r);
+	}
+
+	swap(x, xk);
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
+
+// gauss-seidel iteration
+// for square diagonally dominant matrices
+void gauss_seidel(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+
+	// decompose the matrix A
+	Matrix U = strictly_upper(A);
+	Matrix L = A-U;
+	Vector xk(b); xk.fill(0);
+
+	double resid = 1.0;
+	unsigned int it = 0;
+	Vector r;
+	Vector d;
+	while (resid > res_thresh && it < max_iters){
+		d = b - U*xk;
+		xk = lower_triangular_solve(L, d);
+
+		it++;
+		r = b - A*xk;
+		resid = norm_2(r);
+	}
+
+	swap(x, xk);
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
+
+// successive over-relaxation iteration
+// for square diagonally dominant matrices
+void sor(const Matrix & A, const Vector & b, Vector & x, double w, unsigned int max_iters, double res_thresh=1.0e-15){
+
+	// decompose the matrix A
+	Matrix U = strictly_upper(A);
+	Vector dg = diag(A);
+	Matrix D = diag(dg);
+	Matrix L = A-U-D;
+	Vector xk(b); xk.fill(0);
+
+	double resid = 1.0;
+	unsigned int it = 0;
+	Vector r;
+	Vector d;
+	Matrix N;
+	while (resid > res_thresh && it < max_iters){
+		d = w*b - (w*U+(w-1.0)*D)*xk;
+		N = D + w*L;
+		xk = lower_triangular_solve(N, d);
+
+		it++;
+		r = b - A*xk;
+		resid = norm_2(r);
+	}
+
+	swap(x, xk);
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
 
 // steepest descent
 // for square, SPD matrices only
