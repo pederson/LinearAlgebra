@@ -1064,16 +1064,19 @@ void steepest_descent(const Matrix & mtx, const Vector & b, Vector & x)
 		// update x
 		x += alpha*rv;
 
-		if (ctr%50 == 0)
-		{
-			// recalculate the exact resid every 50 iters
-			rv = b - mtx*x;
-		}
-		else
-		{
-			// update residual
-			rv -= alpha*matvec;
-		}
+		// recalculate residual
+		rv = b - mtx*x;
+
+		// if (ctr%50 == 0)
+		// {
+		// 	// recalculate the exact resid every 50 iters
+		// 	rv = b - mtx*x;
+		// }
+		// else
+		// {
+		// 	// update residual
+		// 	rv -= alpha*matvec;
+		// }
 
 		resid = rv.norm();
 		//std::cout << "residual: " << resid << std::endl;
@@ -1133,17 +1136,91 @@ void conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x)
 }
 
 
+// BiConjugate Gradient method
+void bicg(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+	// initialize stuff
+	Matrix At = ~A;
+	Vector r = b - A*x;
+	Vector bc = b; 
+	Vector rhat = ~bc - (~x)*At; rhat.transpose();
+	Vector xhat = ~x;
+	double resid = 1.0;
+	unsigned int it = 0;
+
+	Vector p = r;
+	Vector phat = rhat; 
+	Vector Ap;
+	double alpha, beta, rho;
+
+
+	while (resid > res_thresh && it < max_iters){
+
+		Ap = A*p;
+		rho = Vector::dot(rhat, r);
+		alpha = rho/Vector::dot(phat, Ap);
+		x += alpha*p;
+		xhat += alpha*(phat);
+		r -= alpha*Ap;
+		// std::cout << At.rows() << ", " << At.cols() << std::endl;
+		// std::cout << rhat.rows() << ", " << rhat.cols() << std::endl;
+		// std::cout << phat.rows() << ", " << phat.cols() << std::endl;
+		rhat = rhat - alpha*phat*At; rhat.transpose();
+
+		beta = Vector::dot(rhat, r)/rho;
+		p = r+beta*p;
+		phat = rhat + beta*phat; phat.transpose();
+
+		// update counters
+		it++;
+		resid = norm_2(r);
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
+
+// BiConjugate Gradient Stabilized method
+void bicgstab(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+	// initialize stuff
+	Vector r = b - A*x;
+	double resid = 1.0;
+	unsigned int it = 0;
+	Vector rhat = r;
+	double rho=1, alpha=1, omega=1;
+	Vector v(r); v.fill(0);
+	Vector p(r); p.fill(0);
+	Vector s,t;
+	double beta, rho_old;
+
+	while (resid > res_thresh && it < max_iters){
+
+		// enforce biorthogonality and biconjugacy
+		rho_old = rho;
+		rho = Vector::dot(rhat, r);
+		beta = rho/rho_old*(alpha/omega);
+		p = r + beta*(p-omega*v);
+		v = A*p;
+		alpha = rho/Vector::dot(rhat,v);
+		s = r - alpha*v;
+		t = A*s;
+		omega = Vector::dot(s,t)/Vector::dot(t,t);
+		x += alpha*p + omega*s;
+
+		// recalculate residual
+		r = s - omega*t;
+
+		// update counters
+		it++;
+		resid = norm_2(r);
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
 // generalized complex eigenvalue decomposition
 
 // schur decomposition
 
-// compute the determinant
-
 // estimate the condition number
-
-// direct inverse (slow in general)
-
-
-
 
 #endif

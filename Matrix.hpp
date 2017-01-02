@@ -119,7 +119,8 @@ public:
 		}
 		else
 		{
-			throw "Vectors must be of same size!";
+			std::cout << "Vectors must be of same size to dot!" << std::endl;
+			throw -1;
 		}
 
 		return result;

@@ -358,6 +358,27 @@ int main(int argc, char * argv[]){
 	cout << "x_calc : " << solncalc2 << endl;
 	cout << "error: " << (rndx-solncalc2).norm() << endl;
 
+	cout << "************************** BICG:" << endl;
+	Vector solncalc4(6);
+	solncalc4.fill(0);
+	bicg(spd, solnb, solncalc4, 100);
+	cout << "A: " << spd << endl;
+	cout << "b: " << solnb << endl;
+	cout << "x_exact: " << rndx << endl;
+	cout << "x_calc : " << solncalc4 << endl;
+	cout << "error: " << (rndx-solncalc4).norm() << endl;
+
+
+	cout << "************************** BICGSTAB:" << endl;
+	Vector solncalc3(6);
+	solncalc3.fill(0);
+	bicgstab(spd, solnb, solncalc3, 100);
+	cout << "A: " << spd << endl;
+	cout << "b: " << solnb << endl;
+	cout << "x_exact: " << rndx << endl;
+	cout << "x_calc : " << solncalc3 << endl;
+	cout << "error: " << (rndx-solncalc3).norm() << endl;
+
 
 	//***************************************************//
 
