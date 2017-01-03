@@ -380,6 +380,17 @@ int main(int argc, char * argv[]){
 	cout << "error: " << (rndx-solncalc3).norm() << endl;
 
 
+	cout << "************************** GMRES(k):" << endl;
+	Vector solncalc5(6);
+	solncalc5.fill(0);
+	gmres_k(spd, solnb, solncalc5, 10, 100);
+	cout << "A: " << spd << endl;
+	cout << "b: " << solnb << endl;
+	cout << "x_exact: " << rndx << endl;
+	cout << "x_calc : " << solncalc5 << endl;
+	cout << "error: " << (rndx-solncalc5).norm() << endl;
+
+
 	//***************************************************//
 
 

@@ -1217,6 +1217,134 @@ void bicgstab(const Matrix & A, const Vector & b, Vector & x, unsigned int max_i
 	std::cout << "iterated: " << it << " times" << std::endl;
 }
 
+
+// Restarted Generalized Minimal Residual Method (GMRES)
+// restarts every k iterations
+void gmres_k(const Matrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
+	// initialize stuff
+	Vector r, q, p, w, c, s, x0=x, yr, y(b.length());
+	Vector e1(x0); e1.fill(0); e1(0)=1;
+	Matrix Q(b.length(), k);
+	Matrix Hr;
+	Matrix H(A.rows(), A.cols()); 
+	double beta, gamma;
+
+	// std::cout << "HERE NOW DONE" << std::endl;
+
+	double resid = 1.0;
+	unsigned int it = 0;
+
+	while (resid > res_thresh && it < max_iters && it < x.length()){
+		r = b - A*x0;
+		// std::cout << "RESID DONE" << std::endl;
+		beta = norm_2(r);
+		Q.col(0) = r/beta;
+		// std::cout << "Q DONE" << std::endl;
+		H.fill(0); H(0,0) = Vector::dot(Q.col(0),A*Q.col(0)); // IS THIS RIGHT??
+		// std::cout << "HFILL DONE" << std::endl;
+
+		
+		// initialize the rhs
+		p = beta*e1;
+		// std::cout << p << std::endl;
+		// std::cout << "PINIT DONE" << std::endl;
+
+		// initialize givens rotators
+		c = 1*e1; c.fill(1);
+		// std::cout << c << std::endl;
+		// std::cout << "CINIT DONE" << std::endl;
+		// std::cout << e1 << std::endl;
+		// std::cout << e1.length() << std::endl;
+		// std::cout << x0 << std::endl;
+		s = e1*0;
+
+		// std::cout << "INIT DONE" << std::endl;
+
+		// inner loop
+		for (auto j=0; j<k; j++){
+			if (it >= max_iters || it >= x.length()) break;
+
+			// matvec
+			w = A*Q.col(j);
+
+			// std::cout << "w: " << w << std::endl;
+
+			// std::cout << "MATVEC DONE" << std::endl;
+
+			// gram-schmidt process
+			for (auto i=0; i<=j; i++){
+				H(i,j) = Vector::dot(w,Q.col(i));
+				w -= H(i,j)*Q.col(i);
+			}
+			H(j+1,j) = norm_2(w);
+			Q.col(j+1) = w/H(j+1,j);
+
+			// std::cout << "GS DONE" << std::endl;
+
+			
+
+			// solve reduced system least squares problem
+			// apply previous givens rotation acting on H
+			for (auto i=0; i<=j-1; i++){
+				H(i,j) = c(i)*H(i,j)+s(i)*H(i+1,j);
+				H(i+1,j) = -s(i)*H(i,j)+c(i)*H(i+1,j);
+				std::cout << "j = " << j << std::endl;
+			}
+			gamma = sqrt(H(j,j)*H(j,j)+H(j+1,j)*H(j+1,j));
+			c(j) = H(j,j)/gamma;
+			s(j) = H(j+1,j)/gamma;
+			// apply current givens rotation on H
+			H(j,j) = gamma;
+			H(j+1,j) = 0;
+			// apply current givens rotation on p
+			p(j) = c(j)*p(j);
+			p(j+1) = -s(j)*p(j);
+
+			// std::cout << "GIVENS DONE" << std::endl;
+
+			//if (fabs(p(j)) < res_thresh) break;
+
+			// reduced system matrix
+			Hr = H(0,j,0,j);
+
+			// std::cout << "REDMAT" << std::endl;
+
+			// do back substitution to get y
+			// std::cout << "HR: "  << Hr << std::endl;
+			// std::cout << "p: " << p.subcol(0,0,j);
+			yr = upper_triangular_solve(Hr, p.subcol(0, 0, j));
+			// std::cout << "BACKSUBS DONE" << std::endl;
+			// std::cout << "yr: " << yr << std::endl;
+			// std::cout << "y: " << y << std::endl;
+			y.subcol(0,0,j) = yr;
+
+			// std::cout << "SUBCOL ASSIGNED" << std::endl;
+
+			
+
+			// form approximate solution
+			x = x0;
+			// std::cout << "xlength: " << x.length() << std::endl;
+			// std::cout << "qlength: " << Q.rows() << std::endl;
+			for (auto i=0; i<=j; i++) x = x + y(i)*Q.col(i);
+
+			// std::cout << "FORMED SOLUTION" << std::endl;
+			// std::cout << "it: " << it << std::endl;
+			it++;
+		}
+
+		// outer loop convergence check
+		if (fabs(p(k-1)) < res_thresh) break;
+		else x0 = x;
+
+		// update counters
+		it++;
+		//resid = norm_2(r);
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
 // generalized complex eigenvalue decomposition
 
 // schur decomposition
