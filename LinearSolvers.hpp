@@ -1136,6 +1136,55 @@ void conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x)
 }
 
 
+// conjugate residual
+// for square, symmetric matrices only
+// uses the x argument as x0
+void conjugate_residual(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
+{
+	Vector r = b-A*x;
+	Vector rold;
+	Vector Arold;
+	Vector Ar = A*r;
+	Vector Ap = Ar;
+	double resid = r.norm();
+
+	// first iteration here
+	Vector d = r;
+	double alpha, beta;
+
+	// continue iterating
+	unsigned int it=0;
+	while (resid > res_thresh && it < max_iters)
+	{
+		// calc alpha
+		Ap = A*d;
+		alpha = Vector::dot(Ar,r)/Vector::dot(Ap,Ap);
+
+		// update x
+		x += alpha*d;
+
+		// calculate residual
+		rold = 1*r;
+		r -= alpha*Ap;
+		resid = r.norm();
+
+		Arold = 1*Ar;
+		Ar = A*r;
+		beta = Vector::dot(r,Ar)/Vector::dot(rold,Arold);
+
+		// update direction
+		d = r+beta*d;
+		Ap = Ar+beta*Ap;
+		
+		it++;
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+
+	return;
+}
+
+
 // BiConjugate Gradient method
 void bicg(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
@@ -1169,6 +1218,49 @@ void bicg(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters
 		beta = Vector::dot(rhat, r)/rho;
 		p = r+beta*p;
 		phat = rhat + beta*phat; phat.transpose();
+
+		// update counters
+		it++;
+		resid = norm_2(r);
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
+
+// BiConjugate Residual method
+void bicr(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+	// initialize stuff
+	Matrix At = ~A;
+	Vector r = b - A*x;
+	Vector bc = b; 
+	Vector rhat = 1*r;
+	Vector p =  0*r;
+	Vector phat = 0*r;
+
+	double resid = 1.0;
+	unsigned int it = 0;
+
+	Vector Ap=A*p, Atphat;
+	Vector Ar = A*r;
+	double alpha, beta=0;
+
+
+	while (resid > res_thresh && it < max_iters){
+
+		p = r+beta*p;
+		phat = rhat+beta*phat;
+		Ap = Ar + beta*Ap;
+		Atphat = At*phat;
+
+		alpha = Vector::dot(r,Ar)/Vector::dot(Atphat, Ap);
+
+		x += alpha*p;
+		r -= alpha*Ap;
+		rhat -= alpha*Atphat;
+
+		beta = Vector::dot(rhat,A*r)/Vector::dot(rhat,Ar);
+		Ar = A*r;
 
 		// update counters
 		it++;

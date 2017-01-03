@@ -358,6 +358,17 @@ int main(int argc, char * argv[]){
 	cout << "x_calc : " << solncalc2 << endl;
 	cout << "error: " << (rndx-solncalc2).norm() << endl;
 
+	// conjugate resid
+	cout << "************************** CONJUGATE RESIDUAL:" << endl;
+	Vector solncalc7(6);
+	solncalc7.fill(0);
+	conjugate_residual(spd, solnb, solncalc7, 100);
+	cout << "A: " << spd << endl;
+	cout << "b: " << solnb << endl;
+	cout << "x_exact: " << rndx << endl;
+	cout << "x_calc : " << solncalc7 << endl;
+	cout << "error: " << (rndx-solncalc7).norm() << endl;
+
 	cout << "************************** BICG:" << endl;
 	Vector solncalc4(6);
 	solncalc4.fill(0);
@@ -367,6 +378,16 @@ int main(int argc, char * argv[]){
 	cout << "x_exact: " << rndx << endl;
 	cout << "x_calc : " << solncalc4 << endl;
 	cout << "error: " << (rndx-solncalc4).norm() << endl;
+
+	cout << "************************** BICR:" << endl;
+	Vector solncalc8(6);
+	solncalc8.fill(0);
+	bicg(spd, solnb, solncalc8, 100);
+	cout << "A: " << spd << endl;
+	cout << "b: " << solnb << endl;
+	cout << "x_exact: " << rndx << endl;
+	cout << "x_calc : " << solncalc8 << endl;
+	cout << "error: " << (rndx-solncalc8).norm() << endl;
 
 
 	cout << "************************** BICGSTAB:" << endl;
