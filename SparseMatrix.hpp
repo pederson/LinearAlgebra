@@ -7,6 +7,7 @@
 #include <list>
 #include <vector>
 #include <random>
+#include <ctime>
 
 #include "Matrix.hpp"
 #include "SparseVector.hpp"
@@ -96,6 +97,23 @@ public:
 				it++;
 			}
 			out(i) = rowsum;
+		}
+		return out;
+	}
+
+
+	// SparseMatrix-Vector transpose product
+	Vector Tmult(const Vector & vct) const{
+		Vector out(m_mrows);
+		out.fill(0);
+
+		for (auto i=0; i<vct.rows(); i++){
+			double rowsum = 0.0;
+			auto it = m_row_ptr[i];
+			while (it != m_row_ptr[i+1]){
+				out(it->first) += it->second*vct(i);
+				it++;
+			}
 		}
 		return out;
 	}
@@ -519,6 +537,28 @@ public:
 	}
 
 
+	// write to Matrix-Market file format
+	void mmwrite(std::string filename) const{
+		std::ofstream file(filename);
+		std::vector<std::string> months = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+
+		time_t now=time(0);
+		tm * nowtm = localtime(&now);
+		file << "%%MatrixMarket matrix coordinate real general\n";
+		file << "% Generated " << nowtm->tm_mday << "-" << months[nowtm->tm_mon] << "-" << nowtm->tm_year+1900 << std::endl;
+		file << m_mrows << " " << m_ncols << " " << m_data.size() << std::endl;
+		file << std::scientific;
+
+		for (auto i=0; i<m_mrows; i++){
+			auto it = m_row_ptr[i];
+			while (it != m_row_ptr[i+1] && it !=m_data.end()){
+				file << i << " " << it->first <<  " " << it->second << std::endl;
+				it++;
+			}
+		}
+	}
+
+
 protected:
 
 	std::size_t m_mrows, m_ncols;
@@ -745,6 +785,36 @@ SparseMatrix sprandmatn(unsigned int rows, unsigned int cols, double fill=0.2)
 		}
 	}
 
+	return out;
+}
+
+// read sparse matrix from a MatrixMarket file format
+SparseMatrix mmread(std::string filename){
+	// open the file as a stream
+	std::ifstream file(filename);
+	unsigned int headerlines = 2;
+
+	// skip header lines
+	std::string line;
+	for (auto i=0; i<headerlines; i++) std::getline(file, line);
+
+	// read the number of rows and columns
+	std::getline(file,line);
+	std::stringstream ss(line);
+	std::string field;
+	unsigned int ncols, mrows;
+	ss >> mrows;
+	ss >> ncols;
+
+	// read the data
+	SparseMatrix out(mrows,ncols);
+	unsigned int i, j;
+	double val;
+	while (std::getline(file,line)){
+		std::stringstream ss(line);
+		ss >> i; ss >> j; ss >> val;
+		out.set(i,j,val);
+	}
 	return out;
 }
 

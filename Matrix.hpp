@@ -382,6 +382,9 @@ public:
 	// Matrix-Vector multiplication
 	Vector operator*(const Vector & v) const;
 
+	// Matrix-Vector transpose multiplication
+	Vector Tmult(const Vector & v) const;
+
 	// Matrix-Matrix addition
 	Matrix operator+(const Matrix & mtx) const
 	{
@@ -619,6 +622,23 @@ public:
 	const double * data() const {return m_data;};
 
 	void transpose();
+
+	void dlmwrite(std::string filename, std::string delimiter=",") const{
+		std::ofstream file(filename);
+		const char * dlm = delimiter.c_str();
+
+		//file << std::endl;
+		file << std::scientific;
+		for (auto i=0; i<m_mrows; i++)
+		{
+			file << m_data[m_mrows*0 + i];
+			for (auto j=1; j<m_ncols; j++)
+			{
+				file << dlm << m_data[m_mrows*j + i];
+			}
+			file << std::endl;
+		}
+	}
 
 	friend std::ostream & operator<<(std::ostream & os, const Matrix & mtx);
 
@@ -1510,6 +1530,28 @@ Vector Matrix::operator*(const Vector & v) const
 		const Vector c = col(i);
 		// out += col(i)*v(i);
 		out += c*v(i);
+	}
+
+	return out;
+}
+
+
+Vector Matrix::Tmult(const Vector & v) const
+{
+	if (m_ncols != v.rows())
+	{
+		throw "Matrix dimensions do not match!";
+	}
+
+	Vector out(m_mrows);
+
+	out.fill(0);
+	for (auto i=0; i<m_mrows; i++)
+	{
+		Vector r = row(i);
+		r.transpose();
+		// out += col(i)*v(i);
+		out += r*v(i);
 	}
 
 	return out;

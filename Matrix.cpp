@@ -65,6 +65,9 @@ int main(int argc, char * argv[]){
 	cout << "F = " << F << endl;
 	cout << "G = " << G << endl;
 
+	// writing to file
+	S.dlmwrite("M_dense.txt",":");
+
 	//***************************************************//
 
 
@@ -530,6 +533,13 @@ int main(int argc, char * argv[]){
 	// verify dense matrix conversion
 	Matrix dm = sm.densify();
 	cout << "dense sm : " << dm << endl;
+
+	// write to matrix-market format
+	sm.mmwrite("M_sparse.txt");
+
+	// read from matrix-market format
+	SparseMatrix smread = mmread("M_sparse.txt");
+	cout << "read sparse matrix: " << smread << endl;
 
 	// solve upper triangular system
 	SparseMatrix sput = speye(6,6) + strictly_upper(sm1);
