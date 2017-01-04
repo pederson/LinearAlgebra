@@ -357,6 +357,25 @@ public:
 	}
 
 
+	// get value at index i,j
+	double get(unsigned int i, unsigned int j) const{
+		auto it=m_row_ptr[i];
+
+		unsigned int ct=0;
+		while(it->first < j && it != m_row_ptr[i+1]){
+			it++;
+			ct++;
+		}
+		if (it == m_row_ptr[i+1]) return 0;
+		else{
+			if (it->first == j){
+				return it->second;
+			}
+		}
+		return 0;
+	}
+
+
 
 	// add val to index i,j
 	void add(unsigned int i, unsigned int j, double val){

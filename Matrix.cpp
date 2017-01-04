@@ -485,6 +485,19 @@ int main(int argc, char * argv[]){
 	sm2.set(0,4, 1.0);
 	cout << "sm2: " << sm2 << endl;
 
+	// sparse matrix diag
+	SparseMatrix sm1 = sprandmatn(6,6);
+	cout << "sm1: " << sm1 << endl;
+	Vector sm1d = diag(sm1);
+	cout << "sm1 diag: " << sm1d << endl;
+
+	// create SparseMatrix from diag
+	SparseMatrix sm1diag = spdiag(sm1d);
+	cout << "sm1d into sparse matrix: " << sm1diag << endl;
+
+	// sparse matrix trace
+	cout << "trace(sm1diag): " << trace(sm1diag) << "\n" << endl;
+
 	/*
 	// matrix transpose
 	cout << "sm2: " << sm2 << endl;
@@ -517,6 +530,76 @@ int main(int argc, char * argv[]){
 	// verify dense matrix conversion
 	Matrix dm = sm.densify();
 	cout << "dense sm : " << dm << endl;
+
+	// solve upper triangular system
+	SparseMatrix sput = speye(6,6) + strictly_upper(sm1);
+	Vector spsoln = randvecn(6);
+	Vector spb = sput*spsoln;
+	Vector spsolncalc = upper_triangular_solve(sput, spb);
+	cout << "sparse A: " << sput << endl;
+	cout << "b: " << spb << endl;
+	cout << "x_exact: " << spsoln << endl;
+	cout << "x_calc : " << spsolncalc << endl;
+	cout << "error: " << (spsoln-spsolncalc).norm() << endl;
+
+	// solve lower triangular system
+	SparseMatrix splt = speye(6,6) + strictly_lower(sm1);
+	spb = splt*spsoln;
+	Vector spsolncalclt = lower_triangular_solve(splt, spb);
+	cout << "sparse A: " << splt << endl;
+	cout << "b: " << spb << endl;
+	cout << "x_exact: " << spsoln << endl;
+	cout << "x_calc : " << spsolncalclt << endl;
+	cout << "error: " << (spsoln-spsolncalclt).norm() << endl;
+
+	// sparse jacobi iteration
+	cout << "************************** SPARSE JACOBI ITERATION:" << endl;
+	SparseMatrix spjac = sm1 + 10*speye(6,6);
+	spb = spjac*spsoln;
+	Vector spsolncalc_jac(6); spsolncalc_jac.fill(0);
+	jacobi(spjac, spb, spsolncalc_jac, 100);
+	cout << "sparse A: " << spjac << endl;
+	cout << "b: " << spb << endl;
+	cout << "x_exact: " << spsoln << endl;
+	cout << "x_calc : " << spsolncalc_jac << endl;
+	cout << "error: " << (spsoln-spsolncalc_jac).norm() << endl;
+
+	// sparse gauss seidel iteration
+	cout << "************************** SPARSE GAUSS-SEIDEL ITERATION:" << endl;
+	SparseMatrix spgs = sm1 + 10*speye(6,6);
+	spb = spgs*spsoln;
+	Vector spsolncalc_gs(6); spsolncalc_gs.fill(0);
+	gauss_seidel(spgs, spb, spsolncalc_gs, 100);
+	cout << "sparse A: " << spgs << endl;
+	cout << "b: " << spb << endl;
+	cout << "x_exact: " << spsoln << endl;
+	cout << "x_calc : " << spsolncalc_gs << endl;
+	cout << "error: " << (spsoln-spsolncalc_gs).norm() << endl;
+
+	// sparse SOR iteration
+	cout << "************************** SPARSE SOR ITERATION:" << endl;
+	SparseMatrix spsor = sm1 + 10*speye(6,6);
+	spb = spsor*spsoln;
+	Vector spsolncalc_sor(6); spsolncalc_sor.fill(0);
+	sor(spsor, spb, spsolncalc_sor, 1.5, 100);
+	cout << "sparse A: " << spsor << endl;
+	cout << "b: " << spb << endl;
+	cout << "x_exact: " << spsoln << endl;
+	cout << "x_calc : " << spsolncalc_sor << endl;
+	cout << "error: " << (spsoln-spsolncalc_sor).norm() << endl;
+
+	// sparse bicgstab iteration
+	cout << "************************** SPARSE BICGSTAB:" << endl;
+	SparseMatrix spbicgstab = sm1 + 10*speye(6,6);
+	spb = spsor*spsoln;
+	Vector spsolncalc_bicgstab(6); spsolncalc_bicgstab.fill(0);
+	bicgstab(spbicgstab, spb, spsolncalc_bicgstab, 100);
+	cout << "sparse A: " << spsor << endl;
+	cout << "b: " << spb << endl;
+	cout << "x_exact: " << spsoln << endl;
+	cout << "x_calc : " << spsolncalc_bicgstab << endl;
+	cout << "error: " << (spsoln-spsolncalc_bicgstab).norm() << endl;
+
 
 	return 0;
 }

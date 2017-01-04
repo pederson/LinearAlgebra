@@ -13,9 +13,6 @@
 
 
 
-
-
-
 // return the diagonals of a matrix as a vector
 Vector diag(const Matrix & mtx)
 {
@@ -25,6 +22,18 @@ Vector diag(const Matrix & mtx)
 	for (auto i=0; i<dim; i++)
 	{
 		out(i) = mtx(i,i);
+	}
+	return out;
+}
+
+// return the diagonals of a sparse matrix as a vector
+Vector diag(const SparseMatrix & mtx){
+	unsigned int dim = std::min(mtx.rows(), mtx.cols());
+	Vector out(dim);
+
+	for (auto i=0; i<dim; i++)
+	{
+		out(i) = mtx.get(i,i);
 	}
 	return out;
 }
@@ -41,6 +50,18 @@ Matrix diag(const Vector & vct)
 	return out;
 }
 
+// convert vector into square diagonal sparse matrix
+SparseMatrix spdiag(const Vector & vct)
+{
+	SparseMatrix out(vct.length(), vct.length());
+
+	for (auto i=0; i<vct.length(); i++)
+	{
+		out.set(i,i,vct(i));
+	}
+	return out;
+}
+
 // return strictly upper triangular part of a matrix
 Matrix strictly_upper(const Matrix & mtx){
 	Matrix out(mtx.rows(), mtx.cols());
@@ -53,10 +74,72 @@ Matrix strictly_upper(const Matrix & mtx){
 	return out;
 }
 
+// return strictly upper triangular part of a sparse matrix
+SparseMatrix strictly_upper(const SparseMatrix & mtx){
+	SparseMatrix out(mtx.rows(), mtx.cols());
+	auto data = mtx.data();
+	auto rowptr = mtx.row_ptr();
+
+	for (auto i=0; i<mtx.rows(); i++){
+		auto it = rowptr[i];
+		while (it != rowptr[i+1] && it !=data.end()){
+			if (it->first > i) out.set(i,it->first,it->second);
+			it++;
+		}
+	}
+
+	return out;
+}
+
+// return strictly lower triangular part of a matrix
+Matrix strictly_lower(const Matrix & mtx){
+	Matrix out(mtx.rows(), mtx.cols());
+	out.fill(0);
+	for (auto i=0; i<mtx.rows(); i++){
+		for (auto j=0; j<i; j++){
+			out(i,j) = mtx(i,j);
+		}
+	}
+	return out;
+}
+
+// return strictly lower triangular part of a sparse matrix
+SparseMatrix strictly_lower(const SparseMatrix & mtx){
+	SparseMatrix out(mtx.rows(), mtx.cols());
+	auto data = mtx.data();
+	auto rowptr = mtx.row_ptr();
+
+	for (auto i=0; i<mtx.rows(); i++){
+		auto it = rowptr[i];
+		while (it != rowptr[i+1] && it !=data.end()){
+			if (it->first < i) out.set(i,it->first,it->second);
+			it++;
+		}
+	}
+
+	return out;
+}
+
+
 
 double trace(const Matrix & A){
 	double s=0;
 	for (auto j=0; j<A.rows(); j++) s+= A(j,j);
+	return s;
+}
+
+double trace(const SparseMatrix & A){
+	double s=0;
+	auto data = A.data();
+	auto rowptr = A.row_ptr();
+
+	for (auto i=0; i<A.rows(); i++){
+		auto it = rowptr[i];
+		while (it != rowptr[i+1] && it !=data.end()){
+			if (it->first == i) s+=it->second;
+			it++;
+		}
+	}
 	return s;
 }
 
@@ -121,6 +204,40 @@ Vector upper_triangular_solve(const Matrix & U, const Vector & b)
 	return out;
 }
 
+
+// upper triangular sparse matrix Ux = b
+Vector upper_triangular_solve(const SparseMatrix & U, const Vector & b)
+{
+	if (U.rows() != U.cols())
+	{
+		std::cout << "Matrix must be square to upper triangular solve!" << std::endl;
+		throw -1;
+	}
+	if (b.length() != U.rows())
+	{
+		std::cout << "Matrix-Vector dimensions do not match in upper triangular solve!" << std::endl;
+		throw -1;
+	}
+
+	Vector out(b);
+	SparseVector row;
+	double sum;
+	// last element
+	out(U.rows()-1) = b(U.rows()-1)/U.get(U.rows()-1, U.rows()-1);
+	// backward substitution
+	for (int i=U.rows()-2; i>=0; i--)
+	{
+		row = U.row(i);
+		sum = 0;
+		auto data = row.data();
+		for (auto it=data.begin(); it != data.end(); it++){
+			if (it->first >= i+1) sum += it->second*out(it->first);
+		}
+		out(i) = (b(i) - sum)/U.get(i,i);
+	}
+	return out;
+}
+
 // lower triangular matrix Lx = b
 Vector lower_triangular_solve(const Matrix & L, const Vector & b)
 {
@@ -142,6 +259,38 @@ Vector lower_triangular_solve(const Matrix & L, const Vector & b)
 	{
 		sum = Vector_Proxy::dot(L.subrow(i, 0, i-1), out(0, i-1));
 		out(i) = (b(i) - sum)/L(i,i);
+	}
+	return out;
+}
+
+// lower triangular sparse matrix Lx = b
+Vector lower_triangular_solve(const SparseMatrix & L, const Vector & b)
+{
+	if (L.rows() != L.cols())
+	{
+		throw "Matrix is not square!";
+	}
+	if (b.length() != L.rows())
+	{
+		throw "Matrix-Vector dimensions do not match!";
+	}
+
+	Vector out(b);
+	SparseVector row;
+	double sum;
+	// first element
+	out(0) = b(0)/L.get(0,0);
+	// forward substitution
+	for (auto i=1; i<L.rows(); i++)
+	{
+		row = L.row(i);
+		sum = 0;
+		auto data = row.data();
+		for (auto it=data.begin(); it != data.end(); it++){
+			if (it->first < i) sum += it->second*out(it->first);
+		}
+		//sum = Vector_Proxy::dot(L.subrow(i, 0, i-1), out(0, i-1));
+		out(i) = (b(i) - sum)/L.get(i,i);
 	}
 	return out;
 }
@@ -168,6 +317,27 @@ Vector diagonal_solve(const Matrix & D, const Vector & b)
 	return out;
 }
 
+// diagonal sparse matrix Dx = b
+Vector diagonal_solve(const SparseMatrix & D, const Vector & b)
+{
+
+	if (D.rows() != D.cols())
+	{
+		throw "Matrix is not square!";
+	}
+	if (b.length() != D.rows())
+	{
+		throw "Matrix-Vector dimensions do not match!";
+	}
+
+	Vector out(b);
+	for (auto i=0; i<D.rows(); i++)
+	{
+		out(i) /= D.get(i,i);
+	}
+	return out;
+}
+
 // unitary matrix Ux = b
 Vector unitary_solve(const Matrix & U, const Vector & b)
 {
@@ -185,8 +355,17 @@ Vector unitary_solve(const Matrix & U, const Vector & b)
 	return out;
 }
 
-// tridiagonal matrix Tx = b (Thomas algorithm)
-Vector tridiagonal_solve(const Matrix & T, const Vector & b);
+// // tridiagonal matrix Tx = b (Thomas algorithm)
+// Vector tridiagonal_solve(const Matrix & T, const Vector & b){
+// 	if (T.rows() != T.cols())
+// 	{
+// 		throw "Matrix is not square!";
+// 	}
+// 	if (b.length() != T.rows())
+// 	{
+// 		throw "Matrix-Vector dimensions do not match!";
+// 	}
+// }
 
 
 
@@ -982,6 +1161,33 @@ void jacobi(const Matrix & A, const Vector & b, Vector & x, unsigned int max_ite
 	std::cout << "iterated: " << it << " times" << std::endl;
 }
 
+// sparse jacobi iteration
+// for square diagonally dominant matrices
+void jacobi(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+
+	// decompose the matrix A
+	Vector dg = diag(A);
+	SparseMatrix D = spdiag(dg);
+	SparseMatrix R = A - D;
+	Vector xk(b); xk.fill(0);
+
+	double resid = 1.0;
+	unsigned int it = 0;
+	Vector r;
+	Vector d;
+	while (resid > res_thresh && it < max_iters){
+		d = b - R*xk;
+		xk = diagonal_solve(D, d);
+
+		it++;
+		r = b - A*xk;
+		resid = norm_2(r);
+	}
+
+	swap(x, xk);
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
 
 // gauss-seidel iteration
 // for square diagonally dominant matrices
@@ -990,6 +1196,33 @@ void gauss_seidel(const Matrix & A, const Vector & b, Vector & x, unsigned int m
 	// decompose the matrix A
 	Matrix U = strictly_upper(A);
 	Matrix L = A-U;
+	Vector xk(b); xk.fill(0);
+
+	double resid = 1.0;
+	unsigned int it = 0;
+	Vector r;
+	Vector d;
+	while (resid > res_thresh && it < max_iters){
+		d = b - U*xk;
+		xk = lower_triangular_solve(L, d);
+
+		it++;
+		r = b - A*xk;
+		resid = norm_2(r);
+	}
+
+	swap(x, xk);
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
+
+// sparse gauss-seidel iteration
+// for square diagonally dominant matrices
+void gauss_seidel(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+
+	// decompose the matrix A
+	SparseMatrix U = strictly_upper(A);
+	SparseMatrix L = strictly_lower(A) + spdiag(diag(A));
 	Vector xk(b); xk.fill(0);
 
 	double resid = 1.0;
@@ -1029,6 +1262,35 @@ void sor(const Matrix & A, const Vector & b, Vector & x, double w, unsigned int 
 	while (resid > res_thresh && it < max_iters){
 		d = w*b - (w*U+(w-1.0)*D)*xk;
 		N = D + w*L;
+		xk = lower_triangular_solve(N, d);
+
+		it++;
+		r = b - A*xk;
+		resid = norm_2(r);
+	}
+
+	swap(x, xk);
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
+// sparse successive over-relaxation iteration
+// for square diagonally dominant matrices
+void sor(const SparseMatrix & A, const Vector & b, Vector & x, double w, unsigned int max_iters, double res_thresh=1.0e-15){
+
+	// decompose the matrix A
+	SparseMatrix U = strictly_upper(A);
+	SparseMatrix D = spdiag(diag(A));
+	SparseMatrix L = strictly_lower(A);
+	Vector xk(b); xk.fill(0);
+
+	double resid = 1.0;
+	unsigned int it = 0;
+	Vector r;
+	Vector d;
+	SparseMatrix N = D + w*L;
+	while (resid > res_thresh && it < max_iters){
+		d = w*b - w*(U*xk)-(w-1.0)*(D*xk);
+		//N = D + w*L;
 		xk = lower_triangular_solve(N, d);
 
 		it++;
@@ -1136,6 +1398,51 @@ void conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x)
 }
 
 
+// sparse conjugate gradient
+// for square, SPD matrices only
+// uses the x argument as x0
+void conjugate_gradient(const SparseMatrix & mtx, const Vector & b, Vector & x)
+{
+	Vector rv = b-mtx*x;
+
+	double resid = rv.norm();
+	double threshold = std::max(resid*1.0e-16, 1.0e-15);
+
+	// first iteration here
+	Vector d = rv;
+	Vector matvec = mtx*d;
+	double alpha = Vector::dot(d,rv)/Vector::dot(d,matvec);
+	x = alpha*b;
+
+	// continue iterating
+	unsigned int ctr=0;
+	while (resid > threshold)
+	{
+		// calculate residual
+		rv = b - mtx*x;
+		resid = rv.norm();
+
+		// pick new direction
+		d = rv - Vector::dot(rv, matvec)/Vector::dot(d, matvec)*d;
+
+		// one matrix-vector product
+		matvec = mtx*d;
+
+		// calculate new step size
+		alpha = Vector::dot(d,rv)/Vector::dot(d,matvec);
+
+		// update x
+		x += alpha*d;
+		
+		ctr++;
+	}
+
+	std::cout << "iterated: " << ctr << " times" << std::endl;
+
+	return;
+}
+
+
 // conjugate residual
 // for square, symmetric matrices only
 // uses the x argument as x0
@@ -1184,6 +1491,54 @@ void conjugate_residual(const Matrix & A, const Vector & b, Vector & x, unsigned
 	return;
 }
 
+
+// sparse conjugate residual
+// for square, symmetric matrices only
+// uses the x argument as x0
+void conjugate_residual(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
+{
+	Vector r = b-A*x;
+	Vector rold;
+	Vector Arold;
+	Vector Ar = A*r;
+	Vector Ap = Ar;
+	double resid = r.norm();
+
+	// first iteration here
+	Vector d = r;
+	double alpha, beta;
+
+	// continue iterating
+	unsigned int it=0;
+	while (resid > res_thresh && it < max_iters)
+	{
+		// calc alpha
+		Ap = A*d;
+		alpha = Vector::dot(Ar,r)/Vector::dot(Ap,Ap);
+
+		// update x
+		x += alpha*d;
+
+		// calculate residual
+		rold = 1*r;
+		r -= alpha*Ap;
+		resid = r.norm();
+
+		Arold = 1*Ar;
+		Ar = A*r;
+		beta = Vector::dot(r,Ar)/Vector::dot(rold,Arold);
+
+		// update direction
+		d = r+beta*d;
+		Ap = Ar+beta*Ap;
+		
+		it++;
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+
+	return;
+}
 
 // BiConjugate Gradient method
 void bicg(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
@@ -1273,6 +1628,44 @@ void bicr(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters
 
 // BiConjugate Gradient Stabilized method
 void bicgstab(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+	// initialize stuff
+	Vector r = b - A*x;
+	double resid = 1.0;
+	unsigned int it = 0;
+	Vector rhat = r;
+	double rho=1, alpha=1, omega=1;
+	Vector v(r); v.fill(0);
+	Vector p(r); p.fill(0);
+	Vector s,t;
+	double beta, rho_old;
+
+	while (resid > res_thresh && it < max_iters){
+
+		// enforce biorthogonality and biconjugacy
+		rho_old = rho;
+		rho = Vector::dot(rhat, r);
+		beta = rho/rho_old*(alpha/omega);
+		p = r + beta*(p-omega*v);
+		v = A*p;
+		alpha = rho/Vector::dot(rhat,v);
+		s = r - alpha*v;
+		t = A*s;
+		omega = Vector::dot(s,t)/Vector::dot(t,t);
+		x += alpha*p + omega*s;
+
+		// recalculate residual
+		r = s - omega*t;
+
+		// update counters
+		it++;
+		resid = norm_2(r);
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
+// sparse BiConjugate Gradient Stabilized method
+void bicgstab(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	Vector r = b - A*x;
 	double resid = 1.0;
