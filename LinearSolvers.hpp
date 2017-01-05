@@ -767,6 +767,58 @@ void lu(const Matrix & A, Matrix & Lout, Matrix & Uout)
 void lu(const Matrix & A, Matrix & Lout, Matrix & Uout, Matrix & P);
 
 
+// incomplete LU factorization
+// only works for square
+void ilu(const SparseMatrix & A, SparseMatrix & Lout, SparseMatrix & Uout)
+{
+
+	std::size_t m,n;
+	A.size(m,n);
+
+	SparseMatrix L = A;
+	auto data = L.data();
+	auto rowptr = L.row_ptr();
+	Vector dg = diag(L);
+	double e;
+
+	// loop over rows
+	for (auto i=0; i<m; i++){
+		auto it = rowptr[i];
+		// loop over k columns
+		while (it != rowptr[i+1] && it !=data.end()){
+			unsigned int k = it->first;
+			if(k > i) break;
+
+			double Lii = dg(k);
+			double Lik = it->second;
+			L.set(i,k,Lik/Lii);
+
+			// loop over columns j
+			auto iti = rowptr[i];
+			auto itk = rowptr[k];
+			while (iti != rowptr[i+1] && iti != data.end()){
+				unsigned int j = iti->first;
+				if(j <= k){
+					iti++;
+					continue;
+				}
+				// find item Aik and Akj and subtract from item Aij
+				L.add(i,j, -Lik/Lii*L.get(k,j));
+				iti++;
+			}
+
+			it++;
+		}
+
+
+	}
+
+	SparseMatrix U = strictly_upper(L) + spdiag(diag(L));
+	swap(L, Lout);
+	swap(U, Uout);
+}
+
+
 // cholesky factorization
 // only works for symmetric, positive definite matrices
 // returns a lower triangular matrix L
@@ -796,42 +848,127 @@ void cholesky(const Matrix & A, Matrix & Lout)
 
 // incomplete cholesky factorization
 // only works for symmetric, positive definite matrices
+// returns LOWER TRIANGULAR MATRIX (L)
 void icholesky(const SparseMatrix & A, SparseMatrix & Lout)
 {
+
+	// std::size_t m,n;
+	// A.size(m,n);
+
+	// SparseMatrix L = A;
+	// auto data = L.data();
+	// auto rowptr = L.row_ptr();
+	// Vector dg = diag(L);
+
+	// // loop over columns
+	// for (auto k=0; k<m; k++){
+	// 	double Lkk = sqrt(dg(k));
+	// 	L.set(k,k, Lkk);
+
+
+	// 	// divide the lower triangular matrix by diagonal value
+	// 	for (auto i=k+1; i<m; i++){
+	// 		auto it = rowptr[i];
+	// 		while (it != rowptr[i+1] && it !=data.end()){
+	// 			if (it->first == k){
+	// 				L.set(i,k, it->second/Lkk);
+	// 				break;
+	// 			}
+	// 			it++;
+	// 		}
+	// 	}
+
+	// 	// subtract using the "untouched" upper triangular part
+	// 	for (auto j=k+1; j<m; j++){
+	// 		for (auto i=j; i<m; i++){
+	// 			auto it=rowptr[i];
+
+	// 			//for (auto j=i; j<m; j++){
+	// 			while (it != rowptr[i+1] && it !=data.end()){
+	// 				if (j <= i){
+	// 					it++;
+	// 					continue;
+	// 				}
+				
+	// 				auto itj = rowptr[j];
+	// 				auto iti = rowptr[i];
+
+	// 				// do the inner summation over columns k
+	// 				while (iti != rowptr[i+1] && itj != rowptr[it->first+1] && iti != data.end() && itj != data.end()){
+	// 					if (iti->first == itj->first){
+	// 						L.set(i, itj->first, it->second - iti->second*itj->second);
+	// 						break;
+	// 					}
+	// 					else if (iti->first < itj->first) iti++;
+	// 					else itj++;
+	// 				}
+
+	// 				it++;
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+
+
+
+
+
+
 
 	std::size_t m,n;
 	A.size(m,n);
 
-	SparseMatrix L(A);
+	SparseMatrix L=A;
 	auto data = L.data();
 	auto rowptr = L.row_ptr();
 
 	// loop over rows
-	for (auto i=0; i<m; i++)
+	for (auto j=0; j<m; j++)
 	{
-		auto it = rowptr[i];
-		// loop over existing columns in this row
-		while (it != rowptr[i+1] && it !=data.end()){
-			unsigned int j = it->first;
-			auto itj = rowptr[j];
-			auto iti = rowptr[i];
 
-			double prodsum = 0;
-			// do the inner summation over columns k
-			while (iti != rowptr[i+1] && itj != rowptr[j+1] && iti != data.end() && itj != data.end()){
-				if (iti->first == itj->first) prodsum += iti->second*itj->second;
-				else if (iti->first < itj->first) iti++;
-				else itj++;
-			}
-			// set element i,j
-			it->second -= prodsum;
-
+		// calculate Ljj
+		auto it = rowptr[j];
+		double Ljj = A.get(j,j);
+		while (it != rowptr[j+1] && it !=data.end()){
+			unsigned int k = it->first;
+			if (k >= j) break;
+			Ljj -= it->second*it->second;
 			it++;
 		}
-		// adjust with the square root
-		double Lii = L.get(i,i);
-		L.set(i,i,Lii/sqrt(Lii));
+		Ljj = sqrt(Ljj);
+		L.set(j,j, Ljj);
 
+		for (auto i=j+1; i<m; i++){
+			double Lij = A.get(i,j);
+			auto iti = rowptr[i];
+
+			// if Aij exists, we modify Lij
+			while (iti != rowptr[i+1] && iti !=data.end()){
+				if (iti->first == j){
+
+					auto iterj = rowptr[j];
+					auto iteri = rowptr[i];
+
+					// do the inner summation over columns k
+					while (iteri != rowptr[i+1] && iterj != rowptr[it->first+1] && iteri != data.end() && iterj != data.end()){
+						if (iteri->first == iterj->first){
+							//L.add(i, j,-iteri->second*iterj->second);
+							Lij -= iteri->second*iterj->second;
+							break;
+						}
+						else if (iteri->first < iterj->first) iteri++;
+						else iterj++;
+					}
+
+					Lij = Lij/Ljj;
+					L.set(i,j,Lij);
+					break;
+				}
+				iti++;
+			}
+
+		}
 	}
 
 	swap(L, Lout);

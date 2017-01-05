@@ -11,6 +11,8 @@ Vector diag(const SparseMatrix & A);
 SparseMatrix spdiag(const Vector & x);
 SparseMatrix strictly_lower(const SparseMatrix & A);
 SparseMatrix strictly_upper(const SparseMatrix & A);
+void icholesky(const SparseMatrix & A, SparseMatrix & R);
+void ilu(const SparseMatrix & A, SparseMatrix & L, SparseMatrix & U);
 
 class Preconditioner
 {
@@ -66,21 +68,18 @@ class SGSPreconditioner : public Preconditioner
 public:
 	SGSPreconditioner(const SparseMatrix & A){
 		m_A = &A;
-		SparseMatrix D = spdiag(diag(*m_A));
-		m_D = new SparseMatrix(D);
+		m_D = spdiag(diag(*m_A));
 	}
-
-	~SGSPreconditioner(){delete m_D;};
 
 	Vector solve(const Vector & b) const{
 		Vector x = lower_triangular_solve(*m_A,b);
-		Vector y = (*m_D)*x;
+		Vector y = m_D*x;
 		return upper_triangular_solve(*m_A, y);
 	}
 protected:
 
 	const SparseMatrix * m_A;
-	SparseMatrix * m_D;
+	SparseMatrix m_D;
 };
 
 
@@ -92,19 +91,16 @@ public:
 	SORPreconditioner(const SparseMatrix & A, double w){
 		m_A = &A;
 		m_w = w;
-		SparseMatrix P = spdiag(diag(*m_A))/w + strictly_lower(*m_A);
-		m_P = new SparseMatrix(P);
+		m_P = spdiag(diag(*m_A))/w + strictly_lower(*m_A);
 	}
 
-	~SORPreconditioner(){delete m_P;};
-
 	Vector solve(const Vector & b) const{
-		return lower_triangular_solve(*m_P, b);
+		return lower_triangular_solve(m_P, b);
 	}
 protected:
 
 	const SparseMatrix * m_A;
-	SparseMatrix * m_P;
+	SparseMatrix m_P;
 	double m_w;
 };
 
@@ -118,31 +114,22 @@ public:
 	SSORPreconditioner(const SparseMatrix & A, double w){
 		m_A = &A;
 		m_w = w;
-		SparseMatrix L = spdiag(diag(*m_A))/w + strictly_lower(*m_A);
-		m_L = new SparseMatrix(L);
-		SparseMatrix R = spdiag(diag(*m_A))/w + strictly_upper(*m_A);
-		m_R = new SparseMatrix(R);
-		SparseMatrix D = spdiag(diag(*m_A));
-		m_D = new SparseMatrix(D);
+		m_L = spdiag(diag(*m_A))/w + strictly_lower(*m_A);
+		m_R = spdiag(diag(*m_A))/w + strictly_upper(*m_A);
+		m_D = spdiag(diag(*m_A));
 	}
 
-	~SSORPreconditioner(){
-		delete m_L;
-		delete m_R;
-		delete m_D;
-	};
-
 	Vector solve(const Vector & b) const{
-		Vector x = lower_triangular_solve(*m_L,b);
-		Vector y = (*m_D)*x;
-		return (2-m_w)/m_w*upper_triangular_solve(*m_R, y);
+		Vector x = lower_triangular_solve(m_L,b);
+		Vector y = m_D*x;
+		return (2-m_w)/m_w*upper_triangular_solve(m_R, y);
 	}
 protected:
 
 	const SparseMatrix * m_A;
-	SparseMatrix * m_L;
-	SparseMatrix * m_R;
-	SparseMatrix * m_D;
+	SparseMatrix m_L;
+	SparseMatrix m_R;
+	SparseMatrix m_D;
 	double m_w;
 };
 
@@ -155,14 +142,39 @@ class ICPreconditioner : public Preconditioner
 public:
 	ICPreconditioner(const SparseMatrix & A){
 		m_A = &A;
+		icholesky(A,m_L);
+		m_R = ~m_L;
 	}
 
 	Vector solve(const Vector & b) const{
-
+		Vector x = lower_triangular_solve(m_L,b);
+		return upper_triangular_solve(m_R,x);
 	}
 protected:
 
 	const SparseMatrix * m_A;
+	SparseMatrix m_R, m_L;
+};
+
+
+
+// incomplete LU preconditioner
+class ILUPreconditioner : public Preconditioner
+{
+public:
+	ILUPreconditioner(const SparseMatrix & A){
+		m_A = &A;
+		ilu(A,m_L,m_U);
+	}
+
+	Vector solve(const Vector & b) const{
+		Vector x = lower_triangular_solve(m_L,b);
+		return upper_triangular_solve(m_U,x);
+	}
+protected:
+
+	const SparseMatrix * m_A;
+	SparseMatrix m_U, m_L;
 };
 
 #endif

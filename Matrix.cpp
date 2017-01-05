@@ -508,6 +508,7 @@ int main(int argc, char * argv[]){
 	swap(sm1, sm2);
 	cout << "sm1: " << sm1 << endl;
 	cout << "sm2: " << sm2 << endl;
+	swap(sm1, sm2);
 
 	// matrix transpose
 	cout << "Sparse matrix transpose" << endl;
@@ -515,7 +516,7 @@ int main(int argc, char * argv[]){
 	cout << "transposed: " ;
 	sm2.transpose();
 	cout << sm2 << endl;
-	throw -1;
+	sm2.transpose();
 
 	// sparsematrix-vector product
 	Vector dv2(5);
@@ -567,6 +568,26 @@ int main(int argc, char * argv[]){
 	cout << "x_exact: " << spsoln << endl;
 	cout << "x_calc : " << spsolncalclt << endl;
 	cout << "error: " << (spsoln-spsolncalclt).norm() << endl;
+
+	// incomplete cholesky decomp
+	cout << "\nincomplete cholesky decomp" << endl;
+	SparseMatrix spch = 10*speye(20,20) + sprandmatsymm(20,20, 1.0);
+	//cout << spch << endl;
+	SparseMatrix Lch;
+	icholesky(spch, Lch);
+	Vector chv = randvecn(20);
+	cout << "resid: " << (spch*chv - Lch*Lch.Tmult(chv)).norm() << "\n" << endl;
+
+
+	// incomplete LU decomp
+	cout << "\nincomplete LU decomp" << endl;
+	SparseMatrix splu = 10*speye(20,20) + sprandmatn(20,20, 1.0);
+	//cout << spch << endl;
+	SparseMatrix Llu, Ulu;
+	ilu(splu, Llu, Ulu);
+	Vector luv = randvecn(20);
+	cout << "resid: " << (splu*luv - Llu*(Ulu*luv)).norm() << "\n" << endl;
+
 
 	// sparse jacobi iteration
 	cout << "************************** SPARSE JACOBI ITERATION:" << endl;
@@ -677,6 +698,25 @@ int main(int argc, char * argv[]){
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
 	conjugate_gradient(&ssorpc, spsymm, ps_b, ps_calc, 100);
+	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+
+
+	cout << "************************** CG - INCOMPLETE CHOLESKY PC:" << endl;
+	ICPreconditioner icpc(spsymm);
+	ps_calc.fill(0);
+	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	conjugate_gradient(&icpc, spsymm, ps_b, ps_calc, 100);
+	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+
+	cout << "************************** CG - INCOMPLETE LU PC:" << endl;
+	ILUPreconditioner ilupc(spsymm);
+	ps_calc.fill(0);
+	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	conjugate_gradient(&ilupc, spsymm, ps_b, ps_calc, 100);
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 	return 0;

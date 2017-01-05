@@ -25,6 +25,7 @@ public:
 		, m_mrows 	(0)
 		, m_ncols 	(0)
 	{
+		m_row_ptr.assign(1,m_data.end());
 	}
 
 	// create and allocate a new sparse matrix
@@ -100,17 +101,16 @@ public:
 		for (auto i=rows_pres1; i<sm2.m_row_ptr.size(); i++) sm2.m_row_ptr[i] = sm2.m_data.end();
 	}
 
-	// assignment operator
-	SparseMatrix & operator=(SparseMatrix& mtx)
-	{
-		swap(*this, mtx);
-		return *this;
-	}
+	// // assignment operator
+	// SparseMatrix & operator=(SparseMatrix& mtx)
+	// {
+	// 	swap(*this, mtx);
+	// 	return *this;
+	// }
 
 	// Matrix assignment
 	SparseMatrix & operator=(const SparseMatrix & A)
 	{
-
 		SparseMatrix out(A);
 		swap(*this, out);
 		return *this;
@@ -119,6 +119,12 @@ public:
 
 	// SparseMatrix-Vector product
 	Vector operator*(const Vector & vct) const{
+		if (m_ncols != vct.rows())
+		{
+			std::cout << "SparseMatrix-Vector dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
 		Vector out(m_mrows);
 		out.fill(0);
 		
@@ -137,6 +143,11 @@ public:
 
 	// SparseMatrix-Vector transpose product
 	Vector Tmult(const Vector & vct) const{
+		if (m_mrows != vct.rows())
+		{
+			std::cout << "SparseMatrix-Vector dimensions do not match!" << std::endl;
+			throw -1;
+		}
 		Vector out(m_mrows);
 		out.fill(0);
 
