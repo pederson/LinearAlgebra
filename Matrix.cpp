@@ -501,15 +501,21 @@ int main(int argc, char * argv[]){
 	// sparse matrix trace
 	cout << "trace(sm1diag): " << trace(sm1diag) << "\n" << endl;
 
-	/*
-	// matrix transpose
+	// sparse matrix swap
+	cout << "Swapping sparse matrices" << endl;
+	cout << "sm1: " << sm1 << endl;
 	cout << "sm2: " << sm2 << endl;
-	cout << "transposed: " << endl;
+	swap(sm1, sm2);
+	cout << "sm1: " << sm1 << endl;
+	cout << "sm2: " << sm2 << endl;
+
+	// matrix transpose
+	cout << "Sparse matrix transpose" << endl;
+	cout << "sm2: " << sm2 << endl;
+	cout << "transposed: " ;
 	sm2.transpose();
-	cout << sm2.rows() << ", " << sm2.cols() << endl;
-	cout << sm2.nnz() << endl;
 	cout << sm2 << endl;
-	*/
+	throw -1;
 
 	// sparsematrix-vector product
 	Vector dv2(5);

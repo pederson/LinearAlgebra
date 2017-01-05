@@ -72,6 +72,22 @@ public:
 
 	friend void swap(SparseMatrix & sm1, SparseMatrix & sm2)
 	{
+		// count number of rowptrs that point to end:
+		unsigned int rows_pres1 = 0;
+		auto it1 = sm1.m_row_ptr[0];
+		// std::cout << sm1.m_data.end()->second << std::endl;
+		while (it1 != sm1.m_data.end()){
+			rows_pres1++;
+			it1 = sm1.m_row_ptr[rows_pres1];
+		} 
+
+		unsigned int rows_pres2 = 0;
+		auto it2 = sm2.m_row_ptr[0];
+		while (it2 != sm2.m_data.end()){
+			rows_pres2++;
+			it2 = sm2.m_row_ptr[rows_pres2];
+		}
+
 		using std::swap;
 		swap(sm1.m_len, sm2.m_len);
 		swap(sm1.m_mrows, sm2.m_mrows);
@@ -79,8 +95,25 @@ public:
 		swap(sm1.m_data, sm2.m_data);
 		swap(sm1.m_row_ptr, sm2.m_row_ptr);
 
-		std::cout << "SWAP OPERATION ISNT WORKING ON SPARSE MATRICES" << std::endl;
-		throw -1;
+		// fix end pointers... it is invalidated by swap
+		for (auto i=rows_pres2; i<sm1.m_row_ptr.size(); i++) sm1.m_row_ptr[i] = sm1.m_data.end();
+		for (auto i=rows_pres1; i<sm2.m_row_ptr.size(); i++) sm2.m_row_ptr[i] = sm2.m_data.end();
+	}
+
+	// assignment operator
+	SparseMatrix & operator=(SparseMatrix& mtx)
+	{
+		swap(*this, mtx);
+		return *this;
+	}
+
+	// Matrix assignment
+	SparseMatrix & operator=(const SparseMatrix & A)
+	{
+
+		SparseMatrix out(A);
+		swap(*this, out);
+		return *this;
 	}
 
 
@@ -492,33 +525,7 @@ public:
 			}
 		}
 
-		auto data = m.data();
-		auto rowptr = m.row_ptr();
-		for (auto i=0; i<rowptr.size()-1; i++){
-			auto it = rowptr[i];
-			// std::cout << rowptr[i]->first << std::endl;
-			while (it != rowptr[i+1]){
-				std::cout << "(" << i << "," << it->first << ") : " << it->second << std::endl;
-				it++;
-			}
-		}
-
-		// std::cout << std::endl;
-		// for (auto it=data.begin(); it!=data.end(); it++){
-		// 	std::cout << "(" << it->first << "," << it->second << ") " << std::endl;
-				
-		// }
-		// std::cout << m.row_ptr().size() << std::endl;
-		// for (auto i=0; i<rowptr.size()-1; i++){
-		// 	std::cout << "(" << i << ", " << rowptr[i]->first << "): " << rowptr[i]->second << std::endl;
-		// }
-
-
-		// std::cout << m << std::endl;
 		swap(*this, m);
-
-		std::cout << "TRANSPOSING A SPARSE MATRIX DOESNT WORK...SWAP IS MESSED UP" << std::endl;
-		throw -1;
 	}
 
 	// return a dense matrix version

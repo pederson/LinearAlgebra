@@ -769,6 +769,7 @@ void lu(const Matrix & A, Matrix & Lout, Matrix & Uout, Matrix & P);
 
 // cholesky factorization
 // only works for symmetric, positive definite matrices
+// returns a lower triangular matrix L
 void cholesky(const Matrix & A, Matrix & Lout)
 {
 
@@ -789,6 +790,50 @@ void cholesky(const Matrix & A, Matrix & Lout)
 		L.subcol(k-1, k, m-1).fill(0);
 	}
 	L = ~L;
+	swap(L, Lout);
+}
+
+
+// incomplete cholesky factorization
+// only works for symmetric, positive definite matrices
+void icholesky(const SparseMatrix & A, SparseMatrix & Lout)
+{
+
+	std::size_t m,n;
+	A.size(m,n);
+
+	SparseMatrix L(A);
+	auto data = L.data();
+	auto rowptr = L.row_ptr();
+
+	// loop over rows
+	for (auto i=0; i<m; i++)
+	{
+		auto it = rowptr[i];
+		// loop over existing columns in this row
+		while (it != rowptr[i+1] && it !=data.end()){
+			unsigned int j = it->first;
+			auto itj = rowptr[j];
+			auto iti = rowptr[i];
+
+			double prodsum = 0;
+			// do the inner summation over columns k
+			while (iti != rowptr[i+1] && itj != rowptr[j+1] && iti != data.end() && itj != data.end()){
+				if (iti->first == itj->first) prodsum += iti->second*itj->second;
+				else if (iti->first < itj->first) iti++;
+				else itj++;
+			}
+			// set element i,j
+			it->second -= prodsum;
+
+			it++;
+		}
+		// adjust with the square root
+		double Lii = L.get(i,i);
+		L.set(i,i,Lii/sqrt(Lii));
+
+	}
+
 	swap(L, Lout);
 }
 
