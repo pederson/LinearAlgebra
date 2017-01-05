@@ -748,11 +748,12 @@ SparseVector sprandvecn(unsigned int length, double fill)
 	// std::default_random_engine generator;
 	unsigned int seed1 = std::chrono::system_clock::now().time_since_epoch().count();
 	std::minstd_rand0 generator(seed1);
+	std::uniform_real_distribution<double> udistrib(0.0,1.0);
 	std::normal_distribution<double> distrib(0.0,1.0);
 
 	SparseVector out(length);
 	for (auto i=0; i<length; i++){
-		if (distrib(generator) < fill) out(i) = distrib(generator);
+		if (udistrib(generator) < fill) out(i) = distrib(generator);
 	}
 	return out;
 }

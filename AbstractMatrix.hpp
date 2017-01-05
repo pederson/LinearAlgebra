@@ -44,6 +44,7 @@ public:
 
 	//virtual AbstractMatrix & operator*(const AbstractMatrix & vct) const = 0;
 	virtual Vector operator*(const Vector & vct) const = 0;
+	virtual Vector Tmult(const Vector & vct) const = 0;
 	//virtual SparseVector operator*(const SparseVector & vct) const = 0;
 	virtual void size(std::size_t & rows, std::size_t & cols) const = 0;
 	virtual std::size_t rows() const = 0;

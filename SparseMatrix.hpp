@@ -770,18 +770,81 @@ SparseMatrix sprandmat(unsigned int rows, unsigned int cols, double fill=0.2)
 	return out;
 }
 
+
+// sparse random matrix uniformly distributed [0,1]
+// with a fill factor of fill
+SparseMatrix sprandmatsymm(unsigned int rows, unsigned int cols, double fill=0.2)
+{
+	if (rows != cols){
+		std::cout << "Cannot form a symmetric matrix that is not square!" << std::endl;
+		throw -1;
+	}
+
+	// seed
+	// std::default_random_engine generator;
+	unsigned int seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+	std::minstd_rand0 generator(seed1);
+	std::uniform_real_distribution<double> distrib(0.0,1.0);
+
+	SparseMatrix out(rows, cols);
+	double val;
+	for (auto i=0; i<rows; i++){
+		for (auto j=i; j<cols; j++){
+			if (distrib(generator) < fill){
+				val = distrib(generator);
+				out.set(i,j, val);
+				out.set(j,i, val);
+			};
+		}
+	}
+
+	return out;
+}
+
+
 // sparse random matrix normally distributed
 SparseMatrix sprandmatn(unsigned int rows, unsigned int cols, double fill=0.2)
 {
 	// std::default_random_engine generator;
 	unsigned int seed1 = std::chrono::system_clock::now().time_since_epoch().count();
 	std::minstd_rand0 generator(seed1);
+	std::uniform_real_distribution<double> udistrib(0.0,1.0);
 	std::normal_distribution<double> distrib(0.0,1.0);
 
 	SparseMatrix out(rows, cols);
 	for (auto i=0; i<rows; i++){
 		for (auto j=0; j<cols; j++){
-			if (distrib(generator) < fill) out.set(i,j, distrib(generator));
+			if (udistrib(generator) < fill) out.set(i,j, distrib(generator));
+		}
+	}
+
+	return out;
+}
+
+
+// symmetric sparse random matrix normally distributed
+SparseMatrix sprandmatnsymm(unsigned int rows, unsigned int cols, double fill=0.2)
+{
+	if (rows != cols){
+		std::cout << "Cannot form a symmetric matrix that is not square!" << std::endl;
+		throw -1;
+	}
+	
+	// std::default_random_engine generator;
+	unsigned int seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+	std::minstd_rand0 generator(seed1);
+	std::uniform_real_distribution<double> udistrib(0.0,1.0);
+	std::normal_distribution<double> distrib(0.0,1.0);
+
+	SparseMatrix out(rows, cols);
+	double val;
+	for (auto i=0; i<rows; i++){
+		for (auto j=i; j<cols; j++){
+			if (udistrib(generator) < fill){
+				val = distrib(generator);
+				out.set(i,j, val);
+				out.set(j,i, val);
+			};
 		}
 	}
 

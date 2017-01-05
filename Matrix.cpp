@@ -1,7 +1,7 @@
 #include "Matrix.hpp"
 #include "SparseVector.hpp"
 #include "SparseMatrix.hpp"
-
+#include "Preconditioner.hpp"
 
 using namespace std;
 
@@ -610,6 +610,68 @@ int main(int argc, char * argv[]){
 	cout << "x_calc : " << spsolncalc_bicgstab << endl;
 	cout << "error: " << (spsoln-spsolncalc_bicgstab).norm() << endl;
 
+
+
+
+
+
+
+	cout << "****************** PRECONDITIONED SOLVERS ******************" << endl;
+	unsigned int psolvesize = 100;
+	SparseMatrix spsymm = sprandmatnsymm(psolvesize,psolvesize, 0.1) + 10*speye(psolvesize, psolvesize);
+	Vector ps_exact = randvecn(psolvesize);
+	Vector ps_b = spsymm*ps_exact;
+	Vector ps_calc(psolvesize);
+	cout << "nnz: " << spsymm.nnz() << "/" << psolvesize*psolvesize << " = " << double(spsymm.nnz())/double(psolvesize*psolvesize) << endl;
+
+	cout << "************************** CG - JACOBI PC:" << endl;
+	JacobiPreconditioner jpc(spsymm);
+	ps_calc.fill(0);
+	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	conjugate_gradient(&jpc, spsymm, ps_b, ps_calc, 100);
+	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+
+
+	cout << "************************** CG - GAUSS-SEIDEL PC:" << endl;
+	GSPreconditioner gspc(spsymm);
+	ps_calc.fill(0);
+	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	conjugate_gradient(&gspc, spsymm, ps_b, ps_calc, 100);
+	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+
+
+	cout << "************************** CG - SYMMETRIC GAUSS-SEIDEL PC:" << endl;
+	SGSPreconditioner sgspc(spsymm);
+	ps_calc.fill(0);
+	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	conjugate_gradient(&sgspc, spsymm, ps_b, ps_calc, 100);
+	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+
+
+	cout << "************************** CG - SOR PC:" << endl;
+	SORPreconditioner sorpc(spsymm, 1.5);
+	ps_calc.fill(0);
+	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	conjugate_gradient(&sorpc, spsymm, ps_b, ps_calc, 100);
+	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+
+
+	cout << "************************** CG - SSOR PC:" << endl;
+	SSORPreconditioner ssorpc(spsymm, 0.8);
+	ps_calc.fill(0);
+	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	conjugate_gradient(&ssorpc, spsymm, ps_b, ps_calc, 100);
+	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 	return 0;
 }

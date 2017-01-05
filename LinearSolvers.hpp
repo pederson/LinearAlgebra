@@ -9,6 +9,7 @@
 #include "Matrix.hpp"
 #include "SparseVector.hpp"
 #include "SparseMatrix.hpp"
+#include "Preconditioner.hpp"
 
 
 
@@ -1401,7 +1402,7 @@ void conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x)
 // sparse conjugate gradient
 // for square, SPD matrices only
 // uses the x argument as x0
-void conjugate_gradient(const SparseMatrix & mtx, const Vector & b, Vector & x)
+void conjugate_gradient(const SparseMatrix & mtx, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
 {
 	Vector rv = b-mtx*x;
 
@@ -1416,7 +1417,7 @@ void conjugate_gradient(const SparseMatrix & mtx, const Vector & b, Vector & x)
 
 	// continue iterating
 	unsigned int ctr=0;
-	while (resid > threshold)
+	while (resid > res_thresh && ctr < max_iters)
 	{
 		// calculate residual
 		rv = b - mtx*x;
@@ -1441,6 +1442,57 @@ void conjugate_gradient(const SparseMatrix & mtx, const Vector & b, Vector & x)
 
 	return;
 }
+
+
+// preconditioned sparse conjugate gradient
+// for square, SPD matrices only
+// uses the x argument as x0
+void conjugate_gradient(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
+{
+	Vector r = b-A*x;
+	double resid = r.norm();
+
+	// setup
+	Vector z = pc->solve(r);
+	Vector d = 1*z;
+	Vector matvec;
+	double alpha, beta, zdr;
+
+	// continue iterating
+	unsigned int it=0;
+	while (resid > res_thresh && it < max_iters)
+	{
+
+		// one matrix-vector product
+		matvec = A*d;
+
+		zdr = Vector::dot(z,r);
+		alpha = zdr/Vector::dot(d,matvec);
+
+		// update x
+		x += alpha*d;
+
+		// update residual
+		r -= alpha*matvec;
+		resid = r.norm();
+
+		// update z
+		z = pc->solve(r);
+
+		// update beta
+		beta = Vector::dot(z,r)/zdr;
+
+		// new direction
+		d = z + beta*d;
+
+		it++;
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+
+	return;
+}
+
 
 
 // conjugate residual
