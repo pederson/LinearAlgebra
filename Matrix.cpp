@@ -582,12 +582,18 @@ int main(int argc, char * argv[]){
 	// incomplete LU decomp
 	cout << "\nincomplete LU decomp" << endl;
 	SparseMatrix splu = 10*speye(20,20) + sprandmatn(20,20, 1.0);
+	cout << "fill: " << splu.nnz() << "/" << splu.rows()*splu.cols() << endl;
 	//cout << spch << endl;
 	SparseMatrix Llu, Ulu;
 	ilu(splu, Llu, Ulu);
+	cout << "L fill: " << Llu.nnz() << "/" << Llu.rows()*Llu.cols() << endl;
+	cout << "U fill: " << Ulu.nnz() << "/" << Ulu.rows()*Ulu.cols() << endl;
+	// cout << "L: " << Llu << endl;
+	// cout << "U: " << Ulu << endl;
 	Vector luv = randvecn(20);
 	cout << "resid: " << (splu*luv - Llu*(Ulu*luv)).norm() << "\n" << endl;
 
+	// throw -1;
 
 	// sparse jacobi iteration
 	cout << "************************** SPARSE JACOBI ITERATION:" << endl;
