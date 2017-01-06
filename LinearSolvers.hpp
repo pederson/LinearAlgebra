@@ -813,6 +813,26 @@ void ilu(const SparseMatrix & A, SparseMatrix & Lout, SparseMatrix & Uout)
 
 	}
 
+
+	// // "brute force" method
+	// // doesn't really take advantage of sparsity
+	// // i,k,j looping 
+	// for (auto i=1; i<m; i++){
+	// 	for (auto k=0; k<i; k++){
+	// 		if (!A.is_nonzero(i,k)) continue;
+	// 		double Aik = L.get(i,k);
+	// 		// std::cout << "Aik: " << Aik << std::endl;
+
+	// 		L.set(i,k, Aik/dg(k));
+
+	// 		for (auto j=k+1; j<m; j++){
+	// 			if (A.is_nonzero(i,j)){
+	// 				L.add(i,j, -Aik*L.get(k,j));
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	SparseMatrix U = strictly_upper(L) + spdiag(diag(L));
 	swap(L, Lout);
 	swap(U, Uout);

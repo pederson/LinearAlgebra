@@ -366,6 +366,17 @@ public:
 	// number of "nonzeros"
 	std::size_t nnz() const {return m_data.size();};
 
+	bool is_nonzero(unsigned int i, unsigned int j) const{
+		auto it=m_row_ptr[i];
+
+		while(it->first < j && it != m_row_ptr[i+1]) it++; 
+		if (it == m_row_ptr[i+1]) return false;
+		else{
+			if (it->first == j) return true;
+		}
+		return false;
+	}
+
 	// return vector of "nonempty" index pairs
 	std::vector<std::pair<unsigned int, unsigned int>> support() const{
 		std::vector<std::pair<unsigned int, unsigned int>> v;
