@@ -1700,6 +1700,60 @@ void conjugate_residual(const SparseMatrix & A, const Vector & b, Vector & x, un
 	return;
 }
 
+/*
+// preconditioned sparse conjugate residual
+// for square, symmetric matrices only
+// uses the x argument as x0
+void conjugate_residual(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
+{
+	Vector r = b-A*x;
+	Vector rhat = pc->solve(r);
+	Vector rold;
+	Vector Arold;
+	Vector Ar = A*r;
+	Vector Ap = 1*Ar;
+	Vector dhat;
+	double resid = r.norm();
+
+	// first iteration here
+	Vector d = r;
+	double alpha, beta;
+
+	// continue iterating
+	unsigned int it=0;
+	while (resid > res_thresh && it < max_iters)
+	{
+		// calc alpha
+		dhat = pc->solve(d);
+		Ap = A*dhat;
+		alpha = Vector::dot(Ar,r)/Vector::dot(Ap,Ap);
+
+		// update x
+		x += alpha*dhat;
+
+		// calculate residual
+		rold = 1*r;
+		r -= alpha*Ap;
+		resid = r.norm();
+
+		Arold = 1*Ar;
+		rhat = pc->solve(r);
+		Ar = A*rhat;
+		beta = Vector::dot(r,Ar)/Vector::dot(rold,Arold);
+
+		// update direction
+		d = r+beta*d;
+		Ap = Ar+beta*Ap;
+		
+		it++;
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+
+	return;
+}
+*/
+
 // BiConjugate Gradient method
 void bicg(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff

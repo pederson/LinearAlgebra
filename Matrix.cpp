@@ -726,6 +726,17 @@ int main(int argc, char * argv[]){
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 
+	/*
+	cout << "************************** CR - INCOMPLETE LU PC:" << endl;
+	ps_calc.fill(0);
+	conjugate_residual(spsymm, ps_b, ps_calc, 100);
+	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	conjugate_residual(&ilupc, spsymm, ps_b, ps_calc, 100);
+	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	*/
+
+
 	cout << "************************** BICGSTAB - INCOMPLETE LU PC:" << endl;
 	ps_calc.fill(0);
 	bicgstab(spsymm, ps_b, ps_calc, 100);
