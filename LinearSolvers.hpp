@@ -1824,6 +1824,7 @@ void bicgstab(const Matrix & A, const Vector & b, Vector & x, unsigned int max_i
 	std::cout << "iterated: " << it << " times" << std::endl;
 }
 
+
 // sparse BiConjugate Gradient Stabilized method
 void bicgstab(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
@@ -1853,6 +1854,51 @@ void bicgstab(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int
 
 		// recalculate residual
 		r = s - omega*t;
+
+		// update counters
+		it++;
+		resid = norm_2(r);
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
+
+// preconditioned sparse BiConjugate Gradient Stabilized method
+void bicgstab(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+	// initialize stuff
+	Vector r = b - A*x;
+	double resid = 1.0;
+	unsigned int it = 0;
+	Vector rhat = 1*r;
+	double rho=1, alpha=1, omega=1;
+	Vector v(r); v.fill(0);
+	Vector p(r); p.fill(0);
+	Vector s,t, shat, phat;
+	double beta, rho_old=1;
+	// Vector r0hat = 1*r;
+
+	while (resid > res_thresh && it < max_iters){
+
+
+		// enforce biorthogonality and biconjugacy
+		
+		rho = Vector::dot(rhat, r);
+		beta = rho/rho_old*(alpha/omega);
+		p = r + beta*(p-omega*v);
+		phat = pc->solve(p);
+		v = A*phat;
+		alpha = rho/Vector::dot(rhat,v);
+		s = r - alpha*v;
+		shat = pc->solve(s);
+		t = A*shat;
+		omega = Vector::dot(s,t)/Vector::dot(t,t);
+		x += alpha*phat + omega*shat;
+
+		// recalculate residual
+		r = s - omega*t;
+
+		rho_old = rho;
 
 		// update counters
 		it++;

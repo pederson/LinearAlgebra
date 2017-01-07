@@ -650,8 +650,8 @@ int main(int argc, char * argv[]){
 
 
 	cout << "****************** PRECONDITIONED SOLVERS ******************" << endl;
-	unsigned int psolvesize = 100;
-	SparseMatrix spsymm = sprandmatnsymm(psolvesize,psolvesize, 0.1) + 10*speye(psolvesize, psolvesize);
+	unsigned int psolvesize = 1000;
+	SparseMatrix spsymm = sprandmatnsymm(psolvesize,psolvesize, 0.01) + 10*speye(psolvesize, psolvesize);
 	Vector ps_exact = randvecn(psolvesize);
 	Vector ps_b = spsymm*ps_exact;
 	Vector ps_calc(psolvesize);
@@ -725,5 +725,13 @@ int main(int argc, char * argv[]){
 	conjugate_gradient(&ilupc, spsymm, ps_b, ps_calc, 100);
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
+
+	cout << "************************** BICGSTAB - INCOMPLETE LU PC:" << endl;
+	ps_calc.fill(0);
+	bicgstab(spsymm, ps_b, ps_calc, 100);
+	cout << "bicgstab resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	bicgstab(&ilupc, spsymm, ps_b, ps_calc, 100);
+	cout << "pc bicgstab resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
 	return 0;
 }

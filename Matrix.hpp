@@ -1260,7 +1260,7 @@ double norm_1(const Vector & vct){
 double norm_2(const Vector & vct){
 	double res=0;
 	for (auto i=0; i<vct.length(); i++) res += vct(i)*vct(i);
-	return res;
+	return sqrt(res);
 }
 
 double norm_inf(const Vector & vct){
