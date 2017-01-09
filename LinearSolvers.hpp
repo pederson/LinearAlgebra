@@ -2067,16 +2067,18 @@ void gmres_k(const Matrix & A, const Vector & b, Vector & x, unsigned int k, uns
 
 			
 
-			// form approximate solution
-			x = x0;
-			// std::cout << "xlength: " << x.length() << std::endl;
-			// std::cout << "qlength: " << Q.rows() << std::endl;
-			for (auto i=0; i<=j; i++) x = x + y(i)*Q.col(i);
+			
 
 			// std::cout << "FORMED SOLUTION" << std::endl;
 			// std::cout << "it: " << it << std::endl;
 			it++;
 		}
+
+		// form approximate solution
+		x = x0;
+		// std::cout << "xlength: " << x.length() << std::endl;
+		// std::cout << "qlength: " << Q.rows() << std::endl;
+		for (auto i=0; i<=k; i++) x = x + y(i)*Q.col(i);
 
 		// outer loop convergence check
 		if (fabs(p(k-1)) < res_thresh) break;

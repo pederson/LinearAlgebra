@@ -414,7 +414,7 @@ int main(int argc, char * argv[]){
 	cout << "x_calc : " << solncalc5 << endl;
 	cout << "error: " << (rndx-solncalc5).norm() << endl;
 
-
+	throw -1;
 	//***************************************************//
 
 
