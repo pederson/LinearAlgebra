@@ -2170,6 +2170,110 @@ void gmres_k(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int 
 	std::cout << "iterated: " << it << " times" << std::endl;
 }
 
+
+// Preconditioned Sparse Restarted Generalized Minimal Residual Method (GMRES)
+// restarts every k iterations
+void gmres_k(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
+	// initialize stuff
+	k = std::min(std::size_t(k),A.cols());
+	Vector r, p, pr, w, c(k), s(k), x0=1*x, yr, y(k); y.fill(0);
+	Vector e1(k+1); e1.fill(0); e1(0)=1;
+	Matrix Q(b.length(), k+1); Q.fill(0);
+	Matrix Hr;
+	Matrix H(k+1,k); 
+	unsigned int red_k = k-1;
+	double beta, gamma;
+
+	double resid = 1.0;
+	unsigned int it = 0;
+
+	while (resid > res_thresh && it < max_iters ){
+		r = pc->solve(b - A*x0);
+		beta = norm_2(r);
+		resid = beta;
+		Q.fill(0);
+		Q.col(0) = r/beta;
+		H.fill(0);
+		
+		// initialize the rhs and the solution vector
+		p = beta*e1;
+		y.fill(0);
+
+		// initialize givens rotators
+		s.fill(0);
+		c.fill(1);
+
+		// inner loop
+		for (auto j=0; j<k; j++){
+			// if (it >= max_iters || it >= x.length() || resid <= res_thresh) break;
+			if (it >= max_iters || resid <= res_thresh) break;
+
+			// std::cout << "inner loop iter: " << j << std::endl;
+
+			// Part of the Arnoldi iteration!
+			// matvec
+			w = pc->solve(A*Q.col(j));
+
+			// gram-schmidt process
+			for (auto i=0; i<=j; i++){
+				H(i,j) = Vector::dot(w,Q.col(i));
+				w -= H(i,j)*Q.col(i);
+			}
+			H(j+1,j) = norm_2(w);
+			Q.col(j+1) = w/H(j+1,j);
+
+			// solve reduced system least squares problem
+			// apply previous givens rotation acting on H
+			double tmp;
+			for (auto i=0; i<j; i++){
+				tmp = c(i)*H(i,j)+s(i)*H(i+1,j);
+				H(i+1,j) = -s(i)*H(i,j)+c(i)*H(i+1,j);
+				H(i,j) = tmp;
+			}
+			// now compute the jth rotation to annihilate the (j+1,j) entry
+			gamma = sqrt(H(j,j)*H(j,j)+H(j+1,j)*H(j+1,j));
+			c(j) = H(j,j)/gamma;
+			s(j) = H(j+1,j)/gamma;
+
+			// apply current givens rotation on H
+			H(j,j) = gamma;
+			H(j+1,j) = 0;
+
+			// apply current givens rotation on p
+			p(j+1) = -s(j)*p(j);
+			p(j) = c(j)*p(j);
+
+			it++;
+			
+			resid = fabs(p(j+1));
+			if (resid < res_thresh){
+				red_k = j;
+				break;
+			}
+		}
+
+		// std::cout << "red_k: " << red_k << " k: " << k << std::endl;
+
+
+		// reduced system matrix
+		Hr = H(0,red_k,0,red_k);
+
+		// do back substitution to get y
+		pr = 1*p.subcol(0,0,red_k);
+		yr = upper_triangular_solve(Hr, pr);
+		y.subcol(0,0,red_k) = 1*yr;
+
+		// form approximate solution
+		x = 1*x0;
+		for (auto i=0; i<=red_k; i++) x += y(i)*Q.col(i);
+
+		// set initial value as current x value
+		x0 = 1*x;
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
+}
+
 // generalized complex eigenvalue decomposition
 
 // schur decomposition

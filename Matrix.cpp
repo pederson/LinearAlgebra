@@ -652,7 +652,7 @@ int main(int argc, char * argv[]){
 	cout << "x_exact: " << spsoln << endl;
 	cout << "x_calc : " << spsolncalc_gmres << endl;
 	cout << "error: " << (spsoln-spsolncalc_gmres).norm() << endl;
-	throw -1;
+
 
 
 
@@ -751,5 +751,14 @@ int main(int argc, char * argv[]){
 	ps_calc.fill(0);
 	bicgstab(&ilupc, spsymm, ps_b, ps_calc, 100);
 	cout << "pc bicgstab resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
+
+	cout << "************************** GMRES - INCOMPLETE LU PC:" << endl;
+	ps_calc.fill(0);
+	gmres_k(spsymm, ps_b, ps_calc, 20, 100);
+	cout << "bicgstab resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	ps_calc.fill(0);
+	gmres_k(&ilupc, spsymm, ps_b, ps_calc, 20, 100);
+	cout << "pc bicgstab resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
+
 	return 0;
 }
