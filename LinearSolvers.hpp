@@ -1968,53 +1968,43 @@ void bicgstab(const Preconditioner * pc, const SparseMatrix & A, const Vector & 
 void gmres_k(const Matrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	k = std::min(std::size_t(k),A.cols());
-	Vector r, p, w, c(k), s(k), x0=1*x, yr, y(k); y.fill(0);
+	Vector r, p, pr, w, c(k), s(k), x0=1*x, yr, y(k); y.fill(0);
 	Vector e1(k+1); e1.fill(0); e1(0)=1;
 	Matrix Q(b.length(), k+1); Q.fill(0);
 	Matrix Hr;
 	Matrix H(k+1,k); 
+	unsigned int red_k = k-1;
 	double beta, gamma;
-
-	// std::cout << "GMRES(" << k << ")" << std::endl;
 
 	double resid = 1.0;
 	unsigned int it = 0;
 
-	while (resid > res_thresh && it < max_iters && it < x.length()){
+	while (resid > res_thresh && it < max_iters ){
 		r = b - A*x0;
-		// std::cout << "RESID DONE" << std::endl;
 		beta = norm_2(r);
 		resid = beta;
 		Q.fill(0);
 		Q.col(0) = r/beta;
-		// std::cout << "Q DONE" << std::endl;
-		H.fill(0); //H(0,0) = Vector::dot(Q.col(0),A*Q.col(0)); // IS THIS RIGHT??
-		// std::cout << "HFILL DONE" << std::endl;
-
+		H.fill(0);
 		
 		// initialize the rhs and the solution vector
 		p = beta*e1;
 		y.fill(0);
-		// std::cout << p << std::endl;
-		// std::cout << "PINIT DONE" << std::endl;
 
 		// initialize givens rotators
 		s.fill(0);
 		c.fill(1);
 
-		// std::cout << "INIT DONE" << std::endl;
-
 		// inner loop
 		for (auto j=0; j<k; j++){
-			if (it >= max_iters || it >= x.length() || resid <= res_thresh) break;
+			// if (it >= max_iters || it >= x.length() || resid <= res_thresh) break;
+			if (it >= max_iters || resid <= res_thresh) break;
 
-			// std::cout << "INNER LOOP ITER: " << j << std::endl;
+			// std::cout << "inner loop iter: " << j << std::endl;
 
+			// Part of the Arnoldi iteration!
 			// matvec
 			w = A*Q.col(j);
-
-			// std::cout << "w: " << w << std::endl;
-			// std::cout << "MATVEC DONE" << std::endl;
 
 			// gram-schmidt process
 			for (auto i=0; i<=j; i++){
@@ -2024,12 +2014,6 @@ void gmres_k(const Matrix & A, const Vector & b, Vector & x, unsigned int k, uns
 			H(j+1,j) = norm_2(w);
 			Q.col(j+1) = w/H(j+1,j);
 
-			// std::cout << "GS DONE" << std::endl;
-			// std::cout << "Q: " << Q << std::endl;
-			// std::cout << "Q'*Q: " << (~Q)*Q << std::endl;
-			
-
-			// std::cout << "H before givens: " << H << std::endl;
 			// solve reduced system least squares problem
 			// apply previous givens rotation acting on H
 			double tmp;
@@ -2037,74 +2021,153 @@ void gmres_k(const Matrix & A, const Vector & b, Vector & x, unsigned int k, uns
 				tmp = c(i)*H(i,j)+s(i)*H(i+1,j);
 				H(i+1,j) = -s(i)*H(i,j)+c(i)*H(i+1,j);
 				H(i,j) = tmp;
-				// std::cout << "givens i = " << i << std::endl;
 			}
 			// now compute the jth rotation to annihilate the (j+1,j) entry
 			gamma = sqrt(H(j,j)*H(j,j)+H(j+1,j)*H(j+1,j));
-			//givens_rotate_to_e1(H(j,j),H(j+1,j),c(j),s(j));
 			c(j) = H(j,j)/gamma;
 			s(j) = H(j+1,j)/gamma;
 
 			// apply current givens rotation on H
 			H(j,j) = gamma;
 			H(j+1,j) = 0;
-			// givens_premultiply()
+
 			// apply current givens rotation on p
 			p(j+1) = -s(j)*p(j);
 			p(j) = c(j)*p(j);
-			
 
-			// std::cout << "GIVENS DONE" << std::endl;
-
-			//if (fabs(p(j+1)) < res_thresh) break;
-
-			// reduced system matrix
-			Hr = H(0,j,0,j);
-			// std::cout << H << std::endl;
-			// std::cout << "Hr: " << Hr << std::endl;
-			// std::cout << "REDMAT" << std::endl;
-
-			// do back substitution to get y
-			// std::cout << "HR: "  << Hr << std::endl;
-			// std::cout << "p: " << p.subcol(0,0,j);
-			Vector pr = 1*p.subcol(0,0,j);
-			// std::cout << "pr: " << pr << std::endl;
-			yr = upper_triangular_solve(Hr, pr);
-			// std::cout << "BACKSUBS DONE" << std::endl;
-			// std::cout << "yr: " << yr << std::endl;
-			// std::cout << "y: " << y << std::endl;
-			y.subcol(0,0,j) = 1*yr;
-			// std::cout << "y: " << y << std::endl;
-
-			// std::cout << "SUBCOL ASSIGNED" << std::endl;
-
-			// std::cout << "norm estimate: " << p(j+1) << std::endl;
-			resid = fabs(p(j+1));
-			
-
-			// std::cout << "FORMED SOLUTION" << std::endl;
-			// std::cout << "it: " << it << std::endl;
 			it++;
+			
+			resid = fabs(p(j+1));
+			if (resid < res_thresh){
+				red_k = j;
+				break;
+			}
 		}
+
+		// std::cout << "red_k: " << red_k << " k: " << k << std::endl;
+
+
+		// reduced system matrix
+		Hr = H(0,red_k,0,red_k);
+
+		// do back substitution to get y
+		pr = 1*p.subcol(0,0,red_k);
+		yr = upper_triangular_solve(Hr, pr);
+		y.subcol(0,0,red_k) = 1*yr;
 
 		// form approximate solution
 		x = 1*x0;
-		// std::cout << "xlength: " << x.length() << std::endl;
-		// std::cout << "qlength: " << Q.rows() << std::endl;
-		for (auto i=0; i<k; i++) x += y(i)*Q.col(i);
+		for (auto i=0; i<=red_k; i++) x += y(i)*Q.col(i);
 
-		// outer loop convergence check
-		if (fabs(p(k-1)) < res_thresh) break;
-		else x0 = 1*x;
-
-		// update counters
-		//it++;
-		//resid = norm_2(r);
+		// set initial value as current x value
+		x0 = 1*x;
 	}
 
 	std::cout << "iterated: " << it << " times" << std::endl;
-	// std::cout << "ending" << std::endl;
-	// std::cout << "residual: " << norm_2(b-A*x) << std::endl;
+}
+
+
+// Sparse Restarted Generalized Minimal Residual Method (GMRES)
+// restarts every k iterations
+void gmres_k(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
+	// initialize stuff
+	k = std::min(std::size_t(k),A.cols());
+	Vector r, p, pr, w, c(k), s(k), x0=1*x, yr, y(k); y.fill(0);
+	Vector e1(k+1); e1.fill(0); e1(0)=1;
+	Matrix Q(b.length(), k+1); Q.fill(0);
+	Matrix Hr;
+	Matrix H(k+1,k); 
+	unsigned int red_k = k-1;
+	double beta, gamma;
+
+	double resid = 1.0;
+	unsigned int it = 0;
+
+	while (resid > res_thresh && it < max_iters ){
+		r = b - A*x0;
+		beta = norm_2(r);
+		resid = beta;
+		Q.fill(0);
+		Q.col(0) = r/beta;
+		H.fill(0);
+		
+		// initialize the rhs and the solution vector
+		p = beta*e1;
+		y.fill(0);
+
+		// initialize givens rotators
+		s.fill(0);
+		c.fill(1);
+
+		// inner loop
+		for (auto j=0; j<k; j++){
+			// if (it >= max_iters || it >= x.length() || resid <= res_thresh) break;
+			if (it >= max_iters || resid <= res_thresh) break;
+
+			// std::cout << "inner loop iter: " << j << std::endl;
+
+			// Part of the Arnoldi iteration!
+			// matvec
+			w = A*Q.col(j);
+
+			// gram-schmidt process
+			for (auto i=0; i<=j; i++){
+				H(i,j) = Vector::dot(w,Q.col(i));
+				w -= H(i,j)*Q.col(i);
+			}
+			H(j+1,j) = norm_2(w);
+			Q.col(j+1) = w/H(j+1,j);
+
+			// solve reduced system least squares problem
+			// apply previous givens rotation acting on H
+			double tmp;
+			for (auto i=0; i<j; i++){
+				tmp = c(i)*H(i,j)+s(i)*H(i+1,j);
+				H(i+1,j) = -s(i)*H(i,j)+c(i)*H(i+1,j);
+				H(i,j) = tmp;
+			}
+			// now compute the jth rotation to annihilate the (j+1,j) entry
+			gamma = sqrt(H(j,j)*H(j,j)+H(j+1,j)*H(j+1,j));
+			c(j) = H(j,j)/gamma;
+			s(j) = H(j+1,j)/gamma;
+
+			// apply current givens rotation on H
+			H(j,j) = gamma;
+			H(j+1,j) = 0;
+
+			// apply current givens rotation on p
+			p(j+1) = -s(j)*p(j);
+			p(j) = c(j)*p(j);
+
+			it++;
+			
+			resid = fabs(p(j+1));
+			if (resid < res_thresh){
+				red_k = j;
+				break;
+			}
+		}
+
+		// std::cout << "red_k: " << red_k << " k: " << k << std::endl;
+
+
+		// reduced system matrix
+		Hr = H(0,red_k,0,red_k);
+
+		// do back substitution to get y
+		pr = 1*p.subcol(0,0,red_k);
+		yr = upper_triangular_solve(Hr, pr);
+		y.subcol(0,0,red_k) = 1*yr;
+
+		// form approximate solution
+		x = 1*x0;
+		for (auto i=0; i<=red_k; i++) x += y(i)*Q.col(i);
+
+		// set initial value as current x value
+		x0 = 1*x;
+	}
+
+	std::cout << "iterated: " << it << " times" << std::endl;
 }
 
 // generalized complex eigenvalue decomposition

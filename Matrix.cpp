@@ -413,8 +413,6 @@ int main(int argc, char * argv[]){
 	cout << "x_exact: " << rndx << endl;
 	cout << "x_calc : " << solncalc5 << endl;
 	cout << "error: " << (solnb-spd*solncalc5).norm() << endl;
-
-	throw -1;
 	//***************************************************//
 
 
@@ -643,9 +641,18 @@ int main(int argc, char * argv[]){
 	cout << "x_calc : " << spsolncalc_bicgstab << endl;
 	cout << "error: " << (spsoln-spsolncalc_bicgstab).norm() << endl;
 
-
-
-
+	// sparse gmres iteration
+	cout << "************************** SPARSE GMRES:" << endl;
+	SparseMatrix spgmres = sm1 + 10*speye(6,6);
+	spb = spsor*spsoln;
+	Vector spsolncalc_gmres(6); spsolncalc_gmres.fill(0);
+	gmres_k(spbicgstab, spb, spsolncalc_gmres, 10, 100);
+	cout << "sparse A: " << spsor << endl;
+	cout << "b: " << spb << endl;
+	cout << "x_exact: " << spsoln << endl;
+	cout << "x_calc : " << spsolncalc_gmres << endl;
+	cout << "error: " << (spsoln-spsolncalc_gmres).norm() << endl;
+	throw -1;
 
 
 
