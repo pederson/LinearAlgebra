@@ -412,7 +412,7 @@ int main(int argc, char * argv[]){
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;
 	cout << "x_calc : " << solncalc5 << endl;
-	cout << "error: " << (rndx-solncalc5).norm() << endl;
+	cout << "error: " << (solnb-spd*solncalc5).norm() << endl;
 
 	throw -1;
 	//***************************************************//
