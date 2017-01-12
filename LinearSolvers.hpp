@@ -2475,30 +2475,49 @@ void amg_direct_interpolation(const SparseMatrix & A,
 	swap(Wi,W);
 }
 
+
+void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::vector<SparseMatrix *> & As){
+
+	// if A is "small enough", then quit setup
+	if (A.cols() < 20) return;
+
+	// perform coarsening
+	std::set<unsigned int> Cpts, Fpts;
+	amg_standard_coarsening(A, Cpts, Fpts, 0.25);
+
+	// get interpolation matrix from C-F splitting
+	SparseMatrix * W = new SparseMatrix();
+	amg_direct_interpolation(A, Cpts, Fpts, *W);
+
+	// generate restricted matrix
+	SparseMatrix * Ar = new SparseMatrix();
+	(*Ar) = W->Tmult(A*(*W));
+	As.push_back(Ar);
+
+	// push the interpolation matrix 
+	Ws.push_back(W);
+
+	// recurse on the restricted matrix
+	amg_setup(*Ar, Ws, As);
+}
+
 // algebraic multigrid
 void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 
 	// *********** SETUP PHASE **************
-	// do coarsening to separate C and F points
-	double theta = 0.25;		// strength threshold
-	std::set<unsigned int> Cpts, Fpts;
-	amg_standard_coarsening(A, Cpts, Fpts, theta);
-
-	// for (auto itr=Cpts.begin(); itr!=Cpts.end(); itr++) std::cout << "C: " << *itr << std::endl;
-	// for (auto itr=Fpts.begin(); itr!=Fpts.end(); itr++) std::cout << "F: " << *itr << std::endl;
-	// std::cout << "HERE I AM AT THE END" << std::endl;
-	// std::vector<unsigned int> intersect(100);
-	// auto it = std::set_intersection(Cpts.begin(), Cpts.end(), Fpts.begin(), Fpts.end(), intersect.begin());
-	// intersect.resize(it-intersect.begin());
-	// for (auto i=0; i<intersect.size(); i++) std::cout << "I: " << intersect[i] << std::endl;
-
-	// construct the interpolation matrix W
-	// which is the transpose of the restriction matrix
-	SparseMatrix * W = new SparseMatrix();
-	amg_direct_interpolation(A, Cpts, Fpts, *W);
+	std::vector<SparseMatrix *> Ws, As;
+	amg_setup(A, Ws, As);
 	// ********** END SETUP *******************
 
+	std::cout << "level: 0 " ;
+	std::cout << "A nnz/total: " << A.nnz() << "/" << A.rows()*A.cols() << std::endl;
+	for (auto i=0; i<Ws.size(); i++){
+		std::cout << "level: " << i+1 << " " ;
+		SparseMatrix & Ar = *As[i];
+		std::cout << "A_r nnz/total: " << Ar.nnz() << "/" << Ar.rows()*Ar.cols() << std::endl;
+	}
 
+	/*
 	// *********** SOLUTION PHASE **************
 	// restrict the residual
 	std::cout << "creating residual... length: ";
@@ -2509,13 +2528,16 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 	std::cout << "restricted residual... length: " << r_restricted.length() << std::endl;
 
 	// restrict the operator matrix A
-	//SparseMatrix A_restricted = W.Tmult(A*W);
+	SparseMatrix A_restricted = W->Tmult(A*(*W));
+	std::cout << "A_r nnz/total: " << A_restricted.nnz() << "/" << A_restricted.rows()*A_restricted.cols() << std::endl;
+	std::cout << "A nnz/total: " << A.nnz() << "/" << A.rows()*A.cols() << std::endl;
+
 
 	// solve the restricted system A_r*e_r = r_r
 
 	// add the solution back
 	// ********** END SOLUTION *******************
-
+	*/
 	}
 
 // generalized complex eigenvalue decomposition

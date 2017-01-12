@@ -117,6 +117,43 @@ public:
 	}
 
 
+	// SparseMatrix-SparseMatrix product
+	SparseMatrix operator*(const SparseMatrix & mtx) const{
+		if (m_ncols != mtx.rows())
+		{
+			std::cout << "SparseMatrix-SparseMatrix dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		SparseMatrix out(m_mrows, mtx.cols());
+		auto rowptrB = mtx.row_ptr();
+		
+		// iterate over ith row of A
+		double rowsum = 0.0;
+		for (auto i=0; i<m_mrows; i++){
+			
+			// iterate over kth row of B
+			for (auto k=0; k<mtx.rows(); k++){
+				auto it = m_row_ptr[i];
+
+				// find element k of a_i
+				while (it != m_row_ptr[i+1]){
+					if (it->first == k){
+						// iterate over this row
+						auto itB = rowptrB[k];
+						while (itB != rowptrB[k+1]){
+							out.add(i, itB->first, itB->second*it->second);
+							itB++;
+						}
+					}
+					it++;
+				}
+			}
+		}
+		return out;
+	}
+
+
 	// SparseMatrix-Vector product
 	Vector operator*(const Vector & vct) const{
 		if (m_ncols != vct.rows())
@@ -136,6 +173,39 @@ public:
 				it++;
 			}
 			out(i) = rowsum;
+		}
+		return out;
+	}
+
+
+	// SparseMatrix-SparseMatrix transpose product
+	SparseMatrix Tmult(const SparseMatrix & mtx) const{
+		if (m_mrows != mtx.rows())
+		{
+			std::cout << "SparseMatrix-SparseMatrix dimensions do not match!" << std::endl;
+			throw -1;
+		}
+
+		SparseMatrix out(m_ncols, mtx.cols());
+		auto rowptrB = mtx.row_ptr();
+		
+		// iterate over kth row of A
+		double rowsum = 0.0;
+		for (auto k=0; k<m_mrows; k++){
+			auto it = m_row_ptr[k];
+
+			// find element for each column i, of the kth row of A, 
+			while (it != m_row_ptr[k+1]){
+				auto i = it->first;
+
+				auto itB = rowptrB[k];
+				// iterate over the kth colum of B
+				while (itB != rowptrB[k+1]){
+					out.add(i,itB->first, itB->second*it->second);
+					itB++;
+				}
+				it++;
+			}
 		}
 		return out;
 	}

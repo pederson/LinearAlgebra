@@ -658,7 +658,7 @@ int main(int argc, char * argv[]){
 
 	cout << "****************** PRECONDITIONED SOLVERS ******************" << endl;
 	unsigned int psolvesize = 500;
-	SparseMatrix spsymm = sprandmatnsymm(psolvesize,psolvesize, 0.05) + 10*speye(psolvesize, psolvesize);
+	SparseMatrix spsymm = sprandmatnsymm(psolvesize,psolvesize, 0.01) + 10*speye(psolvesize, psolvesize);
 	Vector ps_exact = randvecn(psolvesize);
 	Vector ps_b = spsymm*ps_exact;
 	Vector ps_calc(psolvesize);
