@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <complex>
 #include <algorithm>
+#include <set>
+#include <iterator>
 
 #include "Matrix.hpp"
 #include "SparseVector.hpp"
@@ -2277,15 +2279,16 @@ void gmres_k(const Preconditioner * pc, const SparseMatrix & A, const Vector & b
 // algebraic multigrid
 void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 
-	// setup phase
-
+	// *********** SETUP PHASE **************
 	// identify point in C and F where
 	// C is the set of coarse grid points, and F is 
 	// the set of fine grid points
 	double theta = 0.25;		// strength threshold
 	auto rowptr = A.row_ptr();
 	auto data = A.data();
-	Vector lambda(A.cols());
+	// Vector lambda(A.cols());
+	std::vector<unsigned int> lambda(A.cols());
+	std::set<unsigned int> Cpts, Fpts, Upts;
 	for (auto i=0; i<A.rows(); i++){
 		auto it = rowptr[i];
 
@@ -2313,12 +2316,111 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 
 			// these points are strongly connected
 			if (-it->second >= theta*rowmax){
-
+				lambda[it->second]++;
 			}
 			it++;
 		}
 	}
-	// get strongly connected points 
+	std::cout << "Constructed Lambda..." << std::endl;
+
+	
+	for (auto i=0; i<x.length(); i++) Upts.insert(i);
+	unsigned int imax = std::distance(lambda.begin(), std::max_element(lambda.begin(), lambda.end()));//.begin(), lambda.end()));
+	while (lambda[imax] > 0 && Upts.size() > 0){
+		std::cout << "imax: " << imax << " value: " << lambda[imax] << std::endl;
+
+		// set lambda to zero
+		lambda[imax] = 0;
+		Cpts.insert(imax);
+		Upts.erase(imax);
+
+		std::cout << "inserted coarse point..." << imax << std::endl;
+
+		// get the strong connections to this point... these become fine points
+		auto it = rowptr[imax];
+		// for this row, find the max negative value
+		double rowmax = 0.0;
+		while (it != rowptr[imax+1]){
+			unsigned int j = it->first;
+			if (j==imax){
+				it++;
+				continue;
+			}
+
+			rowmax = std::max(rowmax, -it->second);
+			it++;
+		}
+
+		// A point i is strongly connected to j if -Aij >= theta*max(-Aik)
+		it = rowptr[imax];
+		while (it != rowptr[imax+1]){
+			unsigned int j = it->first;
+			if (j==imax){
+				it++;
+				continue;
+			}
+
+			// these points are strongly connected
+			if (-it->second >= theta*rowmax){
+				lambda[j] = 0;
+				Fpts.insert(j);
+				Upts.erase(j);
+
+				std::cout << "inserted fine point..." << j << std::endl;
+
+				// get points strongly connected to these points
+				// and increment lambda for them
+				auto itj = rowptr[j];
+				double rowmaxj = 0.0;
+				while (itj != rowptr[j+1]){
+					unsigned int k = itj->first;
+					if (k==j){
+						itj++;
+						continue;
+					}
+
+					rowmaxj = std::max(rowmaxj, -itj->second);
+					itj++;
+				}
+				itj = rowptr[j];
+				while (itj != rowptr[j+1]){
+					unsigned int k = itj->first;
+					if (k==j){
+						itj++;
+						continue;
+					}
+
+					// these points are strongly connected
+					if (-itj->second >= theta*rowmaxj){
+						lambda[itj->first] += 1;
+					}
+					itj++;
+				}
+			}
+			it++;
+		}
+
+		// get new max lambda point to become coarse point
+		// imax = std::distance(std::max_element(lambda.begin(), lambda.end()));
+		imax = std::distance(lambda.begin(), std::max_element(lambda.begin(), lambda.end()));
+
+		std::cout << "imax: " << imax << std::endl;
+		std::cout << "Csize: " << Cpts.size() << std::endl;
+		std::cout << "Fsize: " << Fpts.size() << std::endl;
+		std::cout << "Usize: " << Upts.size() << std::endl;
+		// for (auto itr=Cpts.begin(); itr!=Cpts.end(); itr++) std::cout << "C: " << *itr << std::endl;
+		// for (auto itr=Fpts.begin(); itr!=Fpts.end(); itr++) std::cout << "F: " << *itr << std::endl;
+
+	}
+	// ********** END SETUP *******************
+
+	for (auto itr=Cpts.begin(); itr!=Cpts.end(); itr++) std::cout << "C: " << *itr << std::endl;
+	for (auto itr=Fpts.begin(); itr!=Fpts.end(); itr++) std::cout << "F: " << *itr << std::endl;
+	std::cout << "HERE I AM AT THE END" << std::endl;
+	std::vector<unsigned int> intersect(100);
+	auto it = std::set_intersection(Cpts.begin(), Cpts.end(), Fpts.begin(), Fpts.end(), intersect.begin());
+	intersect.resize(it-intersect.begin());
+	for (auto i=0; i<intersect.size(); i++) std::cout << "I: " << intersect[i] << std::endl;
 }
 
 // generalized complex eigenvalue decomposition
