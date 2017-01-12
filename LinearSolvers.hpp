@@ -2494,20 +2494,27 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 
 	// construct the interpolation matrix W
 	// which is the transpose of the restriction matrix
-	SparseMatrix W;
-	amg_direct_interpolation(A, Cpts, Fpts, W);
+	SparseMatrix * W = new SparseMatrix();
+	amg_direct_interpolation(A, Cpts, Fpts, *W);
+	// ********** END SETUP *******************
 
+
+	// *********** SOLUTION PHASE **************
 	// restrict the residual
 	std::cout << "creating residual... length: ";
-	Vector r = b-A*x;
+	Vector r = A*x-b;
 	std::cout << r.length() << std::endl;
 	std::cout << "restricting residual..." << std::endl;
-	Vector r_restricted = W.Tmult(r);
+	Vector r_restricted = W->Tmult(r);
 	std::cout << "restricted residual... length: " << r_restricted.length() << std::endl;
 
 	// restrict the operator matrix A
+	//SparseMatrix A_restricted = W.Tmult(A*W);
 
-	// ********** END SETUP *******************
+	// solve the restricted system A_r*e_r = r_r
+
+	// add the solution back
+	// ********** END SOLUTION *******************
 
 	}
 
