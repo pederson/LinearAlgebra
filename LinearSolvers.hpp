@@ -2276,17 +2276,17 @@ void gmres_k(const Preconditioner * pc, const SparseMatrix & A, const Vector & b
 	std::cout << "iterated: " << it << " times" << std::endl;
 }
 
-// algebraic multigrid
-void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 
-	// *********** SETUP PHASE **************
+
+
+
+void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C, std::set<unsigned int> & F, double theta)
+{
 	// identify point in C and F where
 	// C is the set of coarse grid points, and F is 
 	// the set of fine grid points
-	double theta = 0.25;		// strength threshold
 	auto rowptr = A.row_ptr();
 	auto data = A.data();
-	// Vector lambda(A.cols());
 	std::vector<unsigned int> lambda(A.cols());
 	std::set<unsigned int> Cpts, Fpts, Upts;
 	for (auto i=0; i<A.rows(); i++){
@@ -2316,25 +2316,28 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 
 			// these points are strongly connected
 			if (-it->second >= theta*rowmax){
-				lambda[it->second]++;
+				lambda[it->first]++;
 			}
 			it++;
 		}
 	}
-	std::cout << "Constructed Lambda..." << std::endl;
+	// std::cout << "Constructed Lambda..." << std::endl;
+	// for (auto i=lambda.begin(); i!=lambda.end(); i++){
+	// 	std::cout << "lambda: " << *i << std::endl;
+	// }
 
-	
-	for (auto i=0; i<x.length(); i++) Upts.insert(i);
+	// second pass separates C and F points
+	for (auto i=0; i<A.cols(); i++) Upts.insert(i);
 	unsigned int imax = std::distance(lambda.begin(), std::max_element(lambda.begin(), lambda.end()));//.begin(), lambda.end()));
 	while (lambda[imax] > 0 && Upts.size() > 0){
-		std::cout << "imax: " << imax << " value: " << lambda[imax] << std::endl;
+		// std::cout << "imax: " << imax << " value: " << lambda[imax] << std::endl;
 
 		// set lambda to zero
 		lambda[imax] = 0;
 		Cpts.insert(imax);
 		Upts.erase(imax);
 
-		std::cout << "inserted coarse point..." << imax << std::endl;
+		// std::cout << "inserted coarse point..." << imax << std::endl;
 
 		// get the strong connections to this point... these become fine points
 		auto it = rowptr[imax];
@@ -2361,12 +2364,12 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 			}
 
 			// these points are strongly connected
-			if (-it->second >= theta*rowmax){
+			if (-it->second >= theta*rowmax && lambda[j] > 0){
 				lambda[j] = 0;
 				Fpts.insert(j);
 				Upts.erase(j);
 
-				std::cout << "inserted fine point..." << j << std::endl;
+				// std::cout << "inserted fine point..." << j << std::endl;
 
 				// get points strongly connected to these points
 				// and increment lambda for them
@@ -2391,8 +2394,8 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 					}
 
 					// these points are strongly connected
-					if (-itj->second >= theta*rowmaxj){
-						lambda[itj->first] += 1;
+					if (-itj->second >= theta*rowmaxj && lambda[k] > 0){
+						lambda[k] += 1;
 					}
 					itj++;
 				}
@@ -2404,24 +2407,109 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 		// imax = std::distance(std::max_element(lambda.begin(), lambda.end()));
 		imax = std::distance(lambda.begin(), std::max_element(lambda.begin(), lambda.end()));
 
-		std::cout << "imax: " << imax << std::endl;
-		std::cout << "Csize: " << Cpts.size() << std::endl;
-		std::cout << "Fsize: " << Fpts.size() << std::endl;
-		std::cout << "Usize: " << Upts.size() << std::endl;
-		// for (auto itr=Cpts.begin(); itr!=Cpts.end(); itr++) std::cout << "C: " << *itr << std::endl;
-		// for (auto itr=Fpts.begin(); itr!=Fpts.end(); itr++) std::cout << "F: " << *itr << std::endl;
+		// std::cout << "imax: " << imax << " value: " << lambda[imax] << std::endl;
+		// std::cout << "Csize: " << Cpts.size() << std::endl;
+		// std::cout << "Fsize: " << Fpts.size() << std::endl;
+		// std::cout << "Usize: " << Upts.size() << std::endl;
 
 	}
+	std::swap(Cpts,C);
+	std::swap(Fpts,F);
+}
+
+
+void amg_direct_interpolation(const SparseMatrix & A, 
+							  const std::set<unsigned int> & C, const std::set<unsigned int> & F, 
+							  SparseMatrix & W)
+{
+
+	std::vector<bool> iscoarse(A.cols(), false);
+	for (auto it=C.begin(); it!=C.end(); it++) iscoarse[*it] = true;
+	std::vector<unsigned int> coarse_ordering(A.cols(), 0);
+	unsigned int ct=0;
+	for (auto it=C.begin(); it!=C.end(); it++) coarse_ordering[*it] = ct++;
+
+	// determine interpolation matrix W
+	// and its transpose (the restriction matrix) Wt
+	SparseMatrix Wi(A.rows(), C.size());
+	auto rowptr = A.row_ptr();
+	auto data = A.data();
+	for (auto i=0; i<A.rows(); i++){
+		if (iscoarse[i]){
+			Wi.set(i,coarse_ordering[i], 1.0);
+			continue;
+		}
+		auto it = rowptr[i];
+
+		// get rowsum, coarsesum, and diag
+		double rowsum=0;
+		double corsum=0;
+		double rowdiag=0;
+		while (it != rowptr[i+1]){
+			unsigned int j = it->first;
+			if (j==i){
+				rowdiag=it->second;
+				it++;
+				continue;
+			}
+
+			// add to sums
+			rowsum += it->second;
+			if (iscoarse[j]) corsum += it->second;
+
+			it++;
+		}
+
+		// set the values in this row
+		it = rowptr[i];
+		while (it != rowptr[i+1]){
+			unsigned int j = it->first;
+
+			// add to sums
+			if (iscoarse[j]) Wi.set(i,coarse_ordering[j],-rowsum*it->second/(corsum*rowdiag));
+
+			it++;
+		}
+	}
+
+	swap(Wi,W);
+}
+
+// algebraic multigrid
+void amg(const SparseMatrix & A, const Vector & b, Vector & x){
+
+	// *********** SETUP PHASE **************
+	// do coarsening to separate C and F points
+	double theta = 0.25;		// strength threshold
+	std::set<unsigned int> Cpts, Fpts;
+	amg_standard_coarsening(A, Cpts, Fpts, theta);
+
+	// for (auto itr=Cpts.begin(); itr!=Cpts.end(); itr++) std::cout << "C: " << *itr << std::endl;
+	// for (auto itr=Fpts.begin(); itr!=Fpts.end(); itr++) std::cout << "F: " << *itr << std::endl;
+	// std::cout << "HERE I AM AT THE END" << std::endl;
+	// std::vector<unsigned int> intersect(100);
+	// auto it = std::set_intersection(Cpts.begin(), Cpts.end(), Fpts.begin(), Fpts.end(), intersect.begin());
+	// intersect.resize(it-intersect.begin());
+	// for (auto i=0; i<intersect.size(); i++) std::cout << "I: " << intersect[i] << std::endl;
+
+	// construct the interpolation matrix W
+	// which is the transpose of the restriction matrix
+	SparseMatrix W;
+	amg_direct_interpolation(A, Cpts, Fpts, W);
+
+	// restrict the residual
+	std::cout << "creating residual... length: ";
+	Vector r = b-A*x;
+	std::cout << r.length() << std::endl;
+	std::cout << "restricting residual..." << std::endl;
+	Vector r_restricted = W.Tmult(r);
+	std::cout << "restricted residual... length: " << r_restricted.length() << std::endl;
+
+	// restrict the operator matrix A
+
 	// ********** END SETUP *******************
 
-	for (auto itr=Cpts.begin(); itr!=Cpts.end(); itr++) std::cout << "C: " << *itr << std::endl;
-	for (auto itr=Fpts.begin(); itr!=Fpts.end(); itr++) std::cout << "F: " << *itr << std::endl;
-	std::cout << "HERE I AM AT THE END" << std::endl;
-	std::vector<unsigned int> intersect(100);
-	auto it = std::set_intersection(Cpts.begin(), Cpts.end(), Fpts.begin(), Fpts.end(), intersect.begin());
-	intersect.resize(it-intersect.begin());
-	for (auto i=0; i<intersect.size(); i++) std::cout << "I: " << intersect[i] << std::endl;
-}
+	}
 
 // generalized complex eigenvalue decomposition
 

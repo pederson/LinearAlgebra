@@ -148,7 +148,7 @@ public:
 			std::cout << "SparseMatrix-Vector dimensions do not match!" << std::endl;
 			throw -1;
 		}
-		Vector out(m_mrows);
+		Vector out(m_ncols);
 		out.fill(0);
 
 		for (auto i=0; i<vct.rows(); i++){
