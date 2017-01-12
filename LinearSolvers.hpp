@@ -2274,6 +2274,53 @@ void gmres_k(const Preconditioner * pc, const SparseMatrix & A, const Vector & b
 	std::cout << "iterated: " << it << " times" << std::endl;
 }
 
+// algebraic multigrid
+void amg(const SparseMatrix & A, const Vector & b, Vector & x){
+
+	// setup phase
+
+	// identify point in C and F where
+	// C is the set of coarse grid points, and F is 
+	// the set of fine grid points
+	double theta = 0.25;		// strength threshold
+	auto rowptr = A.row_ptr();
+	auto data = A.data();
+	Vector lambda(A.cols());
+	for (auto i=0; i<A.rows(); i++){
+		auto it = rowptr[i];
+
+		// for this row, find the max negative value
+		double rowmax = 0.0;
+		while (it != rowptr[i+1]){
+			unsigned int j = it->first;
+			if (j==i){
+				it++;
+				continue;
+			}
+
+			rowmax = std::max(rowmax, -it->second);
+			it++;
+		}
+
+		// A point i is strongly connected to j if -Aij >= theta*max(-Aik)
+		it = rowptr[i];
+		while (it != rowptr[i+1]){
+			unsigned int j = it->first;
+			if (j==i){
+				it++;
+				continue;
+			}
+
+			// these points are strongly connected
+			if (-it->second >= theta*rowmax){
+
+			}
+			it++;
+		}
+	}
+	// get strongly connected points 
+}
+
 // generalized complex eigenvalue decomposition
 
 // schur decomposition
