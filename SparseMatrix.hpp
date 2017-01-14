@@ -165,7 +165,7 @@ public:
 		Vector out(m_mrows);
 		out.fill(0);
 		
-		for (auto i=0; i<vct.rows(); i++){
+		for (auto i=0; i<m_mrows; i++){
 			double rowsum = 0.0;
 			auto it = m_row_ptr[i];
 			while (it != m_row_ptr[i+1]){
