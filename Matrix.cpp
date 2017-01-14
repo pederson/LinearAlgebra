@@ -522,6 +522,23 @@ int main(int argc, char * argv[]){
 	Vector dv3 = sm*dv2;
 	cout << "SparseMatrix-Vector product: " << dv3 << endl;
 
+	// sparsematrix-sparsematrix product
+	SparseMatrix ss1 = sprandmatn(100,100);
+	SparseMatrix ss2 = sprandmatn(100,100);
+	SparseMatrix smsm2 = ss1*ss2;
+	Vector ssp(smsm2.cols());
+	Vector result1 = ss1*(ss2*ssp);
+	Vector result2 = smsm2*ssp;
+	cout << "sparsematrix-sparsematrix product: resid: " << norm_2(result2-result1) << endl;
+	//cout << smsm2 << endl;
+
+	// sparsematrix-sparsematrix tmult
+	SparseMatrix smtsm2 = ss1.Tmult(ss2);
+	result1 = ss1.Tmult(ss2*ssp);
+	result2 = smtsm2*ssp;
+	cout << "sparsematrix-sparsematrix tmult: resid: " << norm_2(result2-result1) << endl;
+	//cout << smtsm2 << endl;
+
 	// sparse addition
 	SparseMatrix sm3 = sm2 + sm;
 	cout << "sm2+sm: " << sm3 << endl;
@@ -767,9 +784,13 @@ int main(int argc, char * argv[]){
 
 
 	cout << "************************** ALGEBRAIC MULTIGRID: " << endl;
-	ps_calc.fill(0);
-	amg(spsymm, ps_b, ps_calc);
-	cout << "amg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	Vector offd(100 - 1); offd.fill(-1);
+	SparseMatrix spamg = 2*speye(100,100) + spdiag(offd, 1) + spdiag(offd,-1);
+	Vector ps_amg(100); ps_amg.fill(0);
+	Vector psamg_b = randvecn(100);
+	cout << "amg resid before: " << (psamg_b - spamg*ps_amg).norm() << endl;
+	amg(spamg, psamg_b, ps_amg);
+	cout << "amg resid: " << (psamg_b - spamg*ps_amg).norm() << endl;
 
 	return 0;
 }

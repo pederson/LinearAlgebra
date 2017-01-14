@@ -54,13 +54,17 @@ Matrix diag(const Vector & vct)
 }
 
 // convert vector into square diagonal sparse matrix
-SparseMatrix spdiag(const Vector & vct)
+// off is the offset of the diagonal (+ is up, - is down)
+SparseMatrix spdiag(const Vector & vct, int off=0)
 {
-	SparseMatrix out(vct.length(), vct.length());
+	SparseMatrix out(vct.length()+abs(off), vct.length()+abs(off));
 
+	unsigned int ioff=0, joff=0;
+	if (off < 0) ioff=abs(off);
+	if (off > 0) joff=abs(off);
 	for (auto i=0; i<vct.length(); i++)
 	{
-		out.set(i,i,vct(i));
+		out.set(i+ioff,i+joff,vct(i));
 	}
 	return out;
 }
@@ -2423,8 +2427,12 @@ void amg_direct_interpolation(const SparseMatrix & A,
 							  SparseMatrix & W)
 {
 
+	// setup vector that identifies coarse points
 	std::vector<bool> iscoarse(A.cols(), false);
 	for (auto it=C.begin(); it!=C.end(); it++) iscoarse[*it] = true;
+
+	// setup a vector that identifies the index of each coarse
+	// point in the restricted vector
 	std::vector<unsigned int> coarse_ordering(A.cols(), 0);
 	unsigned int ct=0;
 	for (auto it=C.begin(); it!=C.end(); it++) coarse_ordering[*it] = ct++;
@@ -2435,12 +2443,14 @@ void amg_direct_interpolation(const SparseMatrix & A,
 	auto rowptr = A.row_ptr();
 	auto data = A.data();
 	for (auto i=0; i<A.rows(); i++){
+		// if the ith point is coarse, set the interpolation to return unity
 		if (iscoarse[i]){
 			Wi.set(i,coarse_ordering[i], 1.0);
 			continue;
 		}
 		auto it = rowptr[i];
 
+		// determine weighting for fine points
 		// get rowsum, coarsesum, and diag
 		double rowsum=0;
 		double corsum=0;
@@ -2448,14 +2458,26 @@ void amg_direct_interpolation(const SparseMatrix & A,
 		while (it != rowptr[i+1]){
 			unsigned int j = it->first;
 			if (j==i){
-				rowdiag=it->second;
+				rowdiag=it->second;	// the diagonal in the row
 				it++;
 				continue;
 			}
 
 			// add to sums
-			rowsum += it->second;
-			if (iscoarse[j]) corsum += it->second;
+			rowsum += it->second;		// sum over whole row
+			if (iscoarse[j]) corsum += it->second;	// sum over coarse points in the row
+
+			it++;
+		}
+
+		// scale row sum
+		double rowscale=0;
+		it = rowptr[i];
+		while (it != rowptr[i+1]){
+			unsigned int j = it->first;
+
+			// add to sums
+			if (iscoarse[j]) rowscale += -rowsum*it->second/(corsum*rowdiag);
 
 			it++;
 		}
@@ -2466,7 +2488,7 @@ void amg_direct_interpolation(const SparseMatrix & A,
 			unsigned int j = it->first;
 
 			// add to sums
-			if (iscoarse[j]) Wi.set(i,coarse_ordering[j],-rowsum*it->second/(corsum*rowdiag));
+			if (iscoarse[j]) Wi.set(i,coarse_ordering[j],-rowsum*it->second/(corsum*rowdiag*rowscale));
 
 			it++;
 		}
@@ -2505,13 +2527,17 @@ void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::ve
 // Algebraic Multigrid V cycle 
 // v1 	- number of presmoothing steps
 // v2	- number of postsmoothing steps
-// W 	- interpolation matrices
+// Ws 	- interpolation matrices
+// As 	- restricted operator matrices
 void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int level,
 		  std::vector<SparseMatrix *> & Ws, std::vector<SparseMatrix *> & As, 
 		  unsigned int v1=1, unsigned int v2=1){
 
+	
+
 	// if the system is small enough, solve directly
 	if (A.cols() < 20){
+		std::cout << "L(" << level << "): direct solve" << std::endl ;
 		Matrix Ad = A.densify();
 		Matrix Q, R, U;
 		qr_householder(Ad, U, R, Q);
@@ -2522,6 +2548,7 @@ void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int lev
 
 
 	// presmoothing
+	std::cout << "L(" << level << "): presmooth " ;
 	if (v1>0) gauss_seidel(A, b, x, v1);
 
 	// get residual
@@ -2538,14 +2565,26 @@ void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int lev
 	Vector er(Ar->cols()); er.fill(0);
 	amgv(*Ar, rr, er, level+1, Ws, As, v1, v2);
 
+	std::cout << "residual on the error: " << norm_2(rr-(*Ar)*er) << std::endl;
+
 	// interpolate the error
 	Vector e = (*W)*er;
+	// std::cout << "interpolation matrix: " << (*W) << std::endl;
+	// std::cout << "restricted error: " << er << std::endl;
+	// std::cout << "interpolated error: " << e << std::endl;
+
+	std::cout << "residual on the interpolated error: " << norm_2(r-A*e) << std::endl;
+
 
 	// correct for the error
 	x += e;
 
 	// postsmoothing
+	std::cout << "L(" << level << "): postsmooth " ;
 	if (v2>0) gauss_seidel(A, b, x, v2);
+
+	std::cout << "residual on the smoothed solution: " << norm_2(b-A*x) << std::endl;
+
 
 	return;
 }
@@ -2570,6 +2609,10 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 	// *********** SOLUTION PHASE **************
 	amgv(A, b, x, 0, Ws, As, 2, 2);
 	// ********** END SOLUTION *******************
+
+	// delete interpolation matrices and restricted operators
+	for (auto i=0; i<Ws.size(); i++) delete Ws[i];
+	for (auto i=0; i<As.size(); i++) delete As[i];
 	
 }
 
