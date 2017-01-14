@@ -2501,6 +2501,55 @@ void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::ve
 	amg_setup(*Ar, Ws, As);
 }
 
+
+// Algebraic Multigrid V cycle 
+// v1 	- number of presmoothing steps
+// v2	- number of postsmoothing steps
+// W 	- interpolation matrices
+void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int level,
+		  std::vector<SparseMatrix *> & Ws, std::vector<SparseMatrix *> & As, 
+		  unsigned int v1=1, unsigned int v2=1){
+
+	// if the system is small enough, solve directly
+	if (A.cols() < 20){
+		Matrix Ad = A.densify();
+		Matrix Q, R, U;
+		qr_householder(Ad, U, R, Q);
+		x = unitary_solve(Q, b);
+		x = upper_triangular_solve(R, x);
+		return;
+	}
+
+
+	// presmoothing
+	if (v1>0) gauss_seidel(A, b, x, v1);
+
+	// get residual
+	Vector r = b - A*x;
+
+	// restrict residual
+	SparseMatrix * W = Ws[level];
+	Vector rr = W->Tmult(r);
+
+	// get restricted Operator A
+	SparseMatrix * Ar = As[level];
+
+	// solve restricted system for error
+	Vector er(Ar->cols()); er.fill(0);
+	amgv(*Ar, rr, er, level+1, Ws, As, v1, v2);
+
+	// interpolate the error
+	Vector e = (*W)*er;
+
+	// correct for the error
+	x += e;
+
+	// postsmoothing
+	if (v2>0) gauss_seidel(A, b, x, v2);
+
+	return;
+}
+
 // algebraic multigrid
 void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 
@@ -2517,28 +2566,12 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 		std::cout << "A_r nnz/total: " << Ar.nnz() << "/" << Ar.rows()*Ar.cols() << std::endl;
 	}
 
-	/*
+	
 	// *********** SOLUTION PHASE **************
-	// restrict the residual
-	std::cout << "creating residual... length: ";
-	Vector r = A*x-b;
-	std::cout << r.length() << std::endl;
-	std::cout << "restricting residual..." << std::endl;
-	Vector r_restricted = W->Tmult(r);
-	std::cout << "restricted residual... length: " << r_restricted.length() << std::endl;
-
-	// restrict the operator matrix A
-	SparseMatrix A_restricted = W->Tmult(A*(*W));
-	std::cout << "A_r nnz/total: " << A_restricted.nnz() << "/" << A_restricted.rows()*A_restricted.cols() << std::endl;
-	std::cout << "A nnz/total: " << A.nnz() << "/" << A.rows()*A.cols() << std::endl;
-
-
-	// solve the restricted system A_r*e_r = r_r
-
-	// add the solution back
+	amgv(A, b, x, 0, Ws, As, 2, 2);
 	// ********** END SOLUTION *******************
-	*/
-	}
+	
+}
 
 // generalized complex eigenvalue decomposition
 

@@ -755,10 +755,10 @@ int main(int argc, char * argv[]){
 	cout << "************************** GMRES - INCOMPLETE LU PC:" << endl;
 	ps_calc.fill(0);
 	gmres_k(spsymm, ps_b, ps_calc, 20, 100);
-	cout << "bicgstab resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	cout << "gmres resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
 	gmres_k(&ilupc, spsymm, ps_b, ps_calc, 20, 100);
-	cout << "pc bicgstab resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
+	cout << "pc gmres resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
 
 
 
@@ -769,6 +769,7 @@ int main(int argc, char * argv[]){
 	cout << "************************** ALGEBRAIC MULTIGRID: " << endl;
 	ps_calc.fill(0);
 	amg(spsymm, ps_b, ps_calc);
+	cout << "amg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 	return 0;
 }
