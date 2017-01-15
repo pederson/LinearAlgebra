@@ -2745,12 +2745,19 @@ void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::ve
 
 	// get interpolation matrix from C-F splitting
 	SparseMatrix * W = new SparseMatrix();
-	amg_standard_interpolation(A, Cpts, Fpts, *W);
+	amg_direct_interpolation(A, Cpts, Fpts, *W);
+	// amg_standard_interpolation(A, Cpts, Fpts, *W);
 
 	// generate restricted matrix
 	SparseMatrix * Ar = new SparseMatrix();
 	(*Ar) = W->Tmult(A*(*W));
 	As.push_back(Ar);
+
+	// W->mmwrite("SparseInterpolationMatrix.txt");
+	// (W->densify()).dlmwrite("InterpolationMatrix.txt");
+	// Ar->mmwrite("SparseOperator.txt");
+	// (Ar->densify()).dlmwrite("Operator.txt");
+	// throw -1;
 
 	// push the interpolation matrix 
 	Ws.push_back(W);
