@@ -2288,55 +2288,117 @@ void gmres_k(const Preconditioner * pc, const SparseMatrix & A, const Vector & b
 
 
 
+void get_strong_neighbors(const SparseMatrix & A, unsigned int row, std::set<unsigned int> & S, double theta){
+	auto rowptr = A.row_ptr();
+	auto data = A.data();
+	std::set<unsigned int> Spts;
+	auto it = rowptr[row];
+
+	// for this row, find the max negative value
+	double rowmax = 0.0;
+	while (it != rowptr[row+1]){
+		unsigned int j = it->first;
+		if (j==row){
+			it++;
+			continue;
+		}
+
+		rowmax = std::max(rowmax, -it->second);
+		it++;
+	}
+
+	// A point i is strongly connected to j if -Aij >= theta*max(-Aik)
+	it = rowptr[row];
+	while (it != rowptr[row+1]){
+		unsigned int j = it->first;
+		if (j==row){
+			it++;
+			continue;
+		}
+
+		// these points are strongly connected
+		if (-it->second >= theta*rowmax){
+			Spts.insert(it->first);
+		}
+		it++;
+	}
+
+	std::swap(Spts, S);
+}
 
 
+// get coarse point neighbor indices for point "row"
+// support function for AMG
+void get_C_neighbors(const SparseMatrix & A, const std::set<unsigned int> & C, 
+				  unsigned int row, std::set<unsigned int> & rowC){
+	auto rowptr = A.row_ptr();
+	auto data = A.data();
+	std::set<unsigned int> Cpts;
+	auto it = rowptr[row];
+
+	// for this row, find the max negative value
+	double rowmax = 0.0;
+	while (it != rowptr[row+1]){
+		unsigned int j = it->first;
+
+		if (C.find(j) != C.end()) Cpts.insert(j);
+		it++;
+	}
+
+	std::swap(Cpts, rowC);
+}
+
+// get fine point neighbor indices for point "row"
+// support function for AMG
+void get_F_neighbors(const SparseMatrix & A, const std::set<unsigned int> & C, 
+				  unsigned int row, std::set<unsigned int> & rowF){
+	auto rowptr = A.row_ptr();
+	auto data = A.data();
+	std::set<unsigned int> Fpts;
+	auto it = rowptr[row];
+
+	// for this row, find the max negative value
+	double rowmax = 0.0;
+	while (it != rowptr[row+1]){
+		unsigned int j = it->first;
+
+		if (C.find(j) == C.end()) Fpts.insert(j);
+		it++;
+	}
+
+	std::swap(Fpts, rowF);
+}
+
+// standard 2-pass coarsening
+// support function for AMG
 void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C, std::set<unsigned int> & F, double theta)
 {
+
+
 	// identify point in C and F where
 	// C is the set of coarse grid points, and F is 
 	// the set of fine grid points
 	auto rowptr = A.row_ptr();
 	auto data = A.data();
 	std::vector<unsigned int> lambda(A.cols());
-	std::set<unsigned int> Cpts, Fpts, Upts;
+	std::set<unsigned int> Cpts, Fpts, Upts, S;
+	// std::cout << "Constructing lambda measure..." ;
 	for (auto i=0; i<A.rows(); i++){
-		auto it = rowptr[i];
 
-		// for this row, find the max negative value
-		double rowmax = 0.0;
-		while (it != rowptr[i+1]){
-			unsigned int j = it->first;
-			if (j==i){
-				it++;
-				continue;
-			}
+		// get strongly connected points for this row
+		get_strong_neighbors(A, i, S, theta);
 
-			rowmax = std::max(rowmax, -it->second);
-			it++;
-		}
-
-		// A point i is strongly connected to j if -Aij >= theta*max(-Aik)
-		it = rowptr[i];
-		while (it != rowptr[i+1]){
-			unsigned int j = it->first;
-			if (j==i){
-				it++;
-				continue;
-			}
-
-			// these points are strongly connected
-			if (-it->second >= theta*rowmax){
-				lambda[it->first]++;
-			}
-			it++;
-		}
+		// increment lambda for the strong dependencies
+		for (auto it=S.begin(); it!=S.end(); it++) lambda[*it]++;
 	}
+	// std::cout << "DONE" << std::endl;
 	// std::cout << "Constructed Lambda..." << std::endl;
 	// for (auto i=lambda.begin(); i!=lambda.end(); i++){
 	// 	std::cout << "lambda: " << *i << std::endl;
 	// }
 
-	// second pass separates C and F points
+	// first pass separates C and F points
+	// std::cout << "Starting first pass..." ;
 	for (auto i=0; i<A.cols(); i++) Upts.insert(i);
 	unsigned int imax = std::distance(lambda.begin(), std::max_element(lambda.begin(), lambda.end()));//.begin(), lambda.end()));
 	while (lambda[imax] > 0 && Upts.size() > 0){
@@ -2423,11 +2485,78 @@ void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C,
 		// std::cout << "Usize: " << Upts.size() << std::endl;
 
 	}
+	// std::cout << "DONE" << std::endl;
+	// std::cout << "Csize: " << Cpts.size() << std::endl;
+	// std::cout << "Fsize: " << Fpts.size() << std::endl;
+	// std::cout << "Usize: " << Upts.size() << std::endl;
+
+
+
+	// second pass checks that strong F-F dependencies share a common C point
+	auto it=Fpts.begin(); 
+	std::set<unsigned int> iC, jC, cC;
+	std::set<unsigned int> iF, iFS;
+	// std::cout << "Starting second pass..." ;
+	while (it!=Fpts.end()){
+		unsigned int i=*it;
+		//std::cout << "Fine point: " << i << std::endl;
+
+		// get strong dependencies for row i
+		get_strong_neighbors(A, i, S, theta);
+
+		// get C points for row i
+		get_C_neighbors(A, Cpts, i, iC);
+
+		// get F points for row i
+		get_F_neighbors(A, Cpts, i, iF);
+
+		// get strong F neighbors for point i
+		iFS.clear();
+		std::set_intersection(iF.begin(), iF.end(), S.begin(), S.end(), std::inserter(iFS, iFS.begin()));
+
+
+		//std::cout << "num strong dep F points: " << iFS.size() << std::endl;
+		if (iFS.size()==0){
+			it++;
+			continue;
+		}
+
+		// for strongly dependent fine points, check for a common C point
+		for (auto sit=iFS.begin(); sit != iFS.end(); sit++){
+			unsigned int j = *sit;
+			
+			//std::cout << "dependent point: " << j << std::endl;
+
+			// get C points for row j
+			get_C_neighbors(A, Cpts, j, jC);
+
+			// find number of intersections
+			cC.clear();
+			std::set_intersection(iC.begin(), iC.end(), jC.begin(), jC.end(), std::inserter(cC, cC.begin()));
+
+			// if # of common C points is zero, change from F to C point
+			if (cC.size()==0){
+				//it++;
+				Cpts.insert(*it);
+				Fpts.erase(*it);
+				it++;
+				break;
+			}
+		}
+		if (cC.size()!=0) it++;
+	}
+	// std::cout << "DONE" << std::endl;
+	// std::cout << "Csize: " << Cpts.size() << std::endl;
+	// std::cout << "Fsize: " << Fpts.size() << std::endl;
+	// std::cout << "Usize: " << Upts.size() << std::endl;
+
 	std::swap(Cpts,C);
 	std::swap(Fpts,F);
 }
 
 
+// direct interpolation (simplest)
+// support function for AMG
 void amg_direct_interpolation(const SparseMatrix & A, 
 							  const std::set<unsigned int> & C, const std::set<unsigned int> & F, 
 							  SparseMatrix & W)
@@ -2504,10 +2633,111 @@ void amg_direct_interpolation(const SparseMatrix & A,
 }
 
 
+// standard interpolation (better than direct)
+// support function for AMG
+void amg_standard_interpolation(const SparseMatrix & A, 
+							  const std::set<unsigned int> & C, const std::set<unsigned int> & F, 
+							  SparseMatrix & W)
+{
+	double theta=0.25; // THIS SHOULD BE A PARAMETER!!
+
+	// setup vector that identifies coarse points
+	std::vector<bool> iscoarse(A.cols(), false);
+	for (auto it=C.begin(); it!=C.end(); it++) iscoarse[*it] = true;
+
+	// setup a vector that identifies the index of each coarse
+	// point in the restricted vector
+	std::vector<unsigned int> coarse_ordering(A.cols(), 0);
+	unsigned int ct=0;
+	for (auto it=C.begin(); it!=C.end(); it++) coarse_ordering[*it] = ct++;
+
+	// determine interpolation matrix W
+	// and its transpose (the restriction matrix) Wt
+	SparseMatrix Wi(A.rows(), C.size());
+	auto rowptr = A.row_ptr();
+	auto data = A.data();
+	std::set<unsigned int> Ci, Fi, Si, FSi; 
+	for (auto i=0; i<A.rows(); i++){
+		// if the ith point is coarse, set the interpolation to return unity
+		if (iscoarse[i]){
+			Wi.set(i,coarse_ordering[i], 1.0);
+			continue;
+		}
+		
+		// set of fine neighbors
+		get_F_neighbors(A, C, i, Fi);
+
+		// set of coarse neighbors
+		get_C_neighbors(A, C, i, Ci);
+
+		// set of strongly influencing neighbors
+		get_strong_neighbors(A, i, Si, theta);
+
+		// get set of strongly influencing fine neighbors
+		FSi.clear();
+		std::set_intersection(Fi.begin(), Fi.end(), Si.begin(), Si.end(), std::inserter(FSi, FSi.begin()));
+
+		// get sum over weakly influencing fine neighbors
+		double denom=A.get(i,i);
+		auto it = rowptr[i];
+		while (it != rowptr[i+1]){
+			if (!iscoarse[it->first] && Si.find(it->first)==Si.end()) denom += it->second;
+			it++;
+		}
+
+		// can precalculate sum(A_mk) for k in Ci for each m in FSi
+		std::map<unsigned int, double> sigmaAmk;
+		for (auto itm=FSi.begin(); itm!=FSi.end(); itm++){
+			double val=0;
+			unsigned int m=*itm;
+
+			// get sum of intersecting coarse neighbors for m
+			auto im=rowptr[m];
+			while (im!=rowptr[m+1]){
+				unsigned int k=im->first;
+				if (iscoarse[k]){
+					if (Ci.find(k)!=Ci.end()) val+=im->second;
+				}
+				im++;
+			}
+
+			// set the value of the sum
+			sigmaAmk[m] = val;
+		}
+
+		// iterate over existing columns j in row i
+		it = rowptr[i];
+		while (it != rowptr[i+1]){
+			unsigned int j = it->first;
+			double Aij = it->second;
+
+			// sum over the set m in FSi
+			double sigmam=0;
+			for (auto itm=FSi.begin(); itm!=FSi.end(); itm++){
+				unsigned int m=*itm;
+
+				sigmam += A.get(i,m)*A.get(m,j)/sigmaAmk[m];
+			}
+
+			// set the values in the interpolation matrix
+			Wi.set(i, coarse_ordering[j], -(Aij+sigmam)/denom);
+
+			it++;
+		}
+	}
+	// std::cout << "Csize: " << C.size() << std::endl;
+	//std::cout << "FINISHED: " << Wi.nnz() << "/" << Wi.rows()*Wi.cols() << std::endl;
+
+
+	swap(Wi,W);
+}
+
+
+
 void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::vector<SparseMatrix *> & As){
 
 	// if A is "small enough", then quit setup
-	if (A.cols() < 20) return;
+	if (A.cols() < 40) return;
 
 	// perform coarsening
 	std::set<unsigned int> Cpts, Fpts;
@@ -2515,7 +2745,7 @@ void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::ve
 
 	// get interpolation matrix from C-F splitting
 	SparseMatrix * W = new SparseMatrix();
-	amg_direct_interpolation(A, Cpts, Fpts, *W);
+	amg_standard_interpolation(A, Cpts, Fpts, *W);
 
 	// generate restricted matrix
 	SparseMatrix * Ar = new SparseMatrix();
@@ -2542,7 +2772,7 @@ void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int lev
 	
 
 	// if the system is small enough, solve directly
-	if (A.cols() < 20){
+	if (A.cols() < 40){
 		// std::cout << "L(" << level << "): direct solve" << std::endl ;
 		Matrix Ad = A.densify();
 		Matrix Q, R, U;

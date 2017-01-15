@@ -682,7 +682,9 @@ int main(int argc, char * argv[]){
 
 	cout << "****************** PRECONDITIONED SOLVERS ******************" << endl;
 	unsigned int psolvesize = 1000;
-	SparseMatrix spsymm = sprandmatnsymm(psolvesize,psolvesize, 0.01) + 10*speye(psolvesize, psolvesize);
+	unsigned int stencilsize = 5;
+	double fill = double(stencilsize)/double(psolvesize);
+	SparseMatrix spsymm = sprandmatnsymm(psolvesize,psolvesize, fill) + 10*speye(psolvesize, psolvesize);
 	Vector ps_exact = randvecn(psolvesize);
 	Vector ps_b = spsymm*ps_exact;
 	Vector ps_calc(psolvesize);
@@ -760,10 +762,10 @@ int main(int argc, char * argv[]){
 	AMGPreconditioner amgpc(spsymm);
 	ps_calc.fill(0);
 	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
-	cout << "gmres resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
+	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
 	conjugate_gradient(&amgpc, spsymm, ps_b, ps_calc, 100);
-	cout << "pc gmres resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
+	cout << "pc cg resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
 
 	/*
 	cout << "************************** CR - INCOMPLETE LU PC:" << endl;
@@ -810,11 +812,11 @@ int main(int argc, char * argv[]){
 	Vector offd(100 - 1); offd.fill(-1);
 	SparseMatrix spamg = 2*speye(100,100) + spdiag(offd, 1) + spdiag(offd,-1);
 	Vector ps_amg(100); ps_amg.fill(0);
-	Vector psamg_b = randvecn(100);
+	Vector psamg_b(100); psamg_b.fill(0); psamg_b(50) = 1;// = randvecn(100);
 	cout << "amg resid before: " << (psamg_b - spamg*ps_amg).norm() << endl;
-	bicgstab(spamg, psamg_b, ps_amg, 1000);
-	cout << "amg resid after bicgstab: " << (psamg_b - spamg*ps_amg).norm() << endl;
-	amg(spamg, psamg_b, ps_amg, 1);
+	// bicgstab(spamg, psamg_b, ps_amg, 1000);
+	// cout << "amg resid after bicgstab: " << (psamg_b - spamg*ps_amg).norm() << endl;
+	amg(spamg, psamg_b, ps_amg, 10);
 	cout << "amg resid: " << (psamg_b - spamg*ps_amg).norm() << endl;
 
 	return 0;
