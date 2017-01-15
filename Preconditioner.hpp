@@ -13,6 +13,10 @@ SparseMatrix strictly_lower(const SparseMatrix & A);
 SparseMatrix strictly_upper(const SparseMatrix & A);
 void icholesky(const SparseMatrix & A, SparseMatrix & R);
 void ilu(const SparseMatrix & A, SparseMatrix & L, SparseMatrix & U);
+void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::vector<SparseMatrix *> & As);
+void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int level,
+		  const std::vector<SparseMatrix *> & Ws, const std::vector<SparseMatrix *> & As, 
+		  unsigned int v1, unsigned int v2);
 
 class Preconditioner
 {
@@ -175,6 +179,33 @@ protected:
 
 	const SparseMatrix * m_A;
 	SparseMatrix m_U, m_L;
+};
+
+
+// Algebraic multigrid preconditioner
+class AMGPreconditioner : public Preconditioner
+{
+public:
+	AMGPreconditioner(const SparseMatrix & A){
+		m_A = &A;
+		amg_setup(A, Ws, As);
+	}
+
+	~AMGPreconditioner(){
+		for (auto i=0; i<Ws.size(); i++) delete Ws[i];
+		for (auto i=0; i<As.size(); i++) delete As[i];
+	}
+
+	Vector solve(const Vector & b) const{
+		Vector x(m_A->cols()); x.fill(0);
+		amgv(*m_A, b, x, 0, Ws, As, 2, 2);
+		return x;
+	}
+
+private:
+
+	const SparseMatrix * m_A;
+	std::vector<SparseMatrix *> Ws, As;
 };
 
 #endif

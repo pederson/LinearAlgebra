@@ -1251,7 +1251,7 @@ Matrix inv(const Matrix & A){
 
 // jacobi iteration
 // for square diagonally dominant matrices
-void jacobi(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int jacobi(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 
 	// decompose the matrix A
 	Vector dg = diag(A);
@@ -1273,12 +1273,13 @@ void jacobi(const Matrix & A, const Vector & b, Vector & x, unsigned int max_ite
 	}
 
 	swap(x, xk);
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 // sparse jacobi iteration
 // for square diagonally dominant matrices
-void jacobi(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int jacobi(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 
 	// decompose the matrix A
 	Vector dg = diag(A);
@@ -1300,13 +1301,14 @@ void jacobi(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int m
 	}
 
 	swap(x, xk);
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // gauss-seidel iteration
 // for square diagonally dominant matrices
-void gauss_seidel(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int gauss_seidel(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 
 	// decompose the matrix A
 	Matrix U = strictly_upper(A);
@@ -1327,13 +1329,14 @@ void gauss_seidel(const Matrix & A, const Vector & b, Vector & x, unsigned int m
 	}
 
 	swap(x, xk);
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // sparse gauss-seidel iteration
 // for square diagonally dominant matrices
-void gauss_seidel(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int gauss_seidel(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 
 	// decompose the matrix A
 	SparseMatrix U = strictly_upper(A);
@@ -1354,13 +1357,14 @@ void gauss_seidel(const SparseMatrix & A, const Vector & b, Vector & x, unsigned
 	}
 
 	swap(x, xk);
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // successive over-relaxation iteration
 // for square diagonally dominant matrices
-void sor(const Matrix & A, const Vector & b, Vector & x, double w, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int sor(const Matrix & A, const Vector & b, Vector & x, double w, unsigned int max_iters, double res_thresh=1.0e-15){
 
 	// decompose the matrix A
 	Matrix U = strictly_upper(A);
@@ -1385,12 +1389,13 @@ void sor(const Matrix & A, const Vector & b, Vector & x, double w, unsigned int 
 	}
 
 	swap(x, xk);
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 // sparse successive over-relaxation iteration
 // for square diagonally dominant matrices
-void sor(const SparseMatrix & A, const Vector & b, Vector & x, double w, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int sor(const SparseMatrix & A, const Vector & b, Vector & x, double w, unsigned int max_iters, double res_thresh=1.0e-15){
 
 	// decompose the matrix A
 	SparseMatrix U = strictly_upper(A);
@@ -1414,7 +1419,8 @@ void sor(const SparseMatrix & A, const Vector & b, Vector & x, double w, unsigne
 	}
 
 	swap(x, xk);
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 // steepest descent
@@ -2530,14 +2536,14 @@ void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::ve
 // Ws 	- interpolation matrices
 // As 	- restricted operator matrices
 void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int level,
-		  std::vector<SparseMatrix *> & Ws, std::vector<SparseMatrix *> & As, 
+		  const std::vector<SparseMatrix *> & Ws, const std::vector<SparseMatrix *> & As, 
 		  unsigned int v1=1, unsigned int v2=1){
 
 	
 
 	// if the system is small enough, solve directly
 	if (A.cols() < 20){
-		std::cout << "L(" << level << "): direct solve" << std::endl ;
+		// std::cout << "L(" << level << "): direct solve" << std::endl ;
 		Matrix Ad = A.densify();
 		Matrix Q, R, U;
 		qr_householder(Ad, U, R, Q);
@@ -2548,7 +2554,7 @@ void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int lev
 
 
 	// presmoothing
-	std::cout << "L(" << level << "): presmooth " ;
+	// std::cout << "L(" << level << "): presmooth " ;
 	if (v1>0) gauss_seidel(A, b, x, v1);
 
 	// get residual
@@ -2565,7 +2571,7 @@ void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int lev
 	Vector er(Ar->cols()); er.fill(0);
 	amgv(*Ar, rr, er, level+1, Ws, As, v1, v2);
 
-	std::cout << "residual on the error: " << norm_2(rr-(*Ar)*er) << std::endl;
+	// std::cout << "residual on the error: " << norm_2(rr-(*Ar)*er) << std::endl;
 
 	// interpolate the error
 	Vector e = (*W)*er;
@@ -2573,24 +2579,24 @@ void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int lev
 	// std::cout << "restricted error: " << er << std::endl;
 	// std::cout << "interpolated error: " << e << std::endl;
 
-	std::cout << "residual on the interpolated error: " << norm_2(r-A*e) << std::endl;
+	// std::cout << "residual on the interpolated error: " << norm_2(r-A*e) << std::endl;
 
 
 	// correct for the error
 	x += e;
 
 	// postsmoothing
-	std::cout << "L(" << level << "): postsmooth " ;
+	// std::cout << "L(" << level << "): postsmooth " ;
 	if (v2>0) gauss_seidel(A, b, x, v2);
 
-	std::cout << "residual on the smoothed solution: " << norm_2(b-A*x) << std::endl;
+	// std::cout << "residual on the smoothed solution: " << norm_2(b-A*x) << std::endl;
 
 
 	return;
 }
 
 // algebraic multigrid
-void amg(const SparseMatrix & A, const Vector & b, Vector & x){
+void amg(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters){
 
 	// *********** SETUP PHASE **************
 	std::vector<SparseMatrix *> Ws, As;
@@ -2607,7 +2613,7 @@ void amg(const SparseMatrix & A, const Vector & b, Vector & x){
 
 	
 	// *********** SOLUTION PHASE **************
-	amgv(A, b, x, 0, Ws, As, 2, 2);
+	for (auto it=0; it<max_iters; it++) amgv(A, b, x, 0, Ws, As, 2, 2);
 	// ********** END SOLUTION *******************
 
 	// delete interpolation matrices and restricted operators
