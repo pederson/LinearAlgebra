@@ -690,7 +690,7 @@ int main(int argc, char * argv[]){
 
 
 	cout << "****************** PRECONDITIONED SOLVERS ******************" << endl;
-	unsigned int psolvesize = 1000;
+	unsigned int psolvesize = 2500;
 	unsigned int stencilsize = 5;
 	double fill = double(stencilsize)/double(psolvesize);
 	SparseMatrix spsymm = sprandmatnsymm(psolvesize,psolvesize, fill) + 10*speye(psolvesize, psolvesize);
