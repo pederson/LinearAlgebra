@@ -309,7 +309,7 @@ int main(int argc, char * argv[]){
 	ddom = ddom + dgm;
 	Vector rndx1 = randvecn(6);
 	Vector ddomb = ddom*rndx1;
-	Vector ddomx;
+	Vector ddomx(6); ddomx.fill(0);
 	niters = jacobi(ddom, ddomb, ddomx, 100);
 	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << ddom << endl;
@@ -320,7 +320,7 @@ int main(int argc, char * argv[]){
 
 	// gauss-seidel
 	cout << "************************** GAUSS-SEIDEL ITERATION:" << endl;
-	Vector ddomx1;
+	Vector ddomx1(6); ddomx1.fill(0);
 	niters = gauss_seidel(ddom, ddomb, ddomx1, 100);
 	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << ddom << endl;
@@ -331,7 +331,7 @@ int main(int argc, char * argv[]){
 
 	// successive over-relaxation
 	cout << "************************** SOR ITERATION:" << endl;
-	Vector ddomx2;
+	Vector ddomx2(6); ddomx2.fill(0);
 	niters = sor(ddom, ddomb, ddomx2, 1.5, 100);
 	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << ddom << endl;
@@ -347,7 +347,8 @@ int main(int argc, char * argv[]){
 	Vector solnb = spd*rndx;
 	Vector solncalc(6);
 	solncalc.fill(0);
-	steepest_descent(spd, solnb, solncalc);
+	niters = steepest_descent(spd, solnb, solncalc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << spd << endl;
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;
@@ -358,7 +359,8 @@ int main(int argc, char * argv[]){
 	cout << "************************** CONJUGATE GRADIENT:" << endl;
 	Vector solncalc2(6);
 	solncalc2.fill(0);
-	conjugate_gradient(spd, solnb, solncalc2);
+	niters = conjugate_gradient(spd, solnb, solncalc2, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << spd << endl;
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;
@@ -369,7 +371,8 @@ int main(int argc, char * argv[]){
 	cout << "************************** CONJUGATE RESIDUAL:" << endl;
 	Vector solncalc7(6);
 	solncalc7.fill(0);
-	conjugate_residual(spd, solnb, solncalc7, 100);
+	niters = conjugate_residual(spd, solnb, solncalc7, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << spd << endl;
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;
@@ -379,7 +382,8 @@ int main(int argc, char * argv[]){
 	cout << "************************** BICG:" << endl;
 	Vector solncalc4(6);
 	solncalc4.fill(0);
-	bicg(spd, solnb, solncalc4, 100);
+	niters = bicg(spd, solnb, solncalc4, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << spd << endl;
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;
@@ -389,7 +393,8 @@ int main(int argc, char * argv[]){
 	cout << "************************** BICR:" << endl;
 	Vector solncalc8(6);
 	solncalc8.fill(0);
-	bicg(spd, solnb, solncalc8, 100);
+	niters = bicg(spd, solnb, solncalc8, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << spd << endl;
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;
@@ -400,7 +405,8 @@ int main(int argc, char * argv[]){
 	cout << "************************** BICGSTAB:" << endl;
 	Vector solncalc3(6);
 	solncalc3.fill(0);
-	bicgstab(spd, solnb, solncalc3, 100);
+	niters = bicgstab(spd, solnb, solncalc3, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << spd << endl;
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;
@@ -411,7 +417,8 @@ int main(int argc, char * argv[]){
 	cout << "************************** GMRES(k):" << endl;
 	Vector solncalc5(6);
 	solncalc5.fill(0);
-	gmres_k(spd, solnb, solncalc5, 10, 100);
+	niters = gmres_k(spd, solnb, solncalc5, 10, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "A: " << spd << endl;
 	cout << "b: " << solnb << endl;
 	cout << "x_exact: " << rndx << endl;
@@ -645,7 +652,7 @@ int main(int argc, char * argv[]){
 	SparseMatrix spsor = sm1 + 10*speye(6,6);
 	spb = spsor*spsoln;
 	Vector spsolncalc_sor(6); spsolncalc_sor.fill(0);
-	niters = sor(spsor, spb, spsolncalc_sor, 1.5, 100);
+	niters = sor(spsor, spb, spsolncalc_sor, 1.25, 100);
 	cout << "iterated: " << niters << " times" << endl;
 	cout << "sparse A: " << spsor << endl;
 	cout << "b: " << spb << endl;
@@ -658,7 +665,8 @@ int main(int argc, char * argv[]){
 	SparseMatrix spbicgstab = sm1 + 10*speye(6,6);
 	spb = spsor*spsoln;
 	Vector spsolncalc_bicgstab(6); spsolncalc_bicgstab.fill(0);
-	bicgstab(spbicgstab, spb, spsolncalc_bicgstab, 100);
+	niters = bicgstab(spbicgstab, spb, spsolncalc_bicgstab, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "sparse A: " << spsor << endl;
 	cout << "b: " << spb << endl;
 	cout << "x_exact: " << spsoln << endl;
@@ -670,7 +678,8 @@ int main(int argc, char * argv[]){
 	SparseMatrix spgmres = sm1 + 10*speye(6,6);
 	spb = spsor*spsoln;
 	Vector spsolncalc_gmres(6); spsolncalc_gmres.fill(0);
-	gmres_k(spbicgstab, spb, spsolncalc_gmres, 10, 100);
+	niters = gmres_k(spbicgstab, spb, spsolncalc_gmres, 10, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "sparse A: " << spsor << endl;
 	cout << "b: " << spb << endl;
 	cout << "x_exact: " << spsoln << endl;
@@ -693,113 +702,137 @@ int main(int argc, char * argv[]){
 	cout << "************************** CG - JACOBI PC:" << endl;
 	JacobiPreconditioner jpc(spsymm);
 	ps_calc.fill(0);
-	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	conjugate_gradient(&jpc, spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(&jpc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 
 	cout << "************************** CG - GAUSS-SEIDEL PC:" << endl;
 	GSPreconditioner gspc(spsymm);
 	ps_calc.fill(0);
-	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	conjugate_gradient(&gspc, spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(&gspc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 
 	cout << "************************** CG - SYMMETRIC GAUSS-SEIDEL PC:" << endl;
 	SGSPreconditioner sgspc(spsymm);
 	ps_calc.fill(0);
-	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	conjugate_gradient(&sgspc, spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(&sgspc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 
 	cout << "************************** CG - SOR PC:" << endl;
 	SORPreconditioner sorpc(spsymm, 1.5);
 	ps_calc.fill(0);
-	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	conjugate_gradient(&sorpc, spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(&sorpc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 
 	cout << "************************** CG - SSOR PC:" << endl;
 	SSORPreconditioner ssorpc(spsymm, 0.8);
 	ps_calc.fill(0);
-	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	conjugate_gradient(&ssorpc, spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(&ssorpc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 
 	cout << "************************** CG - INCOMPLETE CHOLESKY PC:" << endl;
 	ICPreconditioner icpc(spsymm);
 	ps_calc.fill(0);
-	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	conjugate_gradient(&icpc, spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(&icpc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 	cout << "************************** CG - INCOMPLETE LU PC:" << endl;
 	ILUPreconditioner ilupc(spsymm);
 	ps_calc.fill(0);
-	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	conjugate_gradient(&ilupc, spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(&ilupc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 
 	cout << "************************** CG - AMG PC:" << endl;
 	AMGPreconditioner amgpc(spsymm);
 	ps_calc.fill(0);
-	conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	conjugate_gradient(&amgpc, spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_gradient(&amgpc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc cg resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
 
 	/*
 	cout << "************************** CR - INCOMPLETE LU PC:" << endl;
 	ps_calc.fill(0);
-	conjugate_residual(spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_residual(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	conjugate_residual(&ilupc, spsymm, ps_b, ps_calc, 100);
+	niters = conjugate_residual(&ilupc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc cg resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	*/
 
 
 	cout << "************************** BICGSTAB - INCOMPLETE LU PC:" << endl;
 	ps_calc.fill(0);
-	bicgstab(spsymm, ps_b, ps_calc, 100);
+	niters = bicgstab(spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "bicgstab resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	bicgstab(&ilupc, spsymm, ps_b, ps_calc, 100);
+	niters = bicgstab(&ilupc, spsymm, ps_b, ps_calc, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc bicgstab resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
 
 	cout << "************************** GMRES - INCOMPLETE LU PC:" << endl;
 	ps_calc.fill(0);
-	gmres_k(spsymm, ps_b, ps_calc, 20, 100);
+	niters = gmres_k(spsymm, ps_b, ps_calc, 20, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "gmres resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	gmres_k(&ilupc, spsymm, ps_b, ps_calc, 20, 100);
+	niters = gmres_k(&ilupc, spsymm, ps_b, ps_calc, 20, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc gmres resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
 
 	cout << "************************** GMRES - AMG PC:" << endl;
 	ps_calc.fill(0);
-	gmres_k(spsymm, ps_b, ps_calc, 20, 100);
+	niters = gmres_k(spsymm, ps_b, ps_calc, 20, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "gmres resid: " << (ps_b - spsymm*ps_calc).norm() << endl;
 	ps_calc.fill(0);
-	gmres_k(&amgpc, spsymm, ps_b, ps_calc, 20, 100);
+	niters = gmres_k(&amgpc, spsymm, ps_b, ps_calc, 20, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "pc gmres resid: " << norm_2(ps_b - spsymm*ps_calc) << endl;
 
 
@@ -814,9 +847,11 @@ int main(int argc, char * argv[]){
 	Vector ps_amg(100); ps_amg.fill(0);
 	Vector psamg_b(100); psamg_b.fill(0); psamg_b(50) = 1;// = randvecn(100);
 	cout << "amg resid before: " << (psamg_b - spamg*ps_amg).norm() << endl;
-	// bicgstab(spamg, psamg_b, ps_amg, 1000);
+	// niters = bicgstab(spamg, psamg_b, ps_amg, 50);
+	// cout << "iterated: " << niters << " times" << endl;
 	// cout << "amg resid after bicgstab: " << (psamg_b - spamg*ps_amg).norm() << endl;
-	amg(spamg, psamg_b, ps_amg, 10);
+	niters = amg(spamg, psamg_b, ps_amg, 100);
+	cout << "iterated: " << niters << " times" << endl;
 	cout << "amg resid: " << (psamg_b - spamg*ps_amg).norm() << endl;
 
 	return 0;

@@ -1253,27 +1253,20 @@ Matrix inv(const Matrix & A){
 // for square diagonally dominant matrices
 unsigned int jacobi(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 
-	// decompose the matrix A
-	Vector dg = diag(A);
-	Matrix D = diag(dg);
-	Matrix R = A - D;
-	Vector xk(b); xk.fill(0);
-
-	double resid = 1.0;
-	unsigned int it = 0;
-	Vector r;
+	Vector r = b-A*x;
 	Vector d;
+	double resid = norm_2(r);
+	unsigned int it = 0;
+	
 	while (resid > res_thresh && it < max_iters){
-		d = b - R*xk;
-		xk = diagonal_solve(D, d);
+		// d = b - R*xk;
+		x += diagonal_solve(A, r);
 
 		it++;
-		r = b - A*xk;
+		r = b - A*x;
 		resid = norm_2(r);
 	}
 
-	swap(x, xk);
-	// std::cout << "iterated: " << it << " times" << std::endl;
 	return it;
 }
 
@@ -1281,27 +1274,20 @@ unsigned int jacobi(const Matrix & A, const Vector & b, Vector & x, unsigned int
 // for square diagonally dominant matrices
 unsigned int jacobi(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 
-	// decompose the matrix A
-	Vector dg = diag(A);
-	SparseMatrix D = spdiag(dg);
-	SparseMatrix R = A - D;
-	Vector xk(b); xk.fill(0);
-
-	double resid = 1.0;
-	unsigned int it = 0;
-	Vector r;
+	Vector r = b-A*x;
 	Vector d;
+	double resid = norm_2(r);
+	unsigned int it = 0;
+	
 	while (resid > res_thresh && it < max_iters){
-		d = b - R*xk;
-		xk = diagonal_solve(D, d);
+		// d = b - R*xk;
+		x += diagonal_solve(A, r);
 
 		it++;
-		r = b - A*xk;
+		r = b - A*x;
 		resid = norm_2(r);
 	}
 
-	swap(x, xk);
-	// std::cout << "iterated: " << it << " times" << std::endl;
 	return it;
 }
 
@@ -1313,23 +1299,21 @@ unsigned int gauss_seidel(const Matrix & A, const Vector & b, Vector & x, unsign
 	// decompose the matrix A
 	Matrix U = strictly_upper(A);
 	Matrix L = A-U;
-	Vector xk(b); xk.fill(0);
+	// Vector xk(b); xk.fill(0);
 
 	double resid = 1.0;
 	unsigned int it = 0;
 	Vector r;
 	Vector d;
 	while (resid > res_thresh && it < max_iters){
-		d = b - U*xk;
-		xk = lower_triangular_solve(L, d);
+		d = b - U*x;
+		x = lower_triangular_solve(L, d);
 
 		it++;
-		r = b - A*xk;
+		r = b - A*x;
 		resid = norm_2(r);
 	}
 
-	swap(x, xk);
-	// std::cout << "iterated: " << it << " times" << std::endl;
 	return it;
 }
 
@@ -1341,23 +1325,20 @@ unsigned int gauss_seidel(const SparseMatrix & A, const Vector & b, Vector & x, 
 	// decompose the matrix A
 	SparseMatrix U = strictly_upper(A);
 	SparseMatrix L = strictly_lower(A) + spdiag(diag(A));
-	Vector xk(b); xk.fill(0);
 
 	double resid = 1.0;
 	unsigned int it = 0;
 	Vector r;
 	Vector d;
 	while (resid > res_thresh && it < max_iters){
-		d = b - U*xk;
-		xk = lower_triangular_solve(L, d);
+		d = b - U*x;
+		x = lower_triangular_solve(L, d);
 
 		it++;
-		r = b - A*xk;
+		r = b - A*x;
 		resid = norm_2(r);
 	}
 
-	swap(x, xk);
-	// std::cout << "iterated: " << it << " times" << std::endl;
 	return it;
 }
 
@@ -1371,7 +1352,6 @@ unsigned int sor(const Matrix & A, const Vector & b, Vector & x, double w, unsig
 	Vector dg = diag(A);
 	Matrix D = diag(dg);
 	Matrix L = A-U-D;
-	Vector xk(b); xk.fill(0);
 
 	double resid = 1.0;
 	unsigned int it = 0;
@@ -1379,17 +1359,15 @@ unsigned int sor(const Matrix & A, const Vector & b, Vector & x, double w, unsig
 	Vector d;
 	Matrix N;
 	while (resid > res_thresh && it < max_iters){
-		d = w*b - (w*U+(w-1.0)*D)*xk;
+		d = w*b - (w*U+(w-1.0)*D)*x;
 		N = D + w*L;
-		xk = lower_triangular_solve(N, d);
+		x = lower_triangular_solve(N, d);
 
 		it++;
-		r = b - A*xk;
+		r = b - A*x;
 		resid = norm_2(r);
 	}
 
-	swap(x, xk);
-	// std::cout << "iterated: " << it << " times" << std::endl;
 	return it;
 }
 
@@ -1401,7 +1379,6 @@ unsigned int sor(const SparseMatrix & A, const Vector & b, Vector & x, double w,
 	SparseMatrix U = strictly_upper(A);
 	SparseMatrix D = spdiag(diag(A));
 	SparseMatrix L = strictly_lower(A);
-	Vector xk(b); xk.fill(0);
 
 	double resid = 1.0;
 	unsigned int it = 0;
@@ -1409,34 +1386,31 @@ unsigned int sor(const SparseMatrix & A, const Vector & b, Vector & x, double w,
 	Vector d;
 	SparseMatrix N = D + w*L;
 	while (resid > res_thresh && it < max_iters){
-		d = w*b - w*(U*xk)-(w-1.0)*(D*xk);
+		d = w*b - w*(U*x)-(w-1.0)*(D*x);
 		//N = D + w*L;
-		xk = lower_triangular_solve(N, d);
+		x = lower_triangular_solve(N, d);
 
 		it++;
-		r = b - A*xk;
+		r = b - A*x;
 		resid = norm_2(r);
 	}
 
-	swap(x, xk);
-	// std::cout << "iterated: " << it << " times" << std::endl;
 	return it;
 }
 
 // steepest descent
 // for square, SPD matrices only
 // uses the x argument as x0
-void steepest_descent(const Matrix & mtx, const Vector & b, Vector & x)
+unsigned int steepest_descent(const Matrix & mtx, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
 {
 
 	Vector rv = b-mtx*x;
 	double resid = rv.norm();
-	double threshold = std::max(resid*1.0e-10, 1.0e-6);
 	double alpha;
 	Vector matvec;
 
 	unsigned int ctr=0;
-	while (resid > threshold)
+	while (resid > res_thresh && ctr < max_iters)
 	{
 		// one matrix-vector product
 		matvec = mtx*rv;
@@ -1467,22 +1441,18 @@ void steepest_descent(const Matrix & mtx, const Vector & b, Vector & x)
 		ctr++;
 	}
 
-	std::cout << "iterated: " << ctr << " times" << std::endl;
-
-
-	return;
+	return ctr;
 }
 
 
 // conjugate gradient
 // for square, SPD matrices only
 // uses the x argument as x0
-void conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x)
+unsigned int conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
 {
 	Vector rv = b-mtx*x;
 
 	double resid = rv.norm();
-	double threshold = std::max(resid*1.0e-16, 1.0e-15);
 
 	// first iteration here
 	Vector d = rv;
@@ -1492,7 +1462,7 @@ void conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x)
 
 	// continue iterating
 	unsigned int ctr=0;
-	while (resid > threshold)
+	while (resid > res_thresh && ctr < max_iters)
 	{
 		// calculate residual
 		rv = b - mtx*x;
@@ -1513,16 +1483,14 @@ void conjugate_gradient(const Matrix & mtx, const Vector & b, Vector & x)
 		ctr++;
 	}
 
-	std::cout << "iterated: " << ctr << " times" << std::endl;
-
-	return;
+	return ctr;
 }
 
 
 // sparse conjugate gradient
 // for square, SPD matrices only
 // uses the x argument as x0
-void conjugate_gradient(const SparseMatrix & mtx, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
+unsigned int conjugate_gradient(const SparseMatrix & mtx, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
 {
 	Vector rv = b-mtx*x;
 
@@ -1558,16 +1526,16 @@ void conjugate_gradient(const SparseMatrix & mtx, const Vector & b, Vector & x, 
 		ctr++;
 	}
 
-	std::cout << "iterated: " << ctr << " times" << std::endl;
+	// std::cout << "iterated: " << ctr << " times" << std::endl;
 
-	return;
+	return ctr;
 }
 
 
 // preconditioned sparse conjugate gradient
 // for square, SPD matrices only
 // uses the x argument as x0
-void conjugate_gradient(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
+unsigned int conjugate_gradient(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
 {
 	Vector r = b-A*x;
 	double resid = r.norm();
@@ -1608,9 +1576,9 @@ void conjugate_gradient(const Preconditioner * pc, const SparseMatrix & A, const
 		it++;
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
 
-	return;
+	return it;
 }
 
 
@@ -1618,7 +1586,7 @@ void conjugate_gradient(const Preconditioner * pc, const SparseMatrix & A, const
 // conjugate residual
 // for square, symmetric matrices only
 // uses the x argument as x0
-void conjugate_residual(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
+unsigned int conjugate_residual(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
 {
 	Vector r = b-A*x;
 	Vector rold;
@@ -1658,16 +1626,16 @@ void conjugate_residual(const Matrix & A, const Vector & b, Vector & x, unsigned
 		it++;
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
 
-	return;
+	return it;
 }
 
 
 // sparse conjugate residual
 // for square, symmetric matrices only
 // uses the x argument as x0
-void conjugate_residual(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
+unsigned int conjugate_residual(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15)
 {
 	Vector r = b-A*x;
 	Vector rold;
@@ -1707,9 +1675,9 @@ void conjugate_residual(const SparseMatrix & A, const Vector & b, Vector & x, un
 		it++;
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
 
-	return;
+	return it;
 }
 
 /*
@@ -1767,7 +1735,7 @@ void conjugate_residual(const Preconditioner * pc, const SparseMatrix & A, const
 */
 
 // BiConjugate Gradient method
-void bicg(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int bicg(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	Matrix At = ~A;
 	Vector r = b - A*x;
@@ -1805,12 +1773,13 @@ void bicg(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters
 		resid = norm_2(r);
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // BiConjugate Residual method
-void bicr(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int bicr(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	Matrix At = ~A;
 	Vector r = b - A*x;
@@ -1848,12 +1817,13 @@ void bicr(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters
 		resid = norm_2(r);
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // BiConjugate Gradient Stabilized method
-void bicgstab(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int bicgstab(const Matrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	Vector r = b - A*x;
 	double resid = 1.0;
@@ -1887,12 +1857,13 @@ void bicgstab(const Matrix & A, const Vector & b, Vector & x, unsigned int max_i
 		resid = norm_2(r);
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // sparse BiConjugate Gradient Stabilized method
-void bicgstab(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int bicgstab(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	Vector r = b - A*x;
 	double resid = 1.0;
@@ -1926,12 +1897,13 @@ void bicgstab(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int
 		resid = norm_2(r);
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // preconditioned sparse BiConjugate Gradient Stabilized method
-void bicgstab(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int bicgstab(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	Vector r = b - A*x;
 	double resid = 1.0;
@@ -1971,13 +1943,14 @@ void bicgstab(const Preconditioner * pc, const SparseMatrix & A, const Vector & 
 		resid = norm_2(r);
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // Restarted Generalized Minimal Residual Method (GMRES)
 // restarts every k iterations
-void gmres_k(const Matrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int gmres_k(const Matrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	k = std::min(std::size_t(k),A.cols());
 	Vector r, p, pr, w, c(k), s(k), x0=1*x, yr, y(k); y.fill(0);
@@ -2075,13 +2048,14 @@ void gmres_k(const Matrix & A, const Vector & b, Vector & x, unsigned int k, uns
 		x0 = 1*x;
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // Sparse Restarted Generalized Minimal Residual Method (GMRES)
 // restarts every k iterations
-void gmres_k(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int gmres_k(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	k = std::min(std::size_t(k),A.cols());
 	Vector r, p, pr, w, c(k), s(k), x0=1*x, yr, y(k); y.fill(0);
@@ -2179,13 +2153,14 @@ void gmres_k(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int 
 		x0 = 1*x;
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
 // Preconditioned Sparse Restarted Generalized Minimal Residual Method (GMRES)
 // restarts every k iterations
-void gmres_k(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
+unsigned int gmres_k(const Preconditioner * pc, const SparseMatrix & A, const Vector & b, Vector & x, unsigned int k, unsigned int max_iters, double res_thresh=1.0e-15){
 	// initialize stuff
 	k = std::min(std::size_t(k),A.cols());
 	Vector r, p, pr, w, c(k), s(k), x0=1*x, yr, y(k); y.fill(0);
@@ -2283,7 +2258,8 @@ void gmres_k(const Preconditioner * pc, const SparseMatrix & A, const Vector & b
 		x0 = 1*x;
 	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
 
 
@@ -2792,7 +2768,9 @@ void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int lev
 
 	// presmoothing
 	// std::cout << "L(" << level << "): presmooth " ;
+	// std::cout << " resid = " << norm_2(b-A*x) << std::endl;
 	if (v1>0) gauss_seidel(A, b, x, v1);
+	// std::cout << " resid = " << norm_2(b-A*x) << std::endl;
 
 	// get residual
 	Vector r = b - A*x;
@@ -2825,6 +2803,7 @@ void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int lev
 	// postsmoothing
 	// std::cout << "L(" << level << "): postsmooth " ;
 	if (v2>0) gauss_seidel(A, b, x, v2);
+	// std::cout << " resid = " << norm_2(b-A*x) << std::endl;
 
 	// std::cout << "residual on the smoothed solution: " << norm_2(b-A*x) << std::endl;
 
@@ -2833,29 +2812,37 @@ void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int lev
 }
 
 // algebraic multigrid
-void amg(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters){
+unsigned int amg(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int max_iters, double res_thresh=1.0e-15){
 
 	// *********** SETUP PHASE **************
 	std::vector<SparseMatrix *> Ws, As;
 	amg_setup(A, Ws, As);
 	// ********** END SETUP *******************
 
-	std::cout << "level: 0 " ;
-	std::cout << "A nnz/total: " << A.nnz() << "/" << A.rows()*A.cols() << std::endl;
-	for (auto i=0; i<Ws.size(); i++){
-		std::cout << "level: " << i+1 << " " ;
-		SparseMatrix & Ar = *As[i];
-		std::cout << "A_r nnz/total: " << Ar.nnz() << "/" << Ar.rows()*Ar.cols() << std::endl;
-	}
+	// std::cout << "level: 0 " ;
+	// std::cout << "A nnz/total: " << A.nnz() << "/" << A.rows()*A.cols() << std::endl;
+	// for (auto i=0; i<Ws.size(); i++){
+	// 	std::cout << "level: " << i+1 << " " ;
+	// 	SparseMatrix & Ar = *As[i];
+	// 	std::cout << "A_r nnz/total: " << Ar.nnz() << "/" << Ar.rows()*Ar.cols() << std::endl;
+	// }
 
 	
 	// *********** SOLUTION PHASE **************
-	for (auto it=0; it<max_iters; it++) amgv(A, b, x, 0, Ws, As, 2, 2);
+	unsigned int it=0;
+	double resid = norm_2(b-A*x);
+	while(resid > res_thresh && it < max_iters){
+		amgv(A, b, x, 0, Ws, As, 2, 2);
+		resid = norm_2(b-A*x);
+		it++;
+	}
 	// ********** END SOLUTION *******************
 
 	// delete interpolation matrices and restricted operators
 	for (auto i=0; i<Ws.size(); i++) delete Ws[i];
 	for (auto i=0; i<As.size(); i++) delete As[i];
+
+	return it;
 	
 }
 
