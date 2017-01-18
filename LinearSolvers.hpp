@@ -2264,7 +2264,7 @@ unsigned int gmres_k(const Preconditioner * pc, const SparseMatrix & A, const Ve
 
 
 
-void get_strong_neighbors(const SparseMatrix & A, unsigned int row, std::set<unsigned int> & S, double theta){
+inline void get_strong_neighbors(const SparseMatrix & A, unsigned int row, std::set<unsigned int> & S, double theta){
 	auto rowptr = A.row_ptr();
 	auto data = A.data();
 	std::set<unsigned int> Spts;
@@ -2305,7 +2305,7 @@ void get_strong_neighbors(const SparseMatrix & A, unsigned int row, std::set<uns
 
 // get coarse point neighbor indices for point "row"
 // support function for AMG
-void get_C_neighbors(const SparseMatrix & A, const std::set<unsigned int> & C, 
+inline void get_C_neighbors(const SparseMatrix & A, const std::set<unsigned int> & C, 
 				  unsigned int row, std::set<unsigned int> & rowC){
 	auto rowptr = A.row_ptr();
 	auto data = A.data();
@@ -2326,7 +2326,7 @@ void get_C_neighbors(const SparseMatrix & A, const std::set<unsigned int> & C,
 
 // get fine point neighbor indices for point "row"
 // support function for AMG
-void get_F_neighbors(const SparseMatrix & A, const std::set<unsigned int> & C, 
+inline void get_F_neighbors(const SparseMatrix & A, const std::set<unsigned int> & C, 
 				  unsigned int row, std::set<unsigned int> & rowF){
 	auto rowptr = A.row_ptr();
 	auto data = A.data();
@@ -2351,21 +2351,51 @@ void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C,
 {
 
 
+	// some preliminaries
+	auto rowptr = A.row_ptr();
+	auto data = A.data();
+	
+	// get vector of row maxima
+	// std::cout << "...Constructing row maxima..." << std::endl;
+	std::vector<double> rowmax(A.rows(), 0);
+	for (auto i=0; i<A.rows(); i++){
+		auto it = rowptr[i];
+		// for this row, find the max negative valu
+		while (it != rowptr[i+1]){
+			if (it->first==i){
+				it++;
+				continue;
+			}
+
+			rowmax[i] = std::max(rowmax[i], -it->second);
+			it++;
+		}
+		rowmax[i] *= -theta;
+	}
+
+	// get vector boolean of which points are coarse
+	std::vector<bool> iscoarse(A.rows(), false);
+
 	// identify point in C and F where
 	// C is the set of coarse grid points, and F is 
 	// the set of fine grid points
-	auto rowptr = A.row_ptr();
-	auto data = A.data();
 	std::vector<unsigned int> lambda(A.cols());
 	std::set<unsigned int> Cpts, Fpts, Upts, S;
-	// std::cout << "Constructing lambda measure..." ;
+	// std::cout << "...Constructing lambda measure..." << std::endl;
 	for (auto i=0; i<A.rows(); i++){
+		//std::cout << i << std::endl;
 
-		// get strongly connected points for this row
-		get_strong_neighbors(A, i, S, theta);
+		auto it = rowptr[i];
+		// for this row, find strongly connected points
+		while (it != rowptr[i+1]){
+			if (it->first==i){
+				it++;
+				continue;
+			}
 
-		// increment lambda for the strong dependencies
-		for (auto it=S.begin(); it!=S.end(); it++) lambda[*it]++;
+			if (it->second <= rowmax[i]) lambda[it->first]++;
+			it++;
+		}
 	}
 	// std::cout << "DONE" << std::endl;
 	// std::cout << "Constructed Lambda..." << std::endl;
@@ -2374,7 +2404,7 @@ void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C,
 	// }
 
 	// first pass separates C and F points
-	// std::cout << "Starting first pass..." ;
+	// std::cout << "Starting first pass..." << std::endl ;
 	for (auto i=0; i<A.cols(); i++) Upts.insert(i);
 	unsigned int imax = std::distance(lambda.begin(), std::max_element(lambda.begin(), lambda.end()));//.begin(), lambda.end()));
 	while (lambda[imax] > 0 && Upts.size() > 0){
@@ -2384,26 +2414,13 @@ void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C,
 		lambda[imax] = 0;
 		Cpts.insert(imax);
 		Upts.erase(imax);
+		iscoarse[imax] = true;
 
 		// std::cout << "inserted coarse point..." << imax << std::endl;
 
 		// get the strong connections to this point... these become fine points
 		auto it = rowptr[imax];
-		// for this row, find the max negative value
-		double rowmax = 0.0;
-		while (it != rowptr[imax+1]){
-			unsigned int j = it->first;
-			if (j==imax){
-				it++;
-				continue;
-			}
-
-			rowmax = std::max(rowmax, -it->second);
-			it++;
-		}
-
 		// A point i is strongly connected to j if -Aij >= theta*max(-Aik)
-		it = rowptr[imax];
 		while (it != rowptr[imax+1]){
 			unsigned int j = it->first;
 			if (j==imax){
@@ -2412,7 +2429,7 @@ void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C,
 			}
 
 			// these points are strongly connected
-			if (-it->second >= theta*rowmax && lambda[j] > 0){
+			if (it->second <= rowmax[imax] && lambda[j] > 0){
 				lambda[j] = 0;
 				Fpts.insert(j);
 				Upts.erase(j);
@@ -2422,18 +2439,6 @@ void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C,
 				// get points strongly connected to these points
 				// and increment lambda for them
 				auto itj = rowptr[j];
-				double rowmaxj = 0.0;
-				while (itj != rowptr[j+1]){
-					unsigned int k = itj->first;
-					if (k==j){
-						itj++;
-						continue;
-					}
-
-					rowmaxj = std::max(rowmaxj, -itj->second);
-					itj++;
-				}
-				itj = rowptr[j];
 				while (itj != rowptr[j+1]){
 					unsigned int k = itj->first;
 					if (k==j){
@@ -2442,7 +2447,7 @@ void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C,
 					}
 
 					// these points are strongly connected
-					if (-itj->second >= theta*rowmaxj && lambda[k] > 0){
+					if (itj->second <= rowmax[j] && lambda[k] > 0){
 						lambda[k] += 1;
 					}
 					itj++;
@@ -2469,57 +2474,75 @@ void amg_standard_coarsening(const SparseMatrix & A, std::set<unsigned int> & C,
 
 
 	// second pass checks that strong F-F dependencies share a common C point
-	auto it=Fpts.begin(); 
-	std::set<unsigned int> iC, jC, cC;
-	std::set<unsigned int> iF, iFS;
-	// std::cout << "Starting second pass..." ;
-	while (it!=Fpts.end()){
-		unsigned int i=*it;
+	auto itF=Fpts.begin(); 
+	std::set<unsigned int> iC;
+	// std::cout << "Starting second pass..." << std::endl ;
+	std::vector<bool> Cneighb(A.rows(), false);
+	while (itF!=Fpts.end()){
+		unsigned int i=*itF;
 		//std::cout << "Fine point: " << i << std::endl;
 
-		// get strong dependencies for row i
-		get_strong_neighbors(A, i, S, theta);
-
-		// get C points for row i
-		get_C_neighbors(A, Cpts, i, iC);
-
-		// get F points for row i
-		get_F_neighbors(A, Cpts, i, iF);
-
-		// get strong F neighbors for point i
-		iFS.clear();
-		std::set_intersection(iF.begin(), iF.end(), S.begin(), S.end(), std::inserter(iFS, iFS.begin()));
-
-
-		//std::cout << "num strong dep F points: " << iFS.size() << std::endl;
-		if (iFS.size()==0){
-			it++;
-			continue;
-		}
-
-		// for strongly dependent fine points, check for a common C point
-		for (auto sit=iFS.begin(); sit != iFS.end(); sit++){
-			unsigned int j = *sit;
-			
-			//std::cout << "dependent point: " << j << std::endl;
-
-			// get C points for row j
-			get_C_neighbors(A, Cpts, j, jC);
-
-			// find number of intersections
-			cC.clear();
-			std::set_intersection(iC.begin(), iC.end(), jC.begin(), jC.end(), std::inserter(cC, cC.begin()));
-
-			// if # of common C points is zero, change from F to C point
-			if (cC.size()==0){
-				//it++;
-				Cpts.insert(*it);
-				Fpts.erase(*it);
+		// mark C neighbors for this row
+		auto it = rowptr[i];
+		while (it != rowptr[i+1]){
+			// unsigned int j = it->first;
+			if (it->first==i){
 				it++;
-				break;
+				continue;
 			}
+			if (iscoarse[it->first]) Cneighb[it->first] = true;
+			it++;
 		}
-		if (cC.size()!=0) it++;
+		
+		// for strongly dependent fine neighbors, check for a common C point
+		// iterate over strongly dependent fine neighbors
+		it = rowptr[i];
+		while (it != rowptr[i+1]){
+			unsigned int j = it->first;
+			if (j==i){
+				it++;
+				continue;
+			}
+
+			// these neighbors are strong fine points
+			if (it->second <= rowmax[i] && !iscoarse[j]){
+				unsigned int cc=0;
+
+				// get C neighbors for row j and
+				// find how many neighbors are matching
+				auto itj = rowptr[j];
+				while (itj != rowptr[j+1]){
+					if (itj->first == j){
+						itj++;
+						continue;
+					}
+					if (iscoarse[itj->first] && Cneighb[itj->first]) cc++;
+					itj++;
+				}
+
+				// if there are 0 matching C neighbors, change from F to C point
+				if (cc==0){
+					Cpts.insert(*itF);
+					iscoarse[*itF] = true;
+					Fpts.erase(*itF);
+					break;
+				}
+			}
+			it++;
+		}
+
+		// unmark C neighbors for this row
+		it = rowptr[i];
+		while (it != rowptr[i+1]){
+			if (it->first==i){
+				it++;
+				continue;
+			}
+			if (iscoarse[it->first]) Cneighb[it->first] = false;
+			it++;
+		}
+
+		itF++;
 	}
 	// std::cout << "DONE" << std::endl;
 	// std::cout << "Csize: " << Cpts.size() << std::endl;
@@ -2712,6 +2735,8 @@ void amg_standard_interpolation(const SparseMatrix & A,
 
 void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::vector<SparseMatrix *> & As){
 
+	std::cout << "Level: " << Ws.size() << std::endl;
+
 	// if A is "small enough", then quit setup
 	if (A.cols() < 40) return;
 
@@ -2719,15 +2744,22 @@ void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::ve
 	std::set<unsigned int> Cpts, Fpts;
 	amg_standard_coarsening(A, Cpts, Fpts, 0.25);
 
+	std::cout << "coarsened..." << std::endl;
+
 	// get interpolation matrix from C-F splitting
 	SparseMatrix * W = new SparseMatrix();
 	amg_direct_interpolation(A, Cpts, Fpts, *W);
 	// amg_standard_interpolation(A, Cpts, Fpts, *W);
 
+	std::cout << "interpolated..." << std::endl;
+
 	// generate restricted matrix
 	SparseMatrix * Ar = new SparseMatrix();
 	(*Ar) = W->Tmult(A*(*W));
 	As.push_back(Ar);
+
+	std::cout << "restricted --> " << Ar->rows() << " x " << Ar->cols() << std::endl;
+
 
 	// W->mmwrite("SparseInterpolationMatrix.txt");
 	// (W->densify()).dlmwrite("InterpolationMatrix.txt");
@@ -2827,11 +2859,13 @@ unsigned int amg(const SparseMatrix & A, const Vector & b, Vector & x, unsigned 
 	// 	std::cout << "A_r nnz/total: " << Ar.nnz() << "/" << Ar.rows()*Ar.cols() << std::endl;
 	// }
 
-	
+
+		
 	// *********** SOLUTION PHASE **************
 	unsigned int it=0;
 	double resid = norm_2(b-A*x);
 	while(resid > res_thresh && it < max_iters){
+		std::cout << "iterating..." << it << std::endl;
 		amgv(A, b, x, 0, Ws, As, 2, 2);
 		resid = norm_2(b-A*x);
 		it++;

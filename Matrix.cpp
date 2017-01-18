@@ -845,7 +845,8 @@ int main(int argc, char * argv[]){
 	Vector offd(1000 - 1); offd.fill(-1);
 	SparseMatrix spamg = 2*speye(1000,1000) + spdiag(offd, 1) + spdiag(offd,-1);
 	Vector ps_amg(1000); ps_amg.fill(0);
-	Vector psamg_b(1000); psamg_b.fill(0); psamg_b(50) = 1;// = randvecn(100);
+	// Vector psamg_b(1000); psamg_b.fill(0); psamg_b(50) = 1;
+	Vector psamg_b = randvecn(1000);
 	cout << "amg resid before: " << (psamg_b - spamg*ps_amg).norm() << endl;
 	// niters = bicgstab(spamg, psamg_b, ps_amg, 50);
 	// cout << "iterated: " << niters << " times" << endl;
@@ -853,7 +854,7 @@ int main(int argc, char * argv[]){
 	niters = amg(spamg, psamg_b, ps_amg, 100, 1.0e-12);
 	cout << "iterated: " << niters << " times" << endl;
 	cout << "amg resid: " << (psamg_b - spamg*ps_amg).norm() << endl;
-	// ps_amg.dlmwrite("amg_soln.txt");
+	ps_amg.dlmwrite("amg_soln.txt");
 
 	return 0;
 }
