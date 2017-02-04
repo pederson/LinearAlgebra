@@ -9,9 +9,9 @@
 
 #include "Matrix.hpp"
 
-
-// *******************************************************************************
-
+// using namespace libra;
+// // *******************************************************************************
+// namespace libra{
 
 class SparseVector : public AbstractVector
 {
@@ -643,56 +643,12 @@ SparseVector Vector::get_support(const SparseVector & vct) const{
 	return out;
 }
 
-
-
-
-// global operators - SparseVector
-SparseVector operator*(double val, const SparseVector & vct)
-{
-	SparseVector out(vct.length(), val*vct.default_value());
-	auto data = vct.data();
-	for (auto it=data.begin(); it!=data.end(); it++){
-		out.set(it->first, val*it->second);
-	}
-	return out;
-}
-
-SparseVector operator+(double val, const SparseVector & vct)
-{
-	SparseVector out(vct.length(), val+vct.default_value());
-	auto data = vct.data();
-	for (auto it=data.begin(); it!=data.end(); it++){
-		out.set(it->first, val+it->second);
-	}
-	return out;
-}
-
-SparseVector operator-(double val, const SparseVector & vct)
-{
-	SparseVector out(vct.length(), val-vct.default_value());
-	auto data = vct.data();
-	for (auto it=data.begin(); it!=data.end(); it++){
-		out.set(it->first, val-it->second);
-	}
-	return out;
-}
-
 SparseVector sign(const SparseVector & vct){
 	double deft = sgn(vct.default_value());
 	SparseVector out(vct.length(), deft);
 	auto dat = vct.data();
 	for (auto it=dat.begin(); it!=dat.end(); it++){
 		out(it->first) = sgn(it->second);
-	}
-	return out;
-}
-
-SparseVector abs(const SparseVector & vct){
-	double deft = fabs(vct.default_value());
-	SparseVector out(vct.length(), deft);
-	auto dat = vct.data();
-	for (auto it=dat.begin(); it!=dat.end(); it++){
-		out(it->first) = fabs(it->second);
 	}
 	return out;
 }
@@ -758,4 +714,46 @@ SparseVector sprandvecn(unsigned int length, double fill)
 	return out;
 }
 
+
+
+// global operators - SparseVector
+SparseVector operator*(double val, const SparseVector & vct)
+{
+	SparseVector out(vct.length(), val*vct.default_value());
+	auto data = vct.data();
+	for (auto it=data.begin(); it!=data.end(); it++){
+		out.set(it->first, val*it->second);
+	}
+	return out;
+}
+
+SparseVector operator+(double val, const SparseVector & vct)
+{
+	SparseVector out(vct.length(), val+vct.default_value());
+	auto data = vct.data();
+	for (auto it=data.begin(); it!=data.end(); it++){
+		out.set(it->first, val+it->second);
+	}
+	return out;
+}
+
+SparseVector operator-(double val, const SparseVector & vct)
+{
+	SparseVector out(vct.length(), val-vct.default_value());
+	auto data = vct.data();
+	for (auto it=data.begin(); it!=data.end(); it++){
+		out.set(it->first, val-it->second);
+	}
+	return out;
+}
+
+SparseVector abs(const SparseVector & vct){
+	double deft = fabs(vct.default_value());
+	SparseVector out(vct.length(), deft);
+	auto dat = vct.data();
+	for (auto it=dat.begin(); it!=dat.end(); it++){
+		out(it->first) = fabs(it->second);
+	}
+	return out;
+}
 #endif

@@ -13,9 +13,9 @@
 
 #include "AbstractMatrix.hpp"
 
-
-// *******************************************************************************
-
+// using namespace libra;
+// // *******************************************************************************
+// namespace libra{
 
 class Matrix_Proxy
 {
@@ -193,6 +193,8 @@ protected:
 
 };
 
+
+
 std::ostream& operator<<(std::ostream & os, const Vector_Proxy & vctp)
 {
 	os << std::endl;
@@ -221,7 +223,6 @@ std::ostream& operator<<(std::ostream & os, const Vector_Proxy & vctp)
 
 
 // *******************************************************************************
-
 
 class Matrix : public AbstractMatrix
 {
@@ -669,7 +670,6 @@ std::ostream& operator<<(std::ostream & os, const Matrix & mtx)
 
 // *******************************************************************************
 
-
 // vector is derived from matrix. Has either 1 column or 1 row
 class Vector : public Matrix, public AbstractVector{
 public:
@@ -1053,10 +1053,6 @@ protected:
 
 
 
-
-
-
-
 // global operators - Matrix
 Matrix operator*(double val, const Matrix & mtx)
 {
@@ -1239,15 +1235,15 @@ Vector operator-(double val, const Vector & vct)
 	return out;
 }
 
-Vector sign(const Vector & vct){
-	Vector out(vct);
-	for (auto i=0; i<out.length(); i++) out(i) = sgn(vct(i));
-	return out;
-}
-
 Vector abs(const Vector & vct){
 	Vector out(vct);
 	for (auto i=0; i<out.length(); i++) out(i) = fabs(vct(i));
+	return out;
+}
+
+Vector sign(const Vector & vct){
+	Vector out(vct);
+	for (auto i=0; i<out.length(); i++) out(i) = sgn(vct(i));
 	return out;
 }
 
@@ -1557,6 +1553,8 @@ Vector Matrix::Tmult(const Vector & v) const
 	return out;
 }
 
+
+// }
 
 
 

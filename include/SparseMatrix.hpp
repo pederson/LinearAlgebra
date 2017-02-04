@@ -12,9 +12,9 @@
 #include "Matrix.hpp"
 #include "SparseVector.hpp"
 
-
-// *******************************************************************************
-
+// using namespace libra;
+// // *******************************************************************************
+// namespace libra{
 
 class SparseMatrix : public AbstractMatrix
 {
@@ -980,4 +980,5 @@ SparseMatrix mmread(std::string filename){
 	return out;
 }
 
+// }
 #endif
