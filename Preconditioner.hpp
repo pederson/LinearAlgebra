@@ -8,7 +8,7 @@ Vector diagonal_solve(const SparseMatrix & A, const Vector & b);
 Vector lower_triangular_solve(const SparseMatrix & A, const Vector & b);
 Vector upper_triangular_solve(const SparseMatrix & A, const Vector & b);
 Vector diag(const SparseMatrix & A);
-SparseMatrix spdiag(const Vector & x, int j);
+SparseMatrix spdiag(const Vector & x, int j=0);
 SparseMatrix strictly_lower(const SparseMatrix & A);
 SparseMatrix strictly_upper(const SparseMatrix & A);
 void icholesky(const SparseMatrix & A, SparseMatrix & R);

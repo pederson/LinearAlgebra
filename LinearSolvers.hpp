@@ -55,7 +55,7 @@ Matrix diag(const Vector & vct)
 
 // convert vector into square diagonal sparse matrix
 // off is the offset of the diagonal (+ is up, - is down)
-SparseMatrix spdiag(const Vector & vct, int off=0)
+SparseMatrix spdiag(const Vector & vct, int off)
 {
 	SparseMatrix out(vct.length()+abs(off), vct.length()+abs(off));
 
