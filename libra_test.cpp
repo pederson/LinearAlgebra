@@ -1,14 +1,10 @@
-#include "Matrix.hpp"
-#include "SparseVector.hpp"
-#include "SparseMatrix.hpp"
-#include "Preconditioner.hpp"
+#include <libra.h>
 
 using namespace std;
-
+// using namespace libra;
 // g++ -std=c++11 Matrix.cpp LinearSolvers.hpp -o matrixtest
 
 #include <typeinfo>
-#include "LinearSolvers.hpp"
 
 int main(int argc, char * argv[]){
 

@@ -13,8 +13,9 @@
 #include "SparseMatrix.hpp"
 #include "Preconditioner.hpp"
 
+// using namespace libra;
 
-
+// namespace libra{
 
 // return the diagonals of a matrix as a vector
 Vector diag(const Matrix & mtx)
@@ -2886,4 +2887,5 @@ unsigned int amg(const SparseMatrix & A, const Vector & b, Vector & x, unsigned 
 
 // estimate the condition number
 
+// }
 #endif

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <stdlib.h>
 
+// namespace libra{
 
 // forward declare some classes
 class Matrix;
@@ -65,4 +66,5 @@ template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
+// }
 #endif

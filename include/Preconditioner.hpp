@@ -4,6 +4,9 @@
 #include "Matrix.hpp"
 #include "SparseMatrix.hpp"
 
+// using namespace libra;
+
+
 Vector diagonal_solve(const SparseMatrix & A, const Vector & b);
 Vector lower_triangular_solve(const SparseMatrix & A, const Vector & b);
 Vector upper_triangular_solve(const SparseMatrix & A, const Vector & b);
@@ -17,6 +20,9 @@ void amg_setup(const SparseMatrix & A, std::vector<SparseMatrix *> & Ws, std::ve
 void amgv(const SparseMatrix & A, const Vector & b, Vector & x, unsigned int level,
 		  const std::vector<SparseMatrix *> & Ws, const std::vector<SparseMatrix *> & As, 
 		  unsigned int v1, unsigned int v2);
+
+
+// namespace libra{
 
 class Preconditioner
 {
@@ -208,4 +214,5 @@ private:
 	std::vector<SparseMatrix *> Ws, As;
 };
 
+// }
 #endif
