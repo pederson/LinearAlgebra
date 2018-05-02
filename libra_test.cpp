@@ -2,11 +2,36 @@
 
 using namespace std;
 // using namespace libra;
-// g++ -std=c++11 Matrix.cpp LinearSolvers.hpp -o matrixtest
+// g++ -std=c++14 -I./ libra_test.cpp -o matrixtest
 
 #include <typeinfo>
 
 int main(int argc, char * argv[]){
+
+
+	//**************** GENERALIZED VECTOR TESTS *********************//
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "******* GENERALIZED VECTOR TESTS ***********" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	std::vector<double> ga1 = {0,1,2,3,4,5,6,7,8,9};
+	std::vector<std::complex<double>> ga2 = {9,8,7,6,5,4,3,2,1,0};
+	libra::write_vector(ga2);
+	std::cout << "Generalized Inner Product: " << libra::inner_product(ga2, ga1) << std::endl;
+	std::cout << "Generalized Norms: " << std::endl;
+	std::cout << "                  infinity: " << libra::norm_inf(ga2) << std::endl;
+	std::cout << "                       one: " << libra::norm_1(ga2) << std::endl;
+	std::cout << "                       two: " << libra::norm_2(ga2) << std::endl;
+	std::cout << "                     three: " << libra::norm_3(ga2) << std::endl;
+	std::cout << "                      four: " << libra::norm_4(ga2) << std::endl;
+	std::cout << "                      five: " << libra::norm_5(ga2) << std::endl;
+	libra::fill(ga2, 1.0);
+	libra::write_vector(ga2);
+	std::cout << "Vector length: " << libra::length(ga2) << std::endl;
+	throw -1;
+
 
 	unsigned int nrows=20, ncols = 5;
 
