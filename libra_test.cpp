@@ -19,7 +19,7 @@ int main(int argc, char * argv[]){
 	std::vector<double> ga1 = {0,1,2,3,4,5,6,7,8,9};
 	std::vector<std::complex<double>> ga2 = {9,8,7,6,5,4,3,2,1,0};
 	libra::write_vector(ga2);
-	std::cout << "Generalized Inner Product: " << libra::inner_product(ga2, ga1) << std::endl;
+	std::cout << "Generalized Inner Product: " << libra::inner_product(ga2, ga2) << std::endl;
 	std::cout << "Generalized Norms: " << std::endl;
 	std::cout << "                  infinity: " << libra::norm_inf(ga2) << std::endl;
 	std::cout << "                       one: " << libra::norm_1(ga2) << std::endl;
@@ -30,12 +30,58 @@ int main(int argc, char * argv[]){
 	libra::fill(ga2, 1.0);
 	libra::write_vector(ga2);
 	std::cout << "Vector length: " << libra::length(ga2) << std::endl;
+	auto subv = libra::vector_view(ga2, ga2.begin()+4, ga2.end());
+	libra::fill(subv, 0.0);
+	auto subsubv = libra::vector_view(subv, subv.begin()+1, subv.end()-1);
+	libra::fill(subsubv, 2.0);
+	std::cout <<"vector_view length: " << libra::length(subsubv) << std::endl;
+	libra::write_vector(subv);
+	std::cout << "vector_view norm_3: " << libra::norm_3(subsubv) << std::endl;
+	libra::write_vector(ga2);
+	auto subv1 = libra::vector_view(ga1, ga1.begin()+3, ga1.end()-2);
+	libra::fill_randn(subv1);
+	libra::write_vector(ga1);
+	std::cout << "max value: " << libra::max(ga1) << " at position: " << libra::argmax(ga1) << std::endl;
+	std::cout << "min value: " << libra::min(ga1) << " at position: " << libra::argmin(ga1) << std::endl;
+	
+
+	//**************** TENSOR TESTS *********************//
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "************ DENSE TENSOR TESTS ************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+
+	libra::Tensor<double, 3, 2, 2, 2> tens;
+	libra::Matrix<double, 3, 3> dmat; dmat[0][0] = 1;
+	for (auto it = dmat.begin(); it!= dmat.end(); it++) libra::fill_randn(*it);
+	cout << "<Matrix>" << endl;
+	for (auto it = dmat.begin(); it!= dmat.end(); it++){
+		libra::write_vector(*it);
+	}
+	cout << "</Matrix>" << endl;
+	libra::Vector<double, libra::dynamic_size> dmatx = {1,0,0};
+	libra::Vector<double, 3> dresult;
+	dmat.vmult(dmatx, dresult);
+	libra::write_vector(dresult);
+	
+	libra::Vector<int, libra::dynamic_size> dvec = {3,2,9,0,20, 9, 1};
+	libra::write_vector(dvec);
+	// libra::
+
 	throw -1;
 
 
 	unsigned int nrows=20, ncols = 5;
 
 	//**************** MATRIX TESTS *********************//
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "************ DENSE MATRIX TESTS ************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
 	Matrix A(nrows, ncols);
 	for (auto i=0; i<nrows; i++)
 	{
@@ -90,6 +136,18 @@ int main(int argc, char * argv[]){
 	S.dlmwrite("M_dense.txt",":");
 
 	//***************************************************//
+
+
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "**** GENERALIZED LINEAR SOLVER TESTS *******" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	Vector lvec = libra::diag(A);
+	cout << "lvec: " << lvec << std::endl;
+
+	throw -1;
 
 
 

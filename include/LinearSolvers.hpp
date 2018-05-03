@@ -17,259 +17,59 @@
 
 namespace libra{
 
+template <typename MatrixType>
+Vector diag(const MatrixType & mtx)
+{
+	std::size_t dim = std::min(mtx.rows(), mtx.cols());
+	Vector out(dim);
 
-template <typename VectorT>
-void write_vector(const VectorT & v, std::ostream & os = std::cout, std::size_t ntabs = 0){
-	for (auto i=0; i<ntabs; i++) os << "\t" ;
-	os << "<Vector>" << std::endl;
-	os << std::scientific;
-	for (auto it = std::cbegin(v); it!=std::cend(v); it++){
-		for (auto i=0; i<ntabs; i++) os << "\t" ;
-		std::cout << *it << std::endl;
+	for (auto i=0; i<dim; i++)
+	{
+		out(i) = mtx(i,i);
 	}
-	for (auto i=0; i<ntabs; i++) os << "\t" ;
-	os << "</Vector>" << std::endl;
-	return;
-} 
-
-
-
-
-// this requires that we can return iterators from the vector
-// types using std::cbegin and std::cend
-template <typename Vector1, typename Vector2>
-decltype(auto) inner_product(const Vector1 & v1, const Vector2 & v2){
-
-	auto it1=std::cbegin(v1);
-	auto it2=std::cbegin(v2);
-	auto out = (*it1)*(*it2);
-	it1++; it2++;
-	while (it1 != std::cend(v1) && it2 != std::cend(v2)){
-		out += (*it1)*(*it2);
-		it1++;
-		it2++;
-	}
-
 	return out;
-} 
+}
 
 
+// sparse BiConjugate Gradient Stabilized method
+template <typename MatrixType, typename VectorType>
+unsigned int bicgstab(const MatrixType & A, const VectorType & b, VectorType & x, unsigned int max_iters, double res_thresh=1.0e-15){
+	// initialize stuff
+	VectorType r = b - A*x;
+	double resid = 1.0;
+	unsigned int it = 0;
+	VectorType rhat = r;
+	double rho=1, alpha=1, omega=1;
+	VectorType v(r); fill(v, 0);
+	VectorType p(r); fill(p, 0);
+	VectorType s,t;
+	double beta, rho_old;
 
-// this requires that we can iterate over the vector using std::begin and std::end
-// and that the ValueT is at least implicitly convertible to 
-// the VectorT::value_type
-template <typename VectorT, typename ValueT>
-void fill(VectorT & v1, ValueT val){
-	auto it1 = std::begin(v1);
-	typedef typename std::remove_reference<decltype(*it1)>::type 		NonRefT;
-	for (auto it = std::begin(v1); it!=std::end(v1); it++){
-		*it = static_cast<NonRefT>(val);
-	}
-	return;
-} 
+	while (resid > res_thresh && it < max_iters){
 
+		// enforce biorthogonality and biconjugacy
+		rho_old = rho;
+		rho = inner_product(rhat, r);
+		beta = rho/rho_old*(alpha/omega);
+		p = r + beta*(p-omega*v);
+		v = A*p;
+		alpha = rho/inner_product(rhat,v);
+		s = r - alpha*v;
+		t = A*s;
+		omega = inner_product(s,t)/inner_product(t,t);
+		x += alpha*p + omega*s;
 
+		// recalculate residual
+		r = s - omega*t;
 
-
-// this requires that we can iterate over the vector using std::cbegin and std::cend
-template <typename VectorT>
-std::size_t length(VectorT & v1){
-	std::size_t ct = 0;
-	for (auto it = std::cbegin(v1); it!=std::cend(v1); it++){
-		ct++;
-	}
-	return ct;
-} 
-
-
-
-
-
-// A norm is specified as f(Sum(Rule(v_i))) where
-// 			v_i 	= i-th element of the vector v
-//			Rule 	= some function applied to each vector element (e.g. abs() or square)
-//			Sum  	= the summation over the whole vector
-//			f 		= some function applied to the sum (e.g. the square root)
-template <typename NormRule, typename VectorT>
-decltype(auto) norm(const VectorT & v){
-	auto it = std::cbegin(v);
-	auto val = NormRule::element_rule(*it);
-	it++;
-	while (it != std::cend(v)){
-		val += NormRule::element_rule(*it);
+		// update counters
 		it++;
+		resid = norm_2(r);
 	}
-	return NormRule::function_rule(val);
+
+	// std::cout << "iterated: " << it << " times" << std::endl;
+	return it;
 }
-
-template <std::size_t p>
-struct PNormRule {
-	template <typename T>
-	static T element_rule(T & val){
-		return std::pow(val, p);
-	};
-
-	template <typename T>
-	static T function_rule(T & val){
-		return std::pow(val, 1.0/static_cast<double>(p));
-	}
-};
-
-
-template <> 
-struct PNormRule<1> {
-	template <typename T>
-	static T element_rule(T & val){
-		return std::abs(val);
-	};
-
-	template <typename T>
-	static T function_rule(T & val){
-		return val;
-	}
-};
-
-// some common norm functions defined for convenience
-template <typename VectorT>
-decltype(auto) norm_inf(const VectorT & v){
-	auto it = std::cbegin(v);
-	auto val = std::abs(*it);
-	it++;
-	while (it != std::cend(v)){
-		val = std::max(val, std::abs(*it));
-		it++;
-	}
-	return val;
-}
-
-template <typename VectorT>
-decltype(auto) norm_1(const VectorT & v){
-	return norm<PNormRule<1>>(v);
-}
-
-template <typename VectorT>
-decltype(auto) norm_2(const VectorT & v){
-	return norm<PNormRule<2>>(v);
-}
-
-template <typename VectorT>
-decltype(auto) norm_3(const VectorT & v){
-	return norm<PNormRule<3>>(v);
-}
-
-template <typename VectorT>
-decltype(auto) norm_4(const VectorT & v){
-	return norm<PNormRule<4>>(v);
-}
-
-template <typename VectorT>
-decltype(auto) norm_5(const VectorT & v){
-	return norm<PNormRule<5>>(v);
-}
-
-
-
-
-template <typename IteratorT>
-class SubVector{
-public:
-
-	SubVector(IteratorT beg, IteratorT end)
-	: mBegin(beg), mEnd(end) {};
-
-	friend class iterator;
-	// iterate over key/node pairs for all nodes 
-	class iterator{
-	public:
-		typedef iterator 							self_type;
-		typedef std::ptrdiff_t 						difference_type;
-	    typedef std::pair<const KeyT, MappedT> 		value_type;
-	    typedef std::pair<const KeyT, MappedT> & 	reference;
-	    typedef std::pair<const KeyT, MappedT> * 	pointer;
-	    typedef std::forward_iterator_tag 			iterator_category;
-
-		// construction
-		iterator(SubVector & sv, IteratorT it)
-		: mSV(t)
-		, mIt(it){};
-
-		// iterator(LevelContainer & t, std::size_t lvl, typename std::unordered_map<KeyT, MappedT>::iterator iter)
-		// : cont(t)
-		// , lit(t.mKeyMaps.find(lvl))
-		// , it(iter) {};
-
-
-		// iterator(const iterator & cit)
-		// : cont(cit.cont)
-		// , lit(cit.lit)
-		// , it(cit.it) {};
-
-		iterator & operator=(const iterator & cit){
-			iterator i(cit);
-			std::swap(i,*this);
-			return *this;
-		}
-
-		// dereferencing
-		reference operator*(){ return *it;};
-
-		// preincrement 
-		self_type operator++(){
-			it++;
-			while (lit != cont.mKeyMaps.end()){
-				if (it != lit->second.end()){
-					return *this;				
-				}
-
-				// reached end of level
-				lit++;
-
-				if (lit == cont.mKeyMaps.end()) break;
-				it = lit->second.begin();
-			}
-			// have reached the end of all the cells
-			return cont.end();
-		}
-
-		// postincrement 
-		self_type operator++(int blah){
-			it++;
-			while (lit != cont.mKeyMaps.end()){
-				if (it != lit->second.end()){
-					return *this;				
-				}
-
-				// reached end of level
-				lit++;
-
-				if (lit == cont.mKeyMaps.end()) break;
-				it = lit->second.begin();
-			}
-			// have reached the end of all the cells
-			return cont.end();
-		}
-
-		// pointer
-		pointer operator->() {return it.operator->();};
-
-		// inequality
-		bool operator!=(const self_type & leaf) const {return it != leaf.it;};
-
-		// equality
-		bool operator==(const self_type & leaf) const {return it == leaf.it;};
-
-
-	private:
-		// typename std::map<std::size_t, std::unordered_map<KeyT, MappedT>>::iterator lit;
-		// typename std::unordered_map<KeyT, MappedT>::iterator it;
-		SubVector & mSV;
-		IteratorT mIt;
-	};
-protected:
-	IteratorT mBegin, mEnd;
-};
-
-
 
 
 
@@ -285,21 +85,22 @@ protected:
 
 
 
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // return the diagonals of a matrix as a vector
 Vector diag(const Matrix & mtx)

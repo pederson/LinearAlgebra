@@ -756,4 +756,6 @@ SparseVector abs(const SparseVector & vct){
 	}
 	return out;
 }
+
+// }
 #endif
