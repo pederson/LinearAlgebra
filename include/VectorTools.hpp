@@ -121,6 +121,10 @@ struct inner_product_conjugation<std::complex<U>>{
 	static std::complex<U> get(const std::complex<U> & val) {return std::conj(val);};
 };
 
+template <typename T1, typename T2>
+struct product_type{
+	typedef decltype(std::declval<T1>() * std::declval<T2>()) type;
+};
 
 // this requires that we can return iterators from the vector
 // types using std::cbegin and std::cend

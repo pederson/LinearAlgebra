@@ -205,7 +205,7 @@ int main(int argc, char * argv[]){
 	// libra::write_vector(lresult2);
 	std::cout << "Exact RHS: " << std::endl;
 	// libra::write_vector(lvec);
-	std::cout << "resulting norm: " << norm_2(lresult-lvec) << std::endl;
+	std::cout << "resulting norm: " << norm_2(lresult2-lvec) << std::endl;
 
 
 	typedef std::complex<double> Ctype;
