@@ -61,13 +61,98 @@ public:
 			it++;
 			itme++;
 		}
+		return *this;
 	};
 
+
+	// multiplication by arbitrary scalar
+	template <typename ScalarType>
+	Vector operator*(const ScalarType & s) const {
+		Vector out;
+		VectorResizePolicy<length_at_compile>::resize(out, length(*this));
+
+		auto it = std::begin(out);
+		auto itme = std::cbegin(*this);
+		while (it != std::end(out)){
+			(*it) = s*(*itme);
+			it++;
+			itme++;
+		}
+		return out;
+	};
+
+
+	// addition with arbitrary vector
+	template <typename OtherVector>
+	Vector operator+(const OtherVector & v) const {
+		Vector out;
+		VectorResizePolicy<length_at_compile>::resize(out, length(v));
+		auto it = std::begin(out);
+		auto itv = std::cbegin(v);
+		auto itme = std::cbegin(*this);
+		while (it != std::end(out)){
+			(*it) = (*itme) + (*itv);
+			it++;
+			itv++;
+			itme++;
+		}
+		return out;
+	};
+
+
+	// subtraction with arbitrary vector
+	template <typename OtherVector>
+	Vector operator-(const OtherVector & v) const {
+		Vector out;
+		VectorResizePolicy<length_at_compile>::resize(out, length(v));
+		auto it = std::begin(out);
+		auto itv = std::cbegin(v);
+		auto itme = std::cbegin(*this);
+		while (it != std::end(out)){
+			(*it) = (*itme) - (*itv);
+			it++;
+			itv++;
+			itme++;
+		}
+		return out;
+	};
+
+
+	// compound addition with arbitrary vector
+	template <typename OtherVector>
+	Vector & operator+=(const OtherVector & v) {
+		// VectorResizePolicy<length_at_compile>::resize(out, length(v));
+		auto itv = std::cbegin(v);
+		auto it = std::begin(*this);
+		while (it != std::end(*this)){
+			(*it) += (*itv);
+			it++;
+			itv++;
+		}
+		return *this;
+	};
 
 	// random access operators by index
 	scalar_type & operator()(size_type i){return (*this)[i];};
 	const scalar_type & operator()(size_type i) const {return (*this)[i];};
 
+};
+
+
+// multiplication by arbitrary scalar
+template <typename ScalarType, typename scalar_type, size_type length_at_compile>
+Vector<scalar_type, length_at_compile> operator*(const ScalarType & s, const Vector<scalar_type, length_at_compile> & v) {
+	Vector<scalar_type, length_at_compile> out;
+	VectorResizePolicy<length_at_compile>::resize(out, length(v));
+
+	auto it = std::begin(out);
+	auto itme = std::cbegin(v);
+	while (it != std::end(out)){
+		(*it) = s*(*itme);
+		it++;
+		itme++;
+	}
+	return out;
 };
 
 
@@ -316,6 +401,28 @@ public:
 
 
 };
+
+
+template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
+void write_matrix(Matrix<scalar_type, rows_at_compile, cols_at_compile> & m, std::ostream & os = std::cout, std::size_t ntabs = 0){
+	for (auto i=0; i<ntabs; i++) os << "\t" ;
+	os << "<Matrix>" << std::endl;
+	os << std::scientific;
+	for (auto it = std::cbegin(m); it!=std::cend(m); it++){
+		for (auto i=0; i<ntabs; i++) os << "\t" ;
+			for (auto rit = it->cbegin(); rit != it->cend(); rit++){
+				std::cout << *rit << "," ;
+			}
+		std::cout << "\b \b" ;
+		std::cout << std::endl;
+	}
+	for (auto i=0; i<ntabs; i++) os << "\t" ;
+	os << "</Matrix>" << std::endl;
+	return;
+};
+
+
+
 
 // class Matrix_Proxy
 // {

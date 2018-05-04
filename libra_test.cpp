@@ -106,7 +106,6 @@ int main(int argc, char * argv[]){
 	
 	// libra::
 
-	throw -1;
 
 
 	unsigned int nrows=20, ncols = 5;
@@ -180,9 +179,43 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
-	Vector lvec = libra::diag(A);
-	cout << "lvec: " << lvec << std::endl;
+	// Vector lvec = libra::diag(A);
+	// cout << "lvec: " << lvec << std::endl;
 
+	typedef double SolveType;
+	libra::Matrix<SolveType, 10, 10> lmat;// = {1.0, 0.1, 0.1, 0.2, 1.0, 0.2, 0.3, 0.3, 1.0};
+	for (auto it=lmat.begin(); it!=lmat.end(); it++) libra::fill_rand(*it);
+	// lmat(0,0) = lmat(1,1) = lmat(2,2) = 1.0;
+	// libra::write_matrix(lmat);
+	libra::Vector<SolveType, libra::dynamic_size> lvec; lvec.resize(10);// = {0.2, 0.3, 0.2};
+	libra::fill_rand(lvec);
+	libra::write_vector(lvec);
+	
+	libra::Vector<SolveType, libra::dynamic_size> lresult; lresult.resize(10);// = {0,0,0};
+	libra::fill(lresult, 0);
+	// lmat.vmult(lvec, lresult);
+	libra::bicgstab(lmat, lvec, lresult, 100);
+	// solve the system with BiCGSTAB
+
+	cout << "Solution: " << endl;
+	// libra::write_vector(lresult);
+	libra::Vector<SolveType, libra::dynamic_size> lresult2 = lresult;
+	lmat.vmult(lresult, lresult2);
+	std::cout << "Reconstructed RHS: " << std::endl;
+	// libra::write_vector(lresult2);
+	std::cout << "Exact RHS: " << std::endl;
+	// libra::write_vector(lvec);
+	std::cout << "resulting norm: " << norm_2(lresult-lvec) << std::endl;
+
+
+	typedef std::complex<double> Ctype;
+	if (libra::is_complex<Ctype>::value){
+		cout << "im complex" << endl;
+		typedef typename libra::complex_detector<Ctype>::type 	MyType;
+		MyType p;
+		cout << "my underlying type is: " << typeid(p).name() << endl;
+
+	} 
 	throw -1;
 
 

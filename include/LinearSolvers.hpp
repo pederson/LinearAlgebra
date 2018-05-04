@@ -13,6 +13,8 @@
 #include "SparseMatrix.hpp"
 #include "Preconditioner.hpp"
 
+#include "VectorTools.hpp"
+
 // using namespace libra;
 
 namespace libra{
@@ -31,32 +33,50 @@ Vector diag(const MatrixType & mtx)
 }
 
 
+
+
 // sparse BiConjugate Gradient Stabilized method
-template <typename MatrixType, typename VectorType>
-unsigned int bicgstab(const MatrixType & A, const VectorType & b, VectorType & x, unsigned int max_iters, double res_thresh=1.0e-15){
+template <typename MatrixType, typename VectorTypeIn, typename VectorTypeOut>
+unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOut & x, unsigned int max_iters, double res_thresh=1.0e-15){
+	typedef typename std::remove_const<typename std::remove_reference<typename vector_detector<VectorTypeIn>::type>::type>::type 	ScalarType;
+
+	static_assert(!std::is_const<ScalarType>::value, "Type Must not be const!");
+
 	// initialize stuff
-	VectorType r = b - A*x;
+	VectorTypeIn tmp = x;
+	A.vmult(x, tmp);
+	VectorTypeIn r = b - tmp;
 	double resid = 1.0;
 	unsigned int it = 0;
-	VectorType rhat = r;
-	double rho=1, alpha=1, omega=1;
-	VectorType v(r); fill(v, 0);
-	VectorType p(r); fill(p, 0);
-	VectorType s,t;
-	double beta, rho_old;
+	VectorTypeIn rhat = r;
+	ScalarType rho=1, alpha=1, omega=1;
+	VectorTypeIn v = r; fill(v, 0);
+	VectorTypeIn p = r; fill(p, 0);
+	VectorTypeIn s = r;
+	VectorTypeIn t = r;
+	ScalarType beta, rho_old;
+
+	// std::cout << "starting iterations" << std::endl;
 
 	while (resid > res_thresh && it < max_iters){
 
 		// enforce biorthogonality and biconjugacy
 		rho_old = rho;
 		rho = inner_product(rhat, r);
-		beta = rho/rho_old*(alpha/omega);
+		beta = (rho/rho_old)*(alpha/omega);
 		p = r + beta*(p-omega*v);
-		v = A*p;
+
+		A.vmult(p, v);
+		// v = A*p;
+
 		alpha = rho/inner_product(rhat,v);
 		s = r - alpha*v;
-		t = A*s;
-		omega = inner_product(s,t)/inner_product(t,t);
+
+		A.vmult(s, t);
+		// t = A*s;
+		
+		omega = inner_product(t,s)/inner_product(t,t);
+
 		x += alpha*p + omega*s;
 
 		// recalculate residual
@@ -64,10 +84,12 @@ unsigned int bicgstab(const MatrixType & A, const VectorType & b, VectorType & x
 
 		// update counters
 		it++;
-		resid = norm_2(r);
+		resid = std::abs(norm_2(r));
+
+		std::cout << "it: " << it << " resid: " << resid << std::endl;
 	}
 
-	// std::cout << "iterated: " << it << " times" << std::endl;
+	std::cout << "iterated: " << it << " times" << std::endl;
 	return it;
 }
 
