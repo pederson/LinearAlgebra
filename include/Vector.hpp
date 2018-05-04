@@ -17,6 +17,21 @@
 namespace libra{
 
 
+// fixed-length resize policy
+template <size_type length_at_compile>
+struct VectorResizePolicy{
+	template <typename VectorType>
+	static void resize(VectorType & v, size_type n) {};
+};
+// dynamic size resize policy
+template <>
+struct VectorResizePolicy<dynamic_size>{
+	template <typename VectorType>
+	static void resize(VectorType & v, size_type n) {v.resize(n);};
+};
+
+
+
 
 
 // vector class definition
@@ -28,7 +43,28 @@ public:
 	// inherit the base class constructors
 	using BaseType::BaseType; 
 
+	// this nasty-looking code simply allows the use of vector and array braces initializationn
+	template <typename... Args>
+    Vector(Args &&... args) : BaseType((std::forward<Args>(args))...) {};
 
+	// copy constructor from the same vector type is allowed
+	// ... however, cannot copy construct from arbitrary vector types
+
+	// copy assignment from arbitrary vector
+	template <typename OtherVector>
+	Vector & operator=(const OtherVector & v){
+		VectorResizePolicy<length_at_compile>::resize(*this, length(v));
+		auto it = std::cbegin(v);
+		auto itme = std::begin(*this);
+		while (it != std::cend(v)){
+			(*itme) = *it;
+			it++;
+			itme++;
+		}
+	};
+
+
+	// random access operators by index
 	scalar_type & operator()(size_type i){return (*this)[i];};
 	const scalar_type & operator()(size_type i) const {return (*this)[i];};
 
@@ -45,6 +81,14 @@ public:
 
 	// inherit the base class constructors
 	using BaseType::BaseType;
+
+	// this nasty-looking code simply allows the use of vector and array braces initialization
+	// An input braces-initializer is converted to a row-major ordered matrix
+	// e.g. Matrix<int, 2, 3> mat = {1,2,3,4,5,6} becomes:		|1, 2, 3|
+	// 															|4, 5, 6|
+	template <typename... Args>
+    Matrix(Args &&... args) : BaseType({(std::forward<Args>(args))...}) {};
+
 
 
 	scalar_type & operator()(size_type i, size_type j){return (*this)[i][j];};

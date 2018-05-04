@@ -50,10 +50,16 @@ using Table = typename TableTypedef<true, scalar_type, dims_at_compile...>::type
 
 template <typename scalar_type, size_type rank, size_type... dims_at_compile>
 class Tensor : public Table<scalar_type, rank, dims_at_compile...>{
+public:
 	typedef Table<scalar_type, rank, dims_at_compile...> 	BaseType;
 
 	// inherit the base class constructors
 	using BaseType::BaseType;
+
+	// this nasty-looking code simply allows the use of vector and array braces initializationn
+	template <typename... Args>
+    Tensor(Args &&... args) : BaseType({(std::forward<Args>(args))...}) {};
+
 
 	// template <size_type... inds>
 	// scalar_type & operator()(size_type i, inds... j){return (*this)[i].operator[](j...);}

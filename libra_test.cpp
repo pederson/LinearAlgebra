@@ -46,6 +46,8 @@ int main(int argc, char * argv[]){
 	
 
 	//**************** TENSOR TESTS *********************//
+	cout << endl;
+	cout << endl;
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	cout << "************ DENSE TENSOR TESTS ************" << endl;
@@ -53,21 +55,55 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 
-	libra::Tensor<double, 3, 2, 2, 2> tens;
-	libra::Matrix<double, 3, 3> dmat; dmat[0][0] = 1;
-	for (auto it = dmat.begin(); it!= dmat.end(); it++) libra::fill_randn(*it);
+	libra::Tensor<int, 3, 2, 2, 2> tens = {1,2,3,4,5,6,7,8};
+	cout << "<Tensor>" << endl;
+	for (auto it1 = tens.begin(); it1!=tens.end(); it1++){
+		for (auto it = it1->begin(); it!= it1->end(); it++){
+			libra::write_vector(*it);
+		}
+	}
+	cout << "</Tensor>" << endl;
+
+
+	//**************** VECTOR TESTS *********************//
+	cout << endl;
+	cout << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "************ DENSE VECTOR TESTS ************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	libra::Vector<double, libra::dynamic_size> dmatx = {1.0,0.0,0.0};
+	libra::Vector<double, 3> dresult = {1.0,2.0,3.0};
+	dresult = dmatx;
+	libra::write_vector(dresult);
+	libra::Vector<double, 3> dresult_copy = dresult;
+	libra::write_vector(dresult_copy);
+	
+	libra::Vector<int, libra::dynamic_size> dvec = {3,2,9,0,20, 9, 1};
+	libra::write_vector(dvec);
+
+
+	//**************** MATRIX TESTS *********************//
+	cout << endl;
+	cout << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "************ DENSE MATRIX TESTS ************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	libra::Matrix<int, 3, 3> dmat = {1,2,3,4,5,6,7,8,9}; dmat[0][0] = 9;
+	// for (auto it = dmat.begin(); it!= dmat.end(); it++) libra::fill_randn(*it);
 	cout << "<Matrix>" << endl;
 	for (auto it = dmat.begin(); it!= dmat.end(); it++){
 		libra::write_vector(*it);
 	}
 	cout << "</Matrix>" << endl;
-	libra::Vector<double, libra::dynamic_size> dmatx = {1,0,0};
-	libra::Vector<double, 3> dresult;
 	dmat.vmult(dmatx, dresult);
 	libra::write_vector(dresult);
 	
-	libra::Vector<int, libra::dynamic_size> dvec = {3,2,9,0,20, 9, 1};
-	libra::write_vector(dvec);
 	// libra::
 
 	throw -1;
