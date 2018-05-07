@@ -36,16 +36,62 @@ struct VectorResizePolicy<dynamic_size>{
 
 // vector class definition
 template <typename scalar_type, size_type length_at_compile>
-class Vector : public Tensor<scalar_type, 1, length_at_compile>{
+class Vector : public Table<scalar_type, 1, length_at_compile>{
 public:
-	typedef Tensor<scalar_type, 1, length_at_compile> 	BaseType;
+	typedef Table<scalar_type, 1, length_at_compile> 	BaseType;
+
 
 	// inherit the base class constructors
 	using BaseType::BaseType; 
 
-	// this nasty-looking code simply allows the use of vector and array braces initializationn
-	template <typename... Args>
-    Vector(Args &&... args) : BaseType((std::forward<Args>(args))...) {};
+
+
+	// this nasty-looking code simply allows the use of initializer list for construction
+	template <typename... Args, size_type s = length_at_compile>
+	Vector(Args &&... args, typename std::enable_if<s == dynamic_size, void>::type * = 0) : BaseType((std::forward<Args>(args))...) {};
+
+
+
+
+	// // enable only if dynamic size
+	// // allows the user to set the size of the dynamic vector upon construction
+	// template <size_type s = length_at_compile>
+	// Vector(typename std::enable_if<s == dynamic_size, void>::type * = 0){
+	// 	std::cout << "I am called" << std::endl;
+	// 	// resize(l);
+	// };
+
+ //    // enable only if dynamic size
+	// // allows the user to set the size of the dynamic vector upon construction
+	// // fill constructor
+	// template <size_type s = length_at_compile>
+	// Vector(typename std::enable_if<s == dynamic_size, size_type>::type l, const scalar_type & val = scalar_type())
+	// : BaseType(l, val){
+	// 	std::cout << "fill constructor am called" << std::endl;
+	// 	// resize(l);
+	// };
+
+	// // Vector() {};
+
+	template <size_type s = length_at_compile>
+	Vector(std::array<scalar_type, length_at_compile> a, typename std::enable_if<s != dynamic_size, void>::type * = 0) : BaseType(a) {};
+
+	// template <size_type s = length_at_compile>
+	// typename std::enable_if<s != dynamic_size, Vector &>::type operator=(std::array<scalar_type, length_at_compile> & a){
+	// 	BaseType::operator=(a);
+	// 	return *this;
+	// };
+
+
+	// Vector(std::initializer_list<scalar_type> il) : BaseType(il) {};
+
+
+	// // explicitly treat the case where 1 single scalar is input
+	// template <size_type s = length_at_compile>
+	// Vector(typename std::enable_if<s == 1, scalar_type>::type n){
+	// 	std::cout << "I am called 2" << std::endl;
+	// 	(*this)[0] = n;
+	// };
 
 	// copy constructor from the same vector type is allowed
 	// ... however, cannot copy construct from arbitrary vector types

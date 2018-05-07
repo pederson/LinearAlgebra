@@ -182,19 +182,19 @@ int main(int argc, char * argv[]){
 	// Vector lvec = libra::diag(A);
 	// cout << "lvec: " << lvec << std::endl;
 
-	typedef double SolveType;
-	libra::Matrix<SolveType, 10, 10> lmat;// = {1.0, 0.1, 0.1, 0.2, 1.0, 0.2, 0.3, 0.3, 1.0};
+	typedef std::complex<double> SolveType;
+	libra::Matrix<SolveType, 4, 4> lmat;// = {1.0, 0.1, 0.1, 0.2, 1.0, 0.2, 0.3, 0.3, 1.0};
 	for (auto it=lmat.begin(); it!=lmat.end(); it++) libra::fill_rand(*it);
 	// lmat(0,0) = lmat(1,1) = lmat(2,2) = 1.0;
 	// libra::write_matrix(lmat);
-	libra::Vector<SolveType, libra::dynamic_size> lvec; lvec.resize(10);// = {0.2, 0.3, 0.2};
+	libra::Vector<SolveType, libra::dynamic_size> lvec(4, 0.0);//; lvec.resize(4);// = {0.2, 0.3, 0.2};
 	libra::fill_rand(lvec);
 	libra::write_vector(lvec);
 	
-	libra::Vector<SolveType, libra::dynamic_size> lresult; lresult.resize(10);// = {0,0,0};
+	libra::Vector<SolveType, libra::dynamic_size> lresult; lresult.resize(4);// = {0,0,0};
 	libra::fill(lresult, 0);
 	// lmat.vmult(lvec, lresult);
-	libra::bicgstab(lmat, lvec, lresult, 100);
+	libra::bicgstab(lmat, lvec, lresult, 10);
 	// solve the system with BiCGSTAB
 
 	cout << "Solution: " << endl;
