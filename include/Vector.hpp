@@ -44,57 +44,27 @@ public:
 	// inherit the base class constructors
 	using BaseType::BaseType; 
 
+	// explicitly define an initializer list constructor
+	Vector(std::initializer_list<scalar_type> il){
+		VectorResizePolicy<length_at_compile>::resize(*this, il.size());
+		auto it = std::begin(il);
+		auto itme = std::begin(*this);
+		while (it != std::end(il)){
+			(*itme) = *it;
+			it++;
+			itme++;
+		}
+	}
 
+	// explicitly define an empty constructor
+	Vector() {};
 
-	// this nasty-looking code simply allows the use of initializer list for construction
-	template <typename... Args, size_type s = length_at_compile>
-	Vector(Args &&... args, typename std::enable_if<s == dynamic_size, void>::type * = 0) : BaseType((std::forward<Args>(args))...) {};
+	// 		BEWARE OF FORWARDING CONSTRUCTOR...
+	// 		it can be very bad for overload resolution... basically it always gets chosen
+	// // this nasty-looking code simply allows the use of initializer list for construction
+	// template <typename... Args, size_type s = length_at_compile>
+	// Vector(Args &&... args, typename std::enable_if<s != dynamic_size, void>::type * = 0) : BaseType{std::forward<Args>(args)...} {};
 
-
-
-
-	// // enable only if dynamic size
-	// // allows the user to set the size of the dynamic vector upon construction
-	// template <size_type s = length_at_compile>
-	// Vector(typename std::enable_if<s == dynamic_size, void>::type * = 0){
-	// 	std::cout << "I am called" << std::endl;
-	// 	// resize(l);
-	// };
-
- //    // enable only if dynamic size
-	// // allows the user to set the size of the dynamic vector upon construction
-	// // fill constructor
-	// template <size_type s = length_at_compile>
-	// Vector(typename std::enable_if<s == dynamic_size, size_type>::type l, const scalar_type & val = scalar_type())
-	// : BaseType(l, val){
-	// 	std::cout << "fill constructor am called" << std::endl;
-	// 	// resize(l);
-	// };
-
-	// // Vector() {};
-
-	template <size_type s = length_at_compile>
-	Vector(std::array<scalar_type, length_at_compile> a, typename std::enable_if<s != dynamic_size, void>::type * = 0) : BaseType(a) {};
-
-	// template <size_type s = length_at_compile>
-	// typename std::enable_if<s != dynamic_size, Vector &>::type operator=(std::array<scalar_type, length_at_compile> & a){
-	// 	BaseType::operator=(a);
-	// 	return *this;
-	// };
-
-
-	// Vector(std::initializer_list<scalar_type> il) : BaseType(il) {};
-
-
-	// // explicitly treat the case where 1 single scalar is input
-	// template <size_type s = length_at_compile>
-	// Vector(typename std::enable_if<s == 1, scalar_type>::type n){
-	// 	std::cout << "I am called 2" << std::endl;
-	// 	(*this)[0] = n;
-	// };
-
-	// copy constructor from the same vector type is allowed
-	// ... however, cannot copy construct from arbitrary vector types
 
 	// copy assignment from arbitrary vector
 	template <typename OtherVector>
@@ -109,7 +79,6 @@ public:
 		}
 		return *this;
 	};
-
 
 	// multiplication by arbitrary scalar
 	template <typename ScalarType>
@@ -204,6 +173,35 @@ Vector<scalar_type, length_at_compile> operator*(const ScalarType & s, const Vec
 
 
 
+
+
+
+
+
+
+// fixed-length resize policy
+template <size_type rows_at_compile, size_type cols_at_compile>
+struct MatrixResizePolicy{
+	template <typename MatrixType>
+	static void resize(MatrixType & v, size_type r, size_type c) {};
+};
+// dynamic columns size resize policy
+template <size_type rows_at_compile>
+struct MatrixResizePolicy<rows_at_compile, dynamic_size>{
+	template <typename MatrixType>
+	static void resize(MatrixType & v, size_type r, size_type c) {
+		for (auto i=0; i<r; i++)v[i].resize(c);};
+};
+
+// dynamic columns size resize policy
+template <>
+struct MatrixResizePolicy<dynamic_size, dynamic_size>{
+	template <typename MatrixType>
+	static void resize(MatrixType & v, size_type r, size_type c) {
+		v.resize(r);
+		for (auto i=0; i<r; i++)v[i].resize(c);};
+};
+
 // matrix class definition
 template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
 class Matrix : public Tensor<scalar_type, 2, rows_at_compile, cols_at_compile>{
@@ -217,9 +215,27 @@ public:
 	// An input braces-initializer is converted to a row-major ordered matrix
 	// e.g. Matrix<int, 2, 3> mat = {1,2,3,4,5,6} becomes:		|1, 2, 3|
 	// 															|4, 5, 6|
-	template <typename... Args>
-    Matrix(Args &&... args) : BaseType({(std::forward<Args>(args))...}) {};
-
+	// template <typename... Args>
+ //    Matrix(Args &&... args) : BaseType({(std::forward<Args>(args))...}) {};
+	// explicitly define an initializer list constructor
+	Matrix(std::initializer_list<std::initializer_list<scalar_type>> il){
+		auto it = std::begin(il);
+		MatrixResizePolicy<rows_at_compile, cols_at_compile>::resize(*this, il.size(), (*it).size());
+		
+		auto itrme = std::begin(*this);
+		while (it != std::end(il)){
+			auto it2 = std::begin(*it);
+			auto itcme = std::begin(*itrme);
+			while (it2 != std::end(*it)){
+				(*itcme) = *it2;
+				it2++;
+				itcme++;
+			}
+			// (*itme) = *it;
+			it++;
+			itrme++;
+		}
+	}
 
 
 	scalar_type & operator()(size_type i, size_type j){return (*this)[i][j];};

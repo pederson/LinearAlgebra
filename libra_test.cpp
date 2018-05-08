@@ -94,7 +94,7 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
-	libra::Matrix<int, 3, 3> dmat = {1,2,3,4,5,6,7,8,9}; dmat[0][0] = 9;
+	libra::Matrix<int, 3, 3> dmat = {{1,2,3},{4,5,6},{7,8,9}}; dmat[0][0] = 9;
 	// for (auto it = dmat.begin(); it!= dmat.end(); it++) libra::fill_randn(*it);
 	cout << "<Matrix>" << endl;
 	for (auto it = dmat.begin(); it!= dmat.end(); it++){
