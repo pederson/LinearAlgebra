@@ -204,9 +204,9 @@ struct MatrixResizePolicy<dynamic_size, dynamic_size>{
 
 // matrix class definition
 template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
-class Matrix : public Tensor<scalar_type, 2, rows_at_compile, cols_at_compile>{
+class Matrix : public Table<scalar_type, 2, rows_at_compile, cols_at_compile>{
 public:
-	typedef Tensor<scalar_type, 2, rows_at_compile, cols_at_compile> 	BaseType;
+	typedef Table<scalar_type, 2, rows_at_compile, cols_at_compile> 	BaseType;
 
 	// inherit the base class constructors
 	using BaseType::BaseType;
@@ -236,6 +236,8 @@ public:
 			itrme++;
 		}
 	}
+
+	Matrix(){};
 
 
 	scalar_type & operator()(size_type i, size_type j){return (*this)[i][j];};

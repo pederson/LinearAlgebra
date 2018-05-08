@@ -55,15 +55,19 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 
-	libra::Tensor<int, 3, 2, 2, 2> tens = {1,2,3,4,5,6,7,8};
-	cout << "<Tensor>" << endl;
-	for (auto it1 = tens.begin(); it1!=tens.end(); it1++){
-		for (auto it = it1->begin(); it!= it1->end(); it++){
-			libra::write_vector(*it);
-		}
-	}
-	cout << "</Tensor>" << endl;
+	libra::Tensor<int, void, void, 2, 2, libra::dynamic_size> t;
+	cout << "Tensor has rank: " << t.rank() << endl;
+	cout << "Tensor has ndynamic: " << t.ndynamic() << endl;
+	// libra::Tensor<int, 3, 2, 2, 2> tens = {1,2,3,4,5,6,7,8};
+	// cout << "<Tensor>" << endl;
+	// for (auto it1 = tens.begin(); it1!=tens.end(); it1++){
+	// 	for (auto it = it1->begin(); it!= it1->end(); it++){
+	// 		libra::write_vector(*it);
+	// 	}
+	// }
+	// cout << "</Tensor>" << endl;
 
+	throw -1;
 
 	//**************** VECTOR TESTS *********************//
 	cout << endl;
