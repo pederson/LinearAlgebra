@@ -155,27 +155,98 @@ namespace detail{
 	struct dims_to_array{
 		static constexpr std::array<size_type, parameter_pack_size<dims...>::value> value{dims...}; 
 	};
+
+
+	// cumulative product of an array 
+	// (e.g. {a[2]*a[1]*a[0], a[1]*a[0], a[0], 1} = cumulative_product(a))
+	template<size_type N>
+	std::array<size_type, N> cumulative_product(const std::array<size_type, N> & a){
+		std::array<size_type, N> out = a;
+		for (auto it = out.begin(); it!=out.end(); it++) *it = 1;
+		for (auto i=1; i<out.size(); i++){
+			out[i] = out[i-1]*a[i-1];
+		}	
+		return out;
+	}
+
+
+	// template <size_type N>
+	// struct 
 }
 
-// struct LinearForwardMemory
-
-
-
-template <typename scalar_type, typename memory_policy, typename storage_policy,
-		  size_type... dims_at_compile
-		  >
-class Tensor{
-public:
-	static_assert(detail::dimension_check<dims_at_compile...>::value, "Tensor cannot have fixed size after a dynamic_size specification");
-	typedef Tensor<scalar_type, memory_policy, storage_policy, dims_at_compile...> 		self_type; 
+template <typename scalar_type, size_type... dims_at_compile>
+struct LinearMemory{
+protected:
 	static constexpr size_type tensor_rank = detail::parameter_pack_size<dims_at_compile...>::value;
 	static constexpr size_type num_dynamic = detail::dynamic_size_count<dims_at_compile...>::value;
+	std::array<size_type, tensor_rank> 		mDims = detail::dims_to_array<dims_at_compile...>::value;
+	std::array<size_type, tensor_rank>		mCumProd = detail::cumulative_product(mDims);
+
+	std::vector<scalar_type> mValues;		// this is the data
+
+
+	void resize(std::array<size_type, tensor_rank> & d) {
+		size_type l = 1;
+		for (auto it=d.begin(); it!=d.end(); it++) l *= *it;
+		mValues.resize(l);
+		mCumProd = detail::cumulative_product(mDims);
+	};
+
+public:
+
+	constexpr std::array<size_type, tensor_rank> dims() const {return mDims;};
+	
+	// resize when num_dynamic size_types are passes.... only resizes the dynamic portions
+	template <typename... Args>
+	void resize(size_type d1, Args... d){
+		static_assert(sizeof...(Args) == num_dynamic-1, "Tensor constructor and resize may only fully specify dynamic_size dimensions!");
+		// auto mydims = detail::dims_to_array<dims...>::value;
+		std::array<size_type, num_dynamic> dnew{{d1, size_type(d)...}};
+		for (auto i=tensor_rank - num_dynamic; i<tensor_rank; i++) mDims[i] = dnew[i-(tensor_rank - num_dynamic)];
+		resize(mDims);
+	};
+
+	// element access operator by index pack
+	// must fully specify all the indices in order to use this
+	template <typename... Args>
+	scalar_type & operator()(size_type d1, Args... d){
+		static_assert(sizeof...(Args) == tensor_rank-1, "Tensor index accessor may only fully specify indices!");
+		// would prefer not to make this intermediate array
+		std::array<size_type, 1+sizeof...(Args)> indpack = {d1, size_type(d)...};
+		size_type ind = 0;
+		for (auto i=0; i<sizeof...(Args)+1; i++) ind += mCumProd[i]*indpack[i];
+		//= inner_product(mCumProd, indpack);
+		return mValues[ind];
+	};
+
+	// const element access operator by index pack
+	template <typename... Args>
+	const scalar_type & operator()(size_type d1, Args... d) const {
+		return operator()(d1, d...);
+	};
+
+	
+};
+
+
+
+template <typename scalar_type, template <typename, size_type...> typename memory_policy,
+		  size_type... dims_at_compile
+		  >
+class Tensor : public memory_policy<scalar_type, dims_at_compile...>{
+public:
+	static_assert(detail::dimension_check<dims_at_compile...>::value, "Tensor cannot have fixed size after a dynamic_size specification");
+	
+	typedef memory_policy<scalar_type, dims_at_compile...> 		memory;
+	// typedef Tensor<scalar_type, memory_policy, dims_at_compile...> 		self_type; 
+	static constexpr size_type tensor_rank = detail::parameter_pack_size<dims_at_compile...>::value;
+	static constexpr size_type num_dynamic = detail::dynamic_size_count<dims_at_compile...>::value;
+
 
 	// static constexpr size_type rank = detail::parameter_pack_size<dims_at_compile...>::value;
 	constexpr size_type rank() const {return tensor_rank;};
 	constexpr size_type ndynamic() const {return num_dynamic;};
-	constexpr std::array<size_type, tensor_rank> dims() const {return mDims;};
-
+	
 
 	// empty constructor
 	Tensor() {};
@@ -183,9 +254,7 @@ public:
 	// expose a constructor with num_dynamic arguments of type size_type
 	template <typename... Args>
 	Tensor(size_type d1, Args... dims){
-		static_assert(sizeof...(Args) == num_dynamic-1, "Tensor constructor may only fully specify dynamic_size dimensions!");
-		std::array<size_type, num_dynamic> dnew{{d1, size_type(dims)...}};
-		for (auto i=tensor_rank - num_dynamic; i<tensor_rank; i++) mDims[i] = dnew[i-(tensor_rank - num_dynamic)];
+		memory::resize(d1, dims...);
 	}
 
 	// expose a constructor using initializer lists
@@ -199,19 +268,9 @@ public:
 		// expose an operator(i,j,k) that returns an element or a tensor view
 		// expose iterator and const_iterator
 
-	// this nasty-looking code simply allows the use of vector and array braces initializationn
-	// template <typename... Args>
- //    Tensor(Args &&... args) : BaseType({(std::forward<Args>(args))...}) {};
-
-
-	// template <size_type... inds>
-	// scalar_type & operator()(size_type i, inds... j){return (*this)[i].operator[](j...);}
-
-	// template <size_type... inds>
-	// scalar_type & operator()(size_type i, inds... i){return (*this)[i][j];}
 
 protected:
-	std::array<size_type, tensor_rank> 		mDims = detail::dims_to_array<dims_at_compile...>::value;
+	// std::array<size_type, tensor_rank> 		mDims = detail::dims_to_array<dims_at_compile...>::value;
 };
 
 
