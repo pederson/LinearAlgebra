@@ -55,9 +55,13 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 
-	libra::Tensor<int, void, void, 2, 2, libra::dynamic_size> t;
+	libra::Tensor<int, void, void, 3, 2, libra::dynamic_size, libra::dynamic_size> t(10, 3);
 	cout << "Tensor has rank: " << t.rank() << endl;
 	cout << "Tensor has ndynamic: " << t.ndynamic() << endl;
+	cout << "dimensions: " ;
+	auto tdims = t.dims();
+	for (auto i=tdims.begin(); i!=tdims.end(); i++) cout << *i << ", " ;
+	cout << endl;
 	// libra::Tensor<int, 3, 2, 2, 2> tens = {1,2,3,4,5,6,7,8};
 	// cout << "<Tensor>" << endl;
 	// for (auto it1 = tens.begin(); it1!=tens.end(); it1++){

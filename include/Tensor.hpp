@@ -135,7 +135,31 @@ namespace detail{
 	struct dimension_check{
 		static constexpr bool value = dimension_check_impl<false, Args...>::value;
 	};
+
+
+
+	// check if the parameter pack is all of one type T
+	template <typename T, typename Arg1, typename... Args>
+	struct is_one_type{
+		static constexpr bool value = std::is_same<Arg1, T>::value && is_one_type<T, Args...>::value;
+	};
+	template <typename T, typename Arg1>
+	struct is_one_type<T, Arg1>{
+		static constexpr bool value = std::is_same<Arg1, T>::value;
+	};
+
+
+
+	// convert dims parameter pack to an array
+	template <size_type... dims>
+	struct dims_to_array{
+		static constexpr std::array<size_type, parameter_pack_size<dims...>::value> value{dims...}; 
+	};
 }
+
+// struct LinearForwardMemory
+
+
 
 template <typename scalar_type, typename memory_policy, typename storage_policy,
 		  size_type... dims_at_compile
@@ -150,11 +174,30 @@ public:
 	// static constexpr size_type rank = detail::parameter_pack_size<dims_at_compile...>::value;
 	constexpr size_type rank() const {return tensor_rank;};
 	constexpr size_type ndynamic() const {return num_dynamic;};
+	constexpr std::array<size_type, tensor_rank> dims() const {return mDims;};
 
-	// typedef Table<scalar_type, rank, dims_at_compile...> 	BaseType;
 
-	// inherit the base class constructors
-	// using BaseType::BaseType;
+	// empty constructor
+	Tensor() {};
+
+	// expose a constructor with num_dynamic arguments of type size_type
+	template <typename... Args>
+	Tensor(size_type d1, Args... dims){
+		static_assert(sizeof...(Args) == num_dynamic-1, "Tensor constructor may only fully specify dynamic_size dimensions!");
+		std::array<size_type, num_dynamic> dnew{{d1, size_type(dims)...}};
+		for (auto i=tensor_rank - num_dynamic; i<tensor_rank; i++) mDims[i] = dnew[i-(tensor_rank - num_dynamic)];
+	}
+
+	// expose a constructor using initializer lists
+
+
+	
+
+	// MEMORY OPERATIONS
+		// expose a resize() function
+		// expose an operator[] that returns a lower-rank tensor view
+		// expose an operator(i,j,k) that returns an element or a tensor view
+		// expose iterator and const_iterator
 
 	// this nasty-looking code simply allows the use of vector and array braces initializationn
 	// template <typename... Args>
@@ -167,6 +210,8 @@ public:
 	// template <size_type... inds>
 	// scalar_type & operator()(size_type i, inds... i){return (*this)[i][j];}
 
+protected:
+	std::array<size_type, tensor_rank> 		mDims = detail::dims_to_array<dims_at_compile...>::value;
 };
 
 
