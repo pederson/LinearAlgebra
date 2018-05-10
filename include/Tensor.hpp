@@ -172,6 +172,23 @@ namespace detail{
 
 	// template <size_type N>
 	// struct 
+	namespace lin_memory{
+		template <typename scalar_type>
+		using data_type = std::vector<scalar_type>;
+
+		template <typename scalar_type, bool is_const>
+		struct BaseIteratorTypedef{
+		};
+		template <typename scalar_type>	
+		struct BaseIteratorTypedef<scalar_type, false>{
+			typedef typename data_type<scalar_type>::iterator type;
+		};
+
+		template <typename scalar_type>	
+		struct BaseIteratorTypedef<scalar_type, true>{
+			typedef typename data_type<scalar_type>::const_iterator type;
+		};
+	}
 }
 
 template <typename scalar_type, size_type... dims_at_compile>
@@ -192,7 +209,116 @@ protected:
 		mCumProd = detail::cumulative_product(mDims);
 	};
 
+
+	template <bool is_const>
+	class lin_iterator{
+	public:
+		typedef typename detail::lin_memory::BaseIteratorTypedef<scalar_type, is_const>::type 	IteratorT;
+
+		typedef lin_iterator							self_type;
+		typedef typename IteratorT::difference_type 	difference_type;
+	    typedef typename IteratorT::value_type 			value_type;
+	    typedef typename IteratorT::reference 			reference;
+	    typedef typename IteratorT::pointer 			pointer;
+	    typedef typename IteratorT::iterator_category	iterator_category;
+
+		// construction
+		lin_iterator(IteratorT it)
+		: mIt(it){};
+
+		// copy assignment
+		lin_iterator & operator=(const lin_iterator & cit){
+			lin_iterator i(cit);
+			std::swap(i,*this);
+			return *this;
+		}
+
+		// rvalue dereferencing
+		pointer operator->() {return mIt.operator->();};
+		reference operator*(){ return *mIt;};
+
+		// increment operators
+		self_type operator++(){
+			mIt++;
+			return *this;
+		}
+		self_type operator++(int blah){
+			mIt++;
+			return *this;
+		}
+
+		// decrement operators
+		self_type operator--(){
+			mIt--;
+			return *this;
+		}
+		self_type operator--(int blah){
+			mIt--;
+			return *this;
+		}
+
+		// scalar arithmetic operators
+		self_type operator+(int n){
+			mIt = mIt + n;
+			return *this;
+		}
+		self_type operator-(int n){
+			mIt = mIt - n;
+			return *this;
+		}
+		int operator-(const self_type & b) const {
+			return mIt - b.mIt;
+		}
+
+		// equivalence operators
+		bool operator!=(const self_type & leaf) const {return mIt != leaf.mIt;};
+		bool operator==(const self_type & leaf) const {return mIt == leaf.mIt;};
+
+		// relational operators
+		bool operator>(const self_type & leaf) const {return mIt > leaf.mIt;};
+		bool operator>=(const self_type & leaf) const {return mIt >= leaf.mIt;};
+		bool operator<(const self_type & leaf) const {return mIt < leaf.mIt;};
+		bool operator<=(const self_type & leaf) const {return mIt <= leaf.mIt;};
+
+
+		// compound assignment operators
+		self_type operator+=(int n){
+			mIt += n;
+			return *this;
+		}
+		self_type operator-=(int n){
+			mIt -= n;
+			return *this;
+		}
+
+
+		// offset dereference operator
+		reference operator[](int n){
+			return mIt[n];
+		}
+	private:
+		IteratorT mIt;
+	};
+
+
+	typedef lin_iterator<true> const_iterator;
+	typedef lin_iterator<false> iterator;
+
+
+	iterator begin() {return iterator(mValues.begin());};
+	iterator end()	 {return iterator(mValues.end());};
+
+	// const_iterator cbegin() {return const_iterator(mValues.cbegin());};
+	// const_iterator cend()	 {return const_iterator(mValues.cend());};
+
 public:
+
+	// iterator begin() {return iterator(mValues.begin());};
+	// iterator end()	 {return iterator(mValues.end());};
+
+	const_iterator cbegin() {return const_iterator(mValues.cbegin());};
+	const_iterator cend()	 {return const_iterator(mValues.cend());};
+
 
 	constexpr std::array<size_type, tensor_rank> dims() const {return mDims;};
 	
@@ -206,6 +332,12 @@ public:
 		resize(mDims);
 	};
 
+	// clear all elements
+	void clear(){
+		mValues.clear();
+		for (auto i=tensor_rank-num_dynamic; i<tensor_rank; i++) mDims[i] = 0;
+	}
+
 	// element access operator by index pack
 	// must fully specify all the indices in order to use this
 	template <typename... Args>
@@ -215,7 +347,6 @@ public:
 		std::array<size_type, 1+sizeof...(Args)> indpack = {d1, size_type(d)...};
 		size_type ind = 0;
 		for (auto i=0; i<sizeof...(Args)+1; i++) ind += mCumProd[i]*indpack[i];
-		//= inner_product(mCumProd, indpack);
 		return mValues[ind];
 	};
 
@@ -230,15 +361,25 @@ public:
 
 
 
+// class that represents a (D-1)-dimensional slice of a D-dimensional LinearMemory array
+template <typename scalar_type, size_type... dims_at_compile>
+struct DerivedMemory{
+
+};
+
+
+
+
+
 template <typename scalar_type, template <typename, size_type...> typename memory_policy,
 		  size_type... dims_at_compile
 		  >
-class Tensor : public memory_policy<scalar_type, dims_at_compile...>{
+class GenericTensor : public memory_policy<scalar_type, dims_at_compile...>{
 public:
-	static_assert(detail::dimension_check<dims_at_compile...>::value, "Tensor cannot have fixed size after a dynamic_size specification");
+	static_assert(detail::dimension_check<dims_at_compile...>::value, "GenericTensor cannot have fixed size after a dynamic_size specification");
 	
 	typedef memory_policy<scalar_type, dims_at_compile...> 		memory;
-	// typedef Tensor<scalar_type, memory_policy, dims_at_compile...> 		self_type; 
+	// typedef GenericTensor<scalar_type, memory_policy, dims_at_compile...> 		self_type; 
 	static constexpr size_type tensor_rank = detail::parameter_pack_size<dims_at_compile...>::value;
 	static constexpr size_type num_dynamic = detail::dynamic_size_count<dims_at_compile...>::value;
 
@@ -249,11 +390,11 @@ public:
 	
 
 	// empty constructor
-	Tensor() {};
+	GenericTensor() {};
 
 	// expose a constructor with num_dynamic arguments of type size_type
 	template <typename... Args>
-	Tensor(size_type d1, Args... dims){
+	GenericTensor(size_type d1, Args... dims){
 		memory::resize(d1, dims...);
 	}
 
@@ -266,11 +407,16 @@ public:
 		// expose a resize() function
 		// expose an operator[] that returns a lower-rank tensor view
 		// expose an operator(i,j,k) that returns an element or a tensor view
-		// expose iterator and const_iterator
+		// expose iterator (protected) and const_iterator (public)
 
 
-protected:
-	// std::array<size_type, tensor_rank> 		mDims = detail::dims_to_array<dims_at_compile...>::value;
+
+	// EXPRESSION TEMPLATES
+	template <typename Expression>
+	Tensor operator=(Expression & ex) const {
+
+	};
+
 };
 
 

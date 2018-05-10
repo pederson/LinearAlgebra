@@ -55,7 +55,7 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 
-	libra::Tensor<int, libra::LinearMemory, 3, 2, libra::dynamic_size, libra::dynamic_size> t(2, 3);
+	libra::GenericTensor<int, libra::LinearMemory, 3, 2, libra::dynamic_size, libra::dynamic_size> t(2, 3);
 	cout << "Tensor has rank: " << t.rank() << endl;
 	cout << "Tensor has ndynamic: " << t.ndynamic() << endl;
 	cout << "dimensions: " ;
@@ -63,13 +63,15 @@ int main(int argc, char * argv[]){
 	for (auto i=tdims.begin(); i!=tdims.end(); i++) cout << *i << ", " ;
 	cout << endl;
 
+	// for (auto it=t.cbegin(); it!=t.cend(); it++) *it = 5;
+
 	// for (auto d=0; d<t.rank(); d++){
 
 	// }
 	// for (auto i=tdims.begin(); i!=tdims.end(); i++) cout << *i << ", " ;
 
 
-	t(1,2,2,2) = 12;
+	// t(1,2,2,2) = 12;
 	cout << "t(1,2,2,2): " << t(0,0,0,0) << std::endl;
 	// libra::Tensor<int, 3, 2, 2, 2> tens = {1,2,3,4,5,6,7,8};
 	// cout << "<Tensor>" << endl;
