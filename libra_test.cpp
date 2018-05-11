@@ -70,9 +70,11 @@ int main(int argc, char * argv[]){
 	// }
 	// for (auto i=tdims.begin(); i!=tdims.end(); i++) cout << *i << ", " ;
 
+	std::cout << "size(3): " << t.size<3>() << std::endl;
 
 	// t(1,2,2,2) = 12;
 	cout << "t(1,2,2,2): " << t(0,0,0,0) << std::endl;
+
 	// libra::Tensor<int, 3, 2, 2, 2> tens = {1,2,3,4,5,6,7,8};
 	// cout << "<Tensor>" << endl;
 	// for (auto it1 = tens.begin(); it1!=tens.end(); it1++){

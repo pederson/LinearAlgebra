@@ -98,6 +98,8 @@ namespace detail{
 	};
 
 
+
+
 	// counts the number of times "dynamic_size appears in the dims"
 	template <size_type Arg1, size_type... Args>
 	struct dynamic_size_count{
@@ -213,17 +215,17 @@ protected:
 	template <bool is_const>
 	class lin_iterator{
 	public:
-		typedef typename detail::lin_memory::BaseIteratorTypedef<scalar_type, is_const>::type 	IteratorT;
+		typedef typename detail::lin_memory::BaseIteratorTypedef<scalar_type, is_const>::type 	InternalIteratorT;
 
-		typedef lin_iterator							self_type;
-		typedef typename IteratorT::difference_type 	difference_type;
-	    typedef typename IteratorT::value_type 			value_type;
-	    typedef typename IteratorT::reference 			reference;
-	    typedef typename IteratorT::pointer 			pointer;
-	    typedef typename IteratorT::iterator_category	iterator_category;
+		typedef lin_iterator									self_type;
+		typedef typename InternalIteratorT::difference_type 	difference_type;
+	    typedef typename InternalIteratorT::value_type 			value_type;
+	    typedef typename InternalIteratorT::reference 			reference;
+	    typedef typename InternalIteratorT::pointer 			pointer;
+	    typedef typename InternalIteratorT::iterator_category	iterator_category;
 
 		// construction
-		lin_iterator(IteratorT it)
+		lin_iterator(InternalIteratorT it)
 		: mIt(it){};
 
 		// copy assignment
@@ -297,7 +299,7 @@ protected:
 			return mIt[n];
 		}
 	private:
-		IteratorT mIt;
+		InternalIteratorT mIt;
 	};
 
 
@@ -369,12 +371,32 @@ struct DerivedMemory{
 
 
 
+// this is basically an interface class (virtual base class)
+// except it is statically resolved (at compile time)
+// ,where all the functions are delegated to the derived class
+//
+// It is used as conditional inheritance... the derived class functions
+// are only compiled if they are used in the code. If they don't exist, 
+// then there will be a compilation error
+template <typename Derived>
+class TensorBase {
+public:
+	Derived & derived() {return *static_cast<Derived*>(this);};
+	const Derived & derived() const {return *static_cast<Derived*>(this);};
 
+
+	constexpr size_type rank() const {return derived().rank();};
+
+	// void hello() {std::cout << "hello" << std::endl;};
+};
+
+
+// public TensorBase<GenericTensor<scalar_type, memory_policy, dims_at_compile...>>, 
 
 template <typename scalar_type, template <typename, size_type...> typename memory_policy,
 		  size_type... dims_at_compile
 		  >
-class GenericTensor : public memory_policy<scalar_type, dims_at_compile...>{
+class GenericTensor : public TensorBase<GenericTensor<scalar_type, memory_policy, dims_at_compile...>>, public memory_policy<scalar_type, dims_at_compile...>{
 public:
 	static_assert(detail::dimension_check<dims_at_compile...>::value, "GenericTensor cannot have fixed size after a dynamic_size specification");
 	
@@ -384,9 +406,17 @@ public:
 	static constexpr size_type num_dynamic = detail::dynamic_size_count<dims_at_compile...>::value;
 
 
-	// static constexpr size_type rank = detail::parameter_pack_size<dims_at_compile...>::value;
 	constexpr size_type rank() const {return tensor_rank;};
 	constexpr size_type ndynamic() const {return num_dynamic;};
+	template <size_type dim>
+	constexpr size_type size() const {
+		static_assert(dim < tensor_rank, "Tensor::size(d) ==> d must be less than rank!");
+		return memory::dims()[dim];
+	};
+	// constexpr size_type size(size_type dim) const {
+	// 	// assert(dim < tensor_rank, "Tensor::size(d) ==> d must be less than rank!");
+	// 	return memory::dims()[dim];
+	// };
 	
 
 	// empty constructor
@@ -412,10 +442,10 @@ public:
 
 
 	// EXPRESSION TEMPLATES
-	template <typename Expression>
-	Tensor operator=(Expression & ex) const {
+	// template <typename Expression>
+	// Tensor operator=(Expression & ex) const {
 
-	};
+	// };
 
 };
 
