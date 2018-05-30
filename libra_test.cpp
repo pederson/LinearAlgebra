@@ -84,7 +84,7 @@ int main(int argc, char * argv[]){
 	// }
 	// cout << "</Tensor>" << endl;
 
-	throw -1;
+	// throw -1;
 
 	//**************** VECTOR TESTS *********************//
 	cout << endl;
@@ -215,7 +215,7 @@ int main(int argc, char * argv[]){
 	libra::Vector<SolveType, libra::dynamic_size> lresult; lresult.resize(4);// = {0,0,0};
 	libra::fill(lresult, 0);
 	// lmat.vmult(lvec, lresult);
-	libra::bicgstab(lmat, lvec, lresult, 10);
+	libra::bicgstab_l(2, lmat, lvec, lresult, 10);
 	// solve the system with BiCGSTAB
 
 	cout << "Solution: " << endl;
