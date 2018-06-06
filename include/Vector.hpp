@@ -17,6 +17,26 @@
 namespace libra{
 
 
+
+
+// // interface for an iterable vector
+// template <typename Derived>
+// struct IterableVectorBase{
+// 	Derived & derived() {return *static_cast<Derived*>(this);};
+// 	const Derived & derived() const {return *static_cast<Derived*>(this);};
+
+
+// 	using Derived::const_iterator;
+// 	const_iterator cbegin() {return derived().cbegin();};
+// 	const_iterator cend() {return derived().cend();};
+// };
+
+
+
+
+
+
+
 // fixed-length resize policy
 template <size_type length_at_compile>
 struct VectorResizePolicy{
@@ -69,7 +89,7 @@ public:
 	// copy assignment from arbitrary vector
 	template <typename OtherVector>
 	Vector & operator=(const OtherVector & v){
-		VectorResizePolicy<length_at_compile>::resize(*this, length(v));
+		VectorResizePolicy<length_at_compile>::resize(*this, vector::length(v));
 		auto it = std::cbegin(v);
 		auto itme = std::begin(*this);
 		while (it != std::cend(v)){
@@ -84,7 +104,7 @@ public:
 	template <typename ScalarType>
 	Vector operator*(const ScalarType & s) const {
 		Vector out;
-		VectorResizePolicy<length_at_compile>::resize(out, length(*this));
+		VectorResizePolicy<length_at_compile>::resize(out, vector::length(*this));
 
 		auto it = std::begin(out);
 		auto itme = std::cbegin(*this);
@@ -101,7 +121,7 @@ public:
 	template <typename OtherVector>
 	Vector operator+(const OtherVector & v) const {
 		Vector out;
-		VectorResizePolicy<length_at_compile>::resize(out, length(v));
+		VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
 		auto it = std::begin(out);
 		auto itv = std::cbegin(v);
 		auto itme = std::cbegin(*this);
@@ -119,7 +139,7 @@ public:
 	template <typename OtherVector>
 	Vector operator-(const OtherVector & v) const {
 		Vector out;
-		VectorResizePolicy<length_at_compile>::resize(out, length(v));
+		VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
 		auto it = std::begin(out);
 		auto itv = std::cbegin(v);
 		auto itme = std::cbegin(*this);
@@ -136,7 +156,7 @@ public:
 	// compound addition with arbitrary vector
 	template <typename OtherVector>
 	Vector & operator+=(const OtherVector & v) {
-		// VectorResizePolicy<length_at_compile>::resize(out, length(v));
+		// VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
 		auto itv = std::cbegin(v);
 		auto it = std::begin(*this);
 		while (it != std::end(*this)){
@@ -158,7 +178,7 @@ public:
 template <typename ScalarType, typename scalar_type, size_type length_at_compile>
 Vector<scalar_type, length_at_compile> operator*(const ScalarType & s, const Vector<scalar_type, length_at_compile> & v) {
 	Vector<scalar_type, length_at_compile> out;
-	VectorResizePolicy<length_at_compile>::resize(out, length(v));
+	VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
 
 	auto it = std::begin(out);
 	auto itme = std::cbegin(v);
@@ -252,7 +272,7 @@ public:
 		auto resit = std::begin(result);
 
 		while (rit != this->cend() && resit != std::end(result)){
-			rowsum = inner_product(v, (*rit));
+			rowsum = vector::inner_product(v, (*rit));
 			(*resit) = rowsum;
 			rit++; resit++;
 		}

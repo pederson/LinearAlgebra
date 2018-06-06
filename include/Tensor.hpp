@@ -387,7 +387,7 @@ public:
 
 	constexpr size_type rank() const {return derived().rank();};
 
-	// void hello() {std::cout << "hello" << std::endl;};
+	// void hello() {return derived.hello();};
 };
 
 
@@ -408,8 +408,7 @@ public:
 
 	constexpr size_type rank() const {return tensor_rank;};
 	constexpr size_type ndynamic() const {return num_dynamic;};
-	template <size_type dim>
-	constexpr size_type size() const {
+	template <size_type dim> constexpr size_type size() const {
 		static_assert(dim < tensor_rank, "Tensor::size(d) ==> d must be less than rank!");
 		return memory::dims()[dim];
 	};
@@ -450,7 +449,13 @@ public:
 };
 
 
-
+// Typedef for normal Tensor that uses dense linear memory
+template <typename scalar_type, size_type... dims_at_compile>
+struct TensorTypedef{
+	typedef GenericTensor<scalar_type, LinearMemory, dims_at_compile...> type;
+};
+template <typename scalar_type, size_type... dims_at_compile>
+using Tensor = typename TensorTypedef<scalar_type, dims_at_compile...>::type;
 
 } // end namespace libra
 

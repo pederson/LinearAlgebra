@@ -9,6 +9,7 @@
 #include <iterator>
 
 #include "Matrix.hpp"
+#include "Vector.hpp"
 #include "SparseVector.hpp"
 #include "SparseMatrix.hpp"
 #include "Preconditioner.hpp"
@@ -20,10 +21,11 @@
 namespace libra{
 
 template <typename MatrixType>
-Vector diag(const MatrixType & mtx)
+auto diag(const MatrixType & mtx)
 {
+	typedef decltype(mtx(0,0)) 	ScalarType;
 	std::size_t dim = std::min(mtx.rows(), mtx.cols());
-	Vector out(dim);
+	Vector<ScalarType, libra::dynamic_size> out(dim);
 
 	for (auto i=0; i<dim; i++)
 	{
@@ -38,7 +40,7 @@ Vector diag(const MatrixType & mtx)
 // sparse BiConjugate Gradient Stabilized method
 template <typename MatrixType, typename VectorTypeIn, typename VectorTypeOut>
 unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOut & x, unsigned int max_iters, double res_thresh=1.0e-15){
-	typedef typename std::remove_const<typename std::remove_reference<typename vector_detector<VectorTypeIn>::type>::type>::type 	ScalarType;
+	typedef typename std::remove_const<typename std::remove_reference<typename type_traits::contained_type<VectorTypeIn>::type>::type>::type 	ScalarType;
 
 	static_assert(!std::is_const<ScalarType>::value, "Type Must not be const!");
 
@@ -50,8 +52,8 @@ unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOu
 	unsigned int it = 0;
 	VectorTypeIn rhat = r;
 	ScalarType rho=1, alpha=1, omega=1;
-	VectorTypeIn v = r; fill(v, 0);
-	VectorTypeIn p = r; fill(p, 0);
+	VectorTypeIn v = r; vector::fill(v, 0);
+	VectorTypeIn p = r; vector::fill(p, 0);
 	VectorTypeIn s = r;
 	VectorTypeIn t = r;
 	ScalarType beta, rho_old;
@@ -62,20 +64,20 @@ unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOu
 
 		// enforce biorthogonality and biconjugacy
 		rho_old = rho;
-		rho = inner_product(rhat, r);
+		rho = vector::inner_product(rhat, r);
 		beta = (rho/rho_old)*(alpha/omega);
 		p = r + beta*(p-omega*v);
 
 		A.vmult(p, v);
 		// v = A*p;
 
-		alpha = rho/inner_product(rhat,v);
+		alpha = rho/vector::inner_product(rhat,v);
 		s = r - alpha*v;
 
 		A.vmult(s, t);
 		// t = A*s;
 		
-		omega = inner_product(t,s)/inner_product(t,t);
+		omega = vector::inner_product(t,s)/vector::inner_product(t,t);
 
 		x += alpha*p + omega*s;
 
@@ -84,7 +86,7 @@ unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOu
 
 		// update counters
 		it++;
-		resid = std::abs(norm_2(r));
+		resid = std::abs(vector::norm_2(r));
 
 		std::cout << "it: " << it << " resid: " << resid << std::endl;
 	}
@@ -96,115 +98,115 @@ unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOu
 
 
 
-// sparse BiConjugate Gradient Stabilized L method
-template <typename MatrixType, typename VectorTypeIn, typename VectorTypeOut>
-unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn & b, VectorTypeOut & x, unsigned int max_iters, double res_thresh=1.0e-15){
-	typedef typename std::remove_const<typename std::remove_reference<typename vector_detector<VectorTypeIn>::type>::type>::type 	ScalarType;
+// // sparse BiConjugate Gradient Stabilized L method
+// template <typename MatrixType, typename VectorTypeIn, typename VectorTypeOut>
+// unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn & b, VectorTypeOut & x, unsigned int max_iters, double res_thresh=1.0e-15){
+// 	typedef typename std::remove_const<typename std::remove_reference<typename vector_detector<VectorTypeIn>::type>::type>::type 	ScalarType;
 
-	static_assert(!std::is_const<ScalarType>::value, "Type Must not be const!");
+// 	static_assert(!std::is_const<ScalarType>::value, "Type Must not be const!");
 
-	// initialize stuff
-	VectorTypeIn tmp = x;
-	// A.vmult(x, tmp);
-	tmp = A*x;
-	VectorTypeIn r = b - tmp; // residual vector
-	VectorTypeIn rtilde = r;
-	double resid = 1.0;
-	unsigned int it = 0;
+// 	// initialize stuff
+// 	VectorTypeIn tmp = x;
+// 	// A.vmult(x, tmp);
+// 	tmp = A*x;
+// 	VectorTypeIn r = b - tmp; // residual vector
+// 	VectorTypeIn rtilde = r;
+// 	double resid = 1.0;
+// 	unsigned int it = 0;
 
-	ScalarType beta, rho0, rho1, alpha = 0, omega = 1;
+// 	ScalarType beta, rho0, rho1, alpha = 0, omega = 1;
 	
-	unsigned int N = length(x);
-	Matrix Tau(l,l);  fill(Tau, 0);
-	Matrix R(l+1, N); fill(R, 0);
-	Matrix U(l+1, N); fill(U, 0);
-	VectorTypeIn gamma(l+1);
-	VectorTypeIn gammap(l+1);
-	VectorTypeIn gammapp(l+1);
-	VectorTypeIn sigma(l+1);
+// 	unsigned int N = length(x);
+// 	libra::Matrix<ScalarType, libra::dynamic_size, libra::dynamic_size> Tau(l,l);  fill(Tau, 0);
+// 	libra::Matrix<ScalarType, libra::dynamic_size, libra::dynamic_size> R(l+1, N); fill(R, 0);
+// 	libra::Matrix<ScalarType, libra::dynamic_size, libra::dynamic_size> U(l+1, N); fill(U, 0);
+// 	VectorTypeIn gamma(l+1);
+// 	VectorTypeIn gammap(l+1);
+// 	VectorTypeIn gammapp(l+1);
+// 	VectorTypeIn sigma(l+1);
 
-	R.row(0) = r;
+// 	R.row(0) = r;
 
-	// std::cout << "starting iterations" << std::endl;
+// 	// std::cout << "starting iterations" << std::endl;
 
-	while (resid > res_thresh && it < max_iters){
+// 	while (resid > res_thresh && it < max_iters){
 		
-		rho0 = -omega*rho0;
+// 		rho0 = -omega*rho0;
 
-		// ***  BiCG part *** //
-		for (auto j=0; j<l; j++){
-			rho1 = inner_product(R.row(j), R.row(0));
-			beta = alpha*rho1/rho0;
-			rho0 = rho1;
+// 		// ***  BiCG part *** //
+// 		for (auto j=0; j<l; j++){
+// 			rho1 = inner_product(R.row(j), R.row(0));
+// 			beta = alpha*rho1/rho0;
+// 			rho0 = rho1;
 
-			for (auto i=0; i<=j; i++){
-				U.row(i) = R.row(i) - beta*U.row(i);
-			}
+// 			for (auto i=0; i<=j; i++){
+// 				U.row(i) = R.row(i) - beta*U.row(i);
+// 			}
 
-			U.row(j+1) = A*U.row(j);
-			// A.vmult(U.row(j), U.row(j+1));
-			alpha = rho0/inner_product(U.row(j+1), rtilde);
+// 			U.row(j+1) = A*U.row(j);
+// 			// A.vmult(U.row(j), U.row(j+1));
+// 			alpha = rho0/inner_product(U.row(j+1), rtilde);
 
-			for (auto i=0; i<=j; i++){
-				R.row(i) = R.row(i) - alpha*U.row(i+1);
-			}
+// 			for (auto i=0; i<=j; i++){
+// 				R.row(i) = R.row(i) - alpha*U.row(i+1);
+// 			}
 
-			R.row(j+1) = A*R.row(j);
-			// A.vmult(R.row(j), R.row(j+1));
-			x = x + alpha*U.row(0);
-		}
-
-
-
-		// ***  Modified Gram-Schmidt part *** //
-		for (auto j=1; j<=l; j++){
-			for (auto i=1; i<j; i++){
-				Tau(i,j) = 1.0/sigma(i)*inner_product(R.row(j), R.row(i));
-				R.row(j) = R.row(j) - Tau(i,j)*R.row(i);
-			}
-
-			sigma(j) = inner_product(R.row(j), R.row(j));
-			gammap(j) = 1.0/sigma(j)*inner_product(R.row(0), R.row(j));
-		}
-		gamma(l) = gammap(l);
-		omega = gamma(l);
+// 			R.row(j+1) = A*R.row(j);
+// 			// A.vmult(R.row(j), R.row(j+1));
+// 			x = x + alpha*U.row(0);
+// 		}
 
 
-		// ***  solve Tau*gamma = gammap *** //
-		for (auto j=l-1; j>=1; j--){
-			ScalarType sum_Taugamma = Tau(j, j+1)*gamma(j+1);
-			for (auto i=j+2; i<=l; i++) sum_Taugamma += Tau(j,i)*gamma(i);
-			gamma(j) = gammap(j) - sum_Taugamma;
-		}
 
-		// ***  solve gammapp = Tau*S*gamma
-		for (auto j=1; j<l; j++){
-			ScalarType sum_Taugamma = Tau(j,j+1)*gamma(j+2);
-			for (auto i=j+2; i<l; i++) sum_Taugamma += Tau(j,i)*gamma(i+1);
-			gammapp(j) = gamma(j+1) + sum_Taugamma;
-		}
+// 		// ***  Modified Gram-Schmidt part *** //
+// 		for (auto j=1; j<=l; j++){
+// 			for (auto i=1; i<j; i++){
+// 				Tau(i,j) = 1.0/sigma(i)*inner_product(R.row(j), R.row(i));
+// 				R.row(j) = R.row(j) - Tau(i,j)*R.row(i);
+// 			}
+
+// 			sigma(j) = inner_product(R.row(j), R.row(j));
+// 			gammap(j) = 1.0/sigma(j)*inner_product(R.row(0), R.row(j));
+// 		}
+// 		gamma(l) = gammap(l);
+// 		omega = gamma(l);
 
 
-		// ***  update  *** //
-		x = x + gamma(1)*R.row(0);
-		R.row(0) = R.row(0) - gammap(l)*R.row(l);
-		U.row(0) = U.row(0) - gamma(l)*U.row(l);
-		for (auto j=1; j<l; j++){
-			U.row(0) = U.row(0) - gamma(j)*U.row(j);
-			x = x + gammapp(j)*R.row(j);
-			R.row(0) = R.row(0) - gammap(j)*R.row(j);
-		}
+// 		// ***  solve Tau*gamma = gammap *** //
+// 		for (auto j=l-1; j>=1; j--){
+// 			ScalarType sum_Taugamma = Tau(j, j+1)*gamma(j+1);
+// 			for (auto i=j+2; i<=l; i++) sum_Taugamma += Tau(j,i)*gamma(i);
+// 			gamma(j) = gammap(j) - sum_Taugamma;
+// 		}
 
-		// update counters
-		it+=l;
-		resid = std::abs(norm_2(R.row(0)));
+// 		// ***  solve gammapp = Tau*S*gamma
+// 		for (auto j=1; j<l; j++){
+// 			ScalarType sum_Taugamma = Tau(j,j+1)*gamma(j+2);
+// 			for (auto i=j+2; i<l; i++) sum_Taugamma += Tau(j,i)*gamma(i+1);
+// 			gammapp(j) = gamma(j+1) + sum_Taugamma;
+// 		}
 
-		std::cout << "it: " << it << " resid: " << resid << std::endl;
-	}
 
-	std::cout << "iterated: " << it << " times" << std::endl;
-	return it;
-}
+// 		// ***  update  *** //
+// 		x = x + gamma(1)*R.row(0);
+// 		R.row(0) = R.row(0) - gammap(l)*R.row(l);
+// 		U.row(0) = U.row(0) - gamma(l)*U.row(l);
+// 		for (auto j=1; j<l; j++){
+// 			U.row(0) = U.row(0) - gamma(j)*U.row(j);
+// 			x = x + gammapp(j)*R.row(j);
+// 			R.row(0) = R.row(0) - gammap(j)*R.row(j);
+// 		}
+
+// 		// update counters
+// 		it+=l;
+// 		resid = std::abs(norm_2(R.row(0)));
+
+// 		std::cout << "it: " << it << " resid: " << resid << std::endl;
+// 	}
+
+// 	std::cout << "iterated: " << it << " times" << std::endl;
+// 	return it;
+// }
 
 
 
