@@ -11,7 +11,478 @@
 #include <random>
 #include <chrono>
 
+#include <array>
+#include <utility>
+
+
+#include "Tensor.hpp"
+#include "VectorTools.hpp"
 #include "AbstractMatrix.hpp"
+
+
+
+
+namespace libra{
+	namespace matrix{
+
+		template <typename MatrixType>
+		struct MatrixRow : public vector::VectorAssignment<MatrixRow<MatrixType>>{
+		public:
+
+			typedef MatrixRow<MatrixType> 					SelfType;
+			typedef vector::VectorAssignment<SelfType> 		AssignmentType;
+
+
+			using AssignmentType::operator=;
+
+
+			MatrixRow(MatrixType & m, size_type row)
+			: mMat(&m), mRow(row) {};
+
+			size_type size() const {return mMat->cols();};
+
+
+			template <bool is_const>
+			class matrix_row_iterator{
+			public:
+				typedef std::remove_reference_t<decltype(std::declval<MatrixType>()(0, 0))> 		orig_value_type;
+
+				typedef matrix_row_iterator					self_type;
+				typedef std::ptrdiff_t 						difference_type;
+			    typedef typename std::conditional<is_const, 
+			    								  typename std::add_const<orig_value_type>::type, 
+			    								  orig_value_type>::type 						
+			    								  			value_type;
+			    typedef value_type &			  			reference;
+			    typedef value_type *						pointer;
+			    typedef std::random_access_iterator_tag		iterator_category;
+
+				// construction
+				matrix_row_iterator(MatrixType * m, size_type row, size_type col)
+				: mMat(m), mRow(row), mCol(col){};
+
+				// copy assignment
+				matrix_row_iterator & operator=(const matrix_row_iterator & cit){
+					matrix_row_iterator i(cit);
+					std::swap(i,*this);
+					return *this;
+				}
+
+				// rvalue dereferencing
+				// pointer operator->() {return *mMat(mRow, mCol);};
+				// reference operator*(){return mMat->operator()(mRow, mCol);};
+
+				pointer operator->() const {return mMat->operator()(mRow, mCol);};
+				reference operator*() const {return mMat->operator()(mRow, mCol);};
+
+				// increment operators
+				self_type operator++(){
+					mCol++;
+					return *this;
+				}
+				self_type operator++(int blah){
+					mCol++;
+					return *this;
+				}
+
+				// decrement operators
+				self_type operator--(){
+					mCol--;
+					return *this;
+				}
+				self_type operator--(int blah){
+					mCol--;
+					return *this;
+				}
+
+				// scalar arithmetic operators
+				self_type operator+(int n){
+					mCol = mCol + n;
+					return *this;
+				}
+				self_type operator-(int n){
+					mCol = mCol - n;
+					return *this;
+				}
+				int operator-(const self_type & b) const {
+					return mCol - b.mCol;
+				}
+
+				// equivalence operators
+				bool operator!=(const self_type & leaf) const {return mCol != leaf.mCol;};
+				bool operator==(const self_type & leaf) const {return mCol == leaf.mCol;};
+
+				// relational operators
+				bool operator>(const self_type & leaf) const {return mCol > leaf.mCol;};
+				bool operator>=(const self_type & leaf) const {return mCol >= leaf.mCol;};
+				bool operator<(const self_type & leaf) const {return mCol < leaf.mCol;};
+				bool operator<=(const self_type & leaf) const {return mCol <= leaf.mCol;};
+
+
+				// compound assignment operators
+				self_type operator+=(int n){
+					mCol += n;
+					return *this;
+				}
+				self_type operator-=(int n){
+					mCol -= n;
+					return *this;
+				}
+
+
+				// offset dereference operator
+				// reference operator[](int n){
+				// 	return *mMat(mRow, n);
+				// }
+
+				reference operator[](int n) const {
+					return mMat->operator()(mRow, n);
+				}
+			private:
+				size_type mCol;
+				size_type mRow;
+				typename std::conditional<is_const, typename std::add_const<MatrixType>::type, MatrixType>::type * mMat;
+			};
+
+
+			typedef matrix_row_iterator<true> const_iterator;
+			typedef matrix_row_iterator<false> iterator;
+
+
+			iterator begin() {return iterator(mMat, mRow, 0);};
+			iterator end()	 {return iterator(mMat, mRow, size());};
+
+			const_iterator cbegin() const {return const_iterator(mMat, mRow, 0);};
+			const_iterator cend() const	 {return const_iterator(mMat, mRow, size());};
+
+
+		private:
+			MatrixType * 	mMat;
+			size_type 		mRow;
+		};
+
+
+
+
+
+
+
+		template <typename MatrixType>
+		struct MatrixCol : public vector::VectorAssignment<MatrixCol<MatrixType>>{
+		public:
+
+			typedef MatrixCol<MatrixType> 					SelfType;
+			typedef vector::VectorAssignment<SelfType> 		AssignmentType;
+
+
+			using AssignmentType::operator=;
+
+
+			MatrixCol(MatrixType & m, size_type col)
+			: mMat(&m), mCol(col) {};
+
+			size_type size() const {return mMat->rows();};
+
+
+			template <bool is_const>
+			class matrix_col_iterator{
+			public:
+				typedef std::remove_reference_t<decltype(std::declval<MatrixType>()(0, 0))> 		orig_value_type;
+
+				typedef matrix_col_iterator					self_type;
+				typedef std::ptrdiff_t 						difference_type;
+			    typedef typename std::conditional<is_const, 
+			    								  typename std::add_const<orig_value_type>::type, 
+			    								  orig_value_type>::type 						
+			    								  			value_type;
+			    typedef value_type &			  			reference;
+			    typedef value_type *						pointer;
+			    typedef std::random_access_iterator_tag		iterator_category;
+
+				// construction
+				matrix_col_iterator(MatrixType * m, size_type row, size_type col)
+				: mMat(m), mRow(row), mCol(col){};
+
+				// copy assignment
+				matrix_col_iterator & operator=(const matrix_col_iterator & cit){
+					matrix_col_iterator i(cit);
+					std::swap(i,*this);
+					return *this;
+				}
+
+				// rvalue dereferencing
+				// pointer operator->() {return *mMat(mRow, mCol);};
+				// reference operator*(){return mMat->operator()(mRow, mCol);};
+
+				pointer operator->() const {return mMat->operator()(mRow, mCol);};
+				reference operator*() const {return mMat->operator()(mRow, mCol);};
+
+				// increment operators
+				self_type operator++(){
+					mRow++;
+					return *this;
+				}
+				self_type operator++(int blah){
+					mRow++;
+					return *this;
+				}
+
+				// decrement operators
+				self_type operator--(){
+					mRow--;
+					return *this;
+				}
+				self_type operator--(int blah){
+					mRow--;
+					return *this;
+				}
+
+				// scalar arithmetic operators
+				self_type operator+(int n){
+					mRow = mRow + n;
+					return *this;
+				}
+				self_type operator-(int n){
+					mRow = mRow - n;
+					return *this;
+				}
+				int operator-(const self_type & b) const {
+					return mRow - b.mRow;
+				}
+
+				// equivalence operators
+				bool operator!=(const self_type & leaf) const {return mRow != leaf.mRow;};
+				bool operator==(const self_type & leaf) const {return mRow == leaf.mRow;};
+
+				// relational operators
+				bool operator>(const self_type & leaf) const {return mRow > leaf.mRow;};
+				bool operator>=(const self_type & leaf) const {return mRow >= leaf.mRow;};
+				bool operator<(const self_type & leaf) const {return mRow < leaf.mRow;};
+				bool operator<=(const self_type & leaf) const {return mRow <= leaf.mRow;};
+
+
+				// compound assignment operators
+				self_type operator+=(int n){
+					mRow += n;
+					return *this;
+				}
+				self_type operator-=(int n){
+					mRow -= n;
+					return *this;
+				}
+
+
+				// offset dereference operator
+				// reference operator[](int n){
+				// 	return *mMat(mRow, n);
+				// }
+
+				reference operator[](int n) const {
+					return mMat->operator()(n, mCol);
+				}
+			private:
+				size_type mCol;
+				size_type mRow;
+				typename std::conditional<is_const, typename std::add_const<MatrixType>::type, MatrixType>::type * mMat;
+			};
+
+
+			typedef matrix_col_iterator<true> const_iterator;
+			typedef matrix_col_iterator<false> iterator;
+
+
+			iterator begin() {return iterator(mMat, 0, mCol);};
+			iterator end()	 {return iterator(mMat, size(), mCol);};
+
+			const_iterator cbegin() const {return const_iterator(mMat, 0, mCol);};
+			const_iterator cend() const	 {return const_iterator(mMat, size(), mCol);};
+
+
+		private:
+			MatrixType * 	mMat;
+			size_type 		mCol;
+		};
+
+
+
+
+
+
+
+		// fixed-length resize policy
+		template <size_type rows_at_compile, size_type cols_at_compile>
+		struct MatrixResizePolicy{
+			template <typename MatrixType>
+			static void resize(MatrixType & v, size_type r, size_type c) {};
+		};
+		// dynamic columns size resize policy
+		template <size_type rows_at_compile>
+		struct MatrixResizePolicy<rows_at_compile, dynamic_size>{
+			template <typename MatrixType>
+			static void resize(MatrixType & v, size_type r, size_type c) {
+				for (auto i=0; i<r; i++)v[i].resize(c);};
+		};
+
+		// dynamic columns size resize policy
+		template <>
+		struct MatrixResizePolicy<dynamic_size, dynamic_size>{
+			template <typename MatrixType>
+			static void resize(MatrixType & v, size_type r, size_type c) {
+				v.resize(r);
+				for (auto i=0; i<r; i++)v[i].resize(c);};
+		};
+
+		// matrix class definition
+		template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
+		class Matrix : public Table<scalar_type, 2, rows_at_compile, cols_at_compile>{
+		public:
+			typedef Table<scalar_type, 2, rows_at_compile, cols_at_compile> 	BaseType;
+			typedef Matrix<scalar_type, rows_at_compile, cols_at_compile> 		SelfType;
+
+			// inherit the base class constructors
+			using BaseType::BaseType;
+
+			// this nasty-looking code simply allows the use of vector and array braces initialization
+			// An input braces-initializer is converted to a row-major ordered matrix
+			// e.g. Matrix<int, 2, 3> mat = {1,2,3,4,5,6} becomes:		|1, 2, 3|
+			// 															|4, 5, 6|
+			// template <typename... Args>
+		 //    Matrix(Args &&... args) : BaseType({(std::forward<Args>(args))...}) {};
+			// explicitly define an initializer list constructor
+			Matrix(std::initializer_list<std::initializer_list<scalar_type>> il){
+				auto it = std::begin(il);
+				MatrixResizePolicy<rows_at_compile, cols_at_compile>::resize(*this, il.size(), (*it).size());
+				
+				auto itrme = std::begin(*this);
+				while (it != std::end(il)){
+					auto it2 = std::begin(*it);
+					auto itcme = std::begin(*itrme);
+					while (it2 != std::end(*it)){
+						(*itcme) = *it2;
+						it2++;
+						itcme++;
+					}
+					// (*itme) = *it;
+					it++;
+					itrme++;
+				}
+			}
+
+			Matrix(){};
+
+
+			scalar_type & operator()(size_type i, size_type j){return (*this)[i][j];};
+			const scalar_type & operator()(size_type i, size_type j) const {return (*this)[i][j];};
+
+
+
+			typename std::enable_if<rows_at_compile != dynamic_size, size_type>::type 
+			rows() const {return rows_at_compile;};
+
+			typename std::enable_if<cols_at_compile != dynamic_size, size_type>::type 
+			cols() const {return cols_at_compile;};
+
+
+			// matrix-vector multiplication
+			template <typename VectorT, typename VectorT2>
+			void vmult(const VectorT & v, VectorT2 & result) const {
+				scalar_type rowsum;
+				auto rit = this->cbegin();
+				auto resit = std::begin(result);
+
+				while (rit != this->cend() && resit != std::end(result)){
+					rowsum = vector::inner_product(v, (*rit));
+					(*resit) = rowsum;
+					rit++; resit++;
+				}
+			};
+
+
+
+
+			MatrixRow<SelfType> row(size_type r) {return MatrixRow<SelfType>(*this, r);};
+
+			MatrixCol<SelfType> col(size_type c) {return MatrixCol<SelfType>(*this, c);};
+		};
+
+
+		template <bool Header = false, typename MatrixT>
+		// template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
+		void write(const MatrixT & m, std::string dlm = " ", std::ostream & os = std::cout, std::size_t ntabs = 0){
+
+			// static_assert(type_traits::is_matrix<MatrixT>::value, "Input must be a matrix type!");
+
+			for (auto i=0; i<ntabs; i++) os << "\t" ;
+			if (Header) os << "<Matrix>" << std::endl;
+			os << std::scientific;
+
+			for (auto r = 0; r<m.rows(); r++){
+				for (auto i=0; i<ntabs+1; i++) os << "\t" ;
+
+				// first item of the row
+				os << m(r,0) ;
+
+				// remaining items in the row get a delimiter
+				for (auto c = 1; c<m.cols(); c++){
+					os << dlm << m(r,c) ;
+				}
+				os << std::endl;
+			}
+
+			for (auto i=0; i<ntabs; i++) os << "\t" ;
+			if (Header) os << "</Matrix>" << std::endl;
+			
+			return;
+		};
+
+
+
+
+
+
+		
+
+	} // end namespace matrix
+} // end namespace libra
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // using namespace libra;
 // // *******************************************************************************

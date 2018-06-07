@@ -19,95 +19,163 @@ namespace libra{
 
 
 
-// // interface for an iterable vector
-// template <typename Derived>
-// struct IterableVectorBase{
-// 	Derived & derived() {return *static_cast<Derived*>(this);};
-// 	const Derived & derived() const {return *static_cast<Derived*>(this);};
 
-
-// 	using Derived::const_iterator;
-// 	const_iterator cbegin() {return derived().cbegin();};
-// 	const_iterator cend() {return derived().cend();};
-// };
-
-
-
-
-
-
-
-// fixed-length resize policy
-template <size_type length_at_compile>
-struct VectorResizePolicy{
-	template <typename VectorType>
-	static void resize(VectorType & v, size_type n) {};
-};
-// dynamic size resize policy
-template <>
-struct VectorResizePolicy<dynamic_size>{
-	template <typename VectorType>
-	static void resize(VectorType & v, size_type n) {v.resize(n);};
-};
-
-
-
-
-
-// vector class definition
-template <typename scalar_type, size_type length_at_compile>
-class Vector : public Table<scalar_type, 1, length_at_compile>{
-public:
-	typedef Table<scalar_type, 1, length_at_compile> 	BaseType;
-
-
-	// inherit the base class constructors
-	using BaseType::BaseType; 
-
-	// explicitly define an initializer list constructor
-	Vector(std::initializer_list<scalar_type> il){
-		VectorResizePolicy<length_at_compile>::resize(*this, il.size());
-		auto it = std::begin(il);
-		auto itme = std::begin(*this);
-		while (it != std::end(il)){
-			(*itme) = *it;
-			it++;
-			itme++;
-		}
-	}
-
-	// explicitly define an empty constructor
-	Vector() {};
-
-	// 		BEWARE OF FORWARDING CONSTRUCTOR...
-	// 		it can be very bad for overload resolution... basically it always gets chosen
-	// // this nasty-looking code simply allows the use of initializer list for construction
-	// template <typename... Args, size_type s = length_at_compile>
-	// Vector(Args &&... args, typename std::enable_if<s != dynamic_size, void>::type * = 0) : BaseType{std::forward<Args>(args)...} {};
-
-
-	// copy assignment from arbitrary vector
-	template <typename OtherVector>
-	Vector & operator=(const OtherVector & v){
-		VectorResizePolicy<length_at_compile>::resize(*this, vector::length(v));
-		auto it = std::cbegin(v);
-		auto itme = std::begin(*this);
-		while (it != std::cend(v)){
-			(*itme) = *it;
-			it++;
-			itme++;
-		}
-		return *this;
+	// fixed-length resize policy
+	template <size_type length_at_compile>
+	struct VectorResizePolicy{
+		template <typename VectorType>
+		static void resize(VectorType & v, size_type n) {};
+	};
+	// dynamic size resize policy
+	template <>
+	struct VectorResizePolicy<dynamic_size>{
+		template <typename VectorType>
+		static void resize(VectorType & v, size_type n) {v.resize(n);};
 	};
 
+
+
+
+
+	// vector class definition
+	template <typename scalar_type, size_type length_at_compile>
+	class Vector : public Table<scalar_type, 1, length_at_compile>, 
+				   public vector::VectorAssignment<Vector<scalar_type, length_at_compile>>{
+	public:
+		typedef Vector<scalar_type, length_at_compile> 		SelfType;
+		typedef Table<scalar_type, 1, length_at_compile> 	BaseType;
+		typedef vector::VectorAssignment<SelfType> 			AssignmentType;
+
+
+		// inherit the base class constructors
+		using BaseType::BaseType; 
+		using BaseType::begin;
+		using BaseType::end;
+		using BaseType::cbegin;
+		using BaseType::cend;
+		using AssignmentType::operator=;
+
+		// decltype(auto) begin() {return BaseType::begin();};
+		// decltype(auto) end() {return BaseType::end();};
+
+		// explicitly define an initializer list constructor
+		Vector(std::initializer_list<scalar_type> il){
+			VectorResizePolicy<length_at_compile>::resize(*this, il.size());
+			auto it = std::begin(il);
+			auto itme = std::begin(*this);
+			while (it != std::end(il)){
+				(*itme) = *it;
+				it++;
+				itme++;
+			}
+		}
+
+		// explicitly define an empty constructor
+		Vector() {};
+
+		// 		BEWARE OF FORWARDING CONSTRUCTOR...
+		// 		it can be very bad for overload resolution... basically it always gets chosen
+		// // this nasty-looking code simply allows the use of initializer list for construction
+		// template <typename... Args, size_type s = length_at_compile>
+		// Vector(Args &&... args, typename std::enable_if<s != dynamic_size, void>::type * = 0) : BaseType{std::forward<Args>(args)...} {};
+
+
+		// // copy assignment from arbitrary vector
+		// template <typename OtherVector>
+		// Vector & operator=(const OtherVector & v){
+		// 	VectorResizePolicy<length_at_compile>::resize(*this, vector::length(v));
+		// 	auto it = std::cbegin(v);
+		// 	auto itme = std::begin(*this);
+		// 	while (it != std::cend(v)){
+		// 		(*itme) = *it;
+		// 		it++;
+		// 		itme++;
+		// 	}
+		// 	return *this;
+		// };
+
+		// multiplication by arbitrary scalar
+		template <typename ScalarType>
+		Vector operator*(const ScalarType & s) const {
+			Vector out;
+			VectorResizePolicy<length_at_compile>::resize(out, vector::length(*this));
+
+			auto it = std::begin(out);
+			auto itme = std::cbegin(*this);
+			while (it != std::end(out)){
+				(*it) = s*(*itme);
+				it++;
+				itme++;
+			}
+			return out;
+		};
+
+
+		// addition with arbitrary vector
+		template <typename OtherVector>
+		Vector operator+(const OtherVector & v) const {
+			Vector out;
+			VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
+			auto it = std::begin(out);
+			auto itv = std::cbegin(v);
+			auto itme = std::cbegin(*this);
+			while (it != std::end(out)){
+				(*it) = (*itme) + (*itv);
+				it++;
+				itv++;
+				itme++;
+			}
+			return out;
+		};
+
+
+		// subtraction with arbitrary vector
+		template <typename OtherVector>
+		Vector operator-(const OtherVector & v) const {
+			Vector out;
+			VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
+			auto it = std::begin(out);
+			auto itv = std::cbegin(v);
+			auto itme = std::cbegin(*this);
+			while (it != std::end(out)){
+				(*it) = (*itme) - (*itv);
+				it++;
+				itv++;
+				itme++;
+			}
+			return out;
+		};
+
+
+		// compound addition with arbitrary vector
+		template <typename OtherVector>
+		Vector & operator+=(const OtherVector & v) {
+			// VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
+			auto itv = std::cbegin(v);
+			auto it = std::begin(*this);
+			while (it != std::end(*this)){
+				(*it) += (*itv);
+				it++;
+				itv++;
+			}
+			return *this;
+		};
+
+		// random access operators by index
+		scalar_type & operator()(size_type i){return (*this)[i];};
+		const scalar_type & operator()(size_type i) const {return (*this)[i];};
+
+	};
+
+
 	// multiplication by arbitrary scalar
-	template <typename ScalarType>
-	Vector operator*(const ScalarType & s) const {
-		Vector out;
-		VectorResizePolicy<length_at_compile>::resize(out, vector::length(*this));
+	template <typename ScalarType, typename scalar_type, size_type length_at_compile>
+	Vector<scalar_type, length_at_compile> operator*(const ScalarType & s, const Vector<scalar_type, length_at_compile> & v) {
+		Vector<scalar_type, length_at_compile> out;
+		VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
 
 		auto it = std::begin(out);
-		auto itme = std::cbegin(*this);
+		auto itme = std::cbegin(v);
 		while (it != std::end(out)){
 			(*it) = s*(*itme);
 			it++;
@@ -117,78 +185,6 @@ public:
 	};
 
 
-	// addition with arbitrary vector
-	template <typename OtherVector>
-	Vector operator+(const OtherVector & v) const {
-		Vector out;
-		VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
-		auto it = std::begin(out);
-		auto itv = std::cbegin(v);
-		auto itme = std::cbegin(*this);
-		while (it != std::end(out)){
-			(*it) = (*itme) + (*itv);
-			it++;
-			itv++;
-			itme++;
-		}
-		return out;
-	};
-
-
-	// subtraction with arbitrary vector
-	template <typename OtherVector>
-	Vector operator-(const OtherVector & v) const {
-		Vector out;
-		VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
-		auto it = std::begin(out);
-		auto itv = std::cbegin(v);
-		auto itme = std::cbegin(*this);
-		while (it != std::end(out)){
-			(*it) = (*itme) - (*itv);
-			it++;
-			itv++;
-			itme++;
-		}
-		return out;
-	};
-
-
-	// compound addition with arbitrary vector
-	template <typename OtherVector>
-	Vector & operator+=(const OtherVector & v) {
-		// VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
-		auto itv = std::cbegin(v);
-		auto it = std::begin(*this);
-		while (it != std::end(*this)){
-			(*it) += (*itv);
-			it++;
-			itv++;
-		}
-		return *this;
-	};
-
-	// random access operators by index
-	scalar_type & operator()(size_type i){return (*this)[i];};
-	const scalar_type & operator()(size_type i) const {return (*this)[i];};
-
-};
-
-
-// multiplication by arbitrary scalar
-template <typename ScalarType, typename scalar_type, size_type length_at_compile>
-Vector<scalar_type, length_at_compile> operator*(const ScalarType & s, const Vector<scalar_type, length_at_compile> & v) {
-	Vector<scalar_type, length_at_compile> out;
-	VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
-
-	auto it = std::begin(out);
-	auto itme = std::cbegin(v);
-	while (it != std::end(out)){
-		(*it) = s*(*itme);
-		it++;
-		itme++;
-	}
-	return out;
-};
 
 
 
@@ -197,313 +193,311 @@ Vector<scalar_type, length_at_compile> operator*(const ScalarType & s, const Vec
 
 
 
+// // fixed-length resize policy
+// template <size_type rows_at_compile, size_type cols_at_compile>
+// struct MatrixResizePolicy{
+// 	template <typename MatrixType>
+// 	static void resize(MatrixType & v, size_type r, size_type c) {};
+// };
+// // dynamic columns size resize policy
+// template <size_type rows_at_compile>
+// struct MatrixResizePolicy<rows_at_compile, dynamic_size>{
+// 	template <typename MatrixType>
+// 	static void resize(MatrixType & v, size_type r, size_type c) {
+// 		for (auto i=0; i<r; i++)v[i].resize(c);};
+// };
 
+// // dynamic columns size resize policy
+// template <>
+// struct MatrixResizePolicy<dynamic_size, dynamic_size>{
+// 	template <typename MatrixType>
+// 	static void resize(MatrixType & v, size_type r, size_type c) {
+// 		v.resize(r);
+// 		for (auto i=0; i<r; i++)v[i].resize(c);};
+// };
 
-// fixed-length resize policy
-template <size_type rows_at_compile, size_type cols_at_compile>
-struct MatrixResizePolicy{
-	template <typename MatrixType>
-	static void resize(MatrixType & v, size_type r, size_type c) {};
-};
-// dynamic columns size resize policy
-template <size_type rows_at_compile>
-struct MatrixResizePolicy<rows_at_compile, dynamic_size>{
-	template <typename MatrixType>
-	static void resize(MatrixType & v, size_type r, size_type c) {
-		for (auto i=0; i<r; i++)v[i].resize(c);};
-};
+// // matrix class definition
+// template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
+// class Matrix : public Table<scalar_type, 2, rows_at_compile, cols_at_compile>{
+// public:
+// 	typedef Table<scalar_type, 2, rows_at_compile, cols_at_compile> 	BaseType;
 
-// dynamic columns size resize policy
-template <>
-struct MatrixResizePolicy<dynamic_size, dynamic_size>{
-	template <typename MatrixType>
-	static void resize(MatrixType & v, size_type r, size_type c) {
-		v.resize(r);
-		for (auto i=0; i<r; i++)v[i].resize(c);};
-};
+// 	// inherit the base class constructors
+// 	using BaseType::BaseType;
 
-// matrix class definition
-template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
-class Matrix : public Table<scalar_type, 2, rows_at_compile, cols_at_compile>{
-public:
-	typedef Table<scalar_type, 2, rows_at_compile, cols_at_compile> 	BaseType;
-
-	// inherit the base class constructors
-	using BaseType::BaseType;
-
-	// this nasty-looking code simply allows the use of vector and array braces initialization
-	// An input braces-initializer is converted to a row-major ordered matrix
-	// e.g. Matrix<int, 2, 3> mat = {1,2,3,4,5,6} becomes:		|1, 2, 3|
-	// 															|4, 5, 6|
-	// template <typename... Args>
- //    Matrix(Args &&... args) : BaseType({(std::forward<Args>(args))...}) {};
-	// explicitly define an initializer list constructor
-	Matrix(std::initializer_list<std::initializer_list<scalar_type>> il){
-		auto it = std::begin(il);
-		MatrixResizePolicy<rows_at_compile, cols_at_compile>::resize(*this, il.size(), (*it).size());
+// 	// this nasty-looking code simply allows the use of vector and array braces initialization
+// 	// An input braces-initializer is converted to a row-major ordered matrix
+// 	// e.g. Matrix<int, 2, 3> mat = {1,2,3,4,5,6} becomes:		|1, 2, 3|
+// 	// 															|4, 5, 6|
+// 	// template <typename... Args>
+//  //    Matrix(Args &&... args) : BaseType({(std::forward<Args>(args))...}) {};
+// 	// explicitly define an initializer list constructor
+// 	Matrix(std::initializer_list<std::initializer_list<scalar_type>> il){
+// 		auto it = std::begin(il);
+// 		MatrixResizePolicy<rows_at_compile, cols_at_compile>::resize(*this, il.size(), (*it).size());
 		
-		auto itrme = std::begin(*this);
-		while (it != std::end(il)){
-			auto it2 = std::begin(*it);
-			auto itcme = std::begin(*itrme);
-			while (it2 != std::end(*it)){
-				(*itcme) = *it2;
-				it2++;
-				itcme++;
-			}
-			// (*itme) = *it;
-			it++;
-			itrme++;
-		}
-	}
+// 		auto itrme = std::begin(*this);
+// 		while (it != std::end(il)){
+// 			auto it2 = std::begin(*it);
+// 			auto itcme = std::begin(*itrme);
+// 			while (it2 != std::end(*it)){
+// 				(*itcme) = *it2;
+// 				it2++;
+// 				itcme++;
+// 			}
+// 			// (*itme) = *it;
+// 			it++;
+// 			itrme++;
+// 		}
+// 	}
 
-	Matrix(){};
-
-
-	scalar_type & operator()(size_type i, size_type j){return (*this)[i][j];};
-	const scalar_type & operator()(size_type i, size_type j) const {return (*this)[i][j];};
+// 	Matrix(){};
 
 
-	// matrix-vector multiplication
-	template <typename VectorT, typename VectorT2>
-	void vmult(const VectorT & v, VectorT2 & result) const {
-		scalar_type rowsum;
-		auto rit = this->cbegin();
-		auto resit = std::begin(result);
-
-		while (rit != this->cend() && resit != std::end(result)){
-			rowsum = vector::inner_product(v, (*rit));
-			(*resit) = rowsum;
-			rit++; resit++;
-		}
-	};
+// 	scalar_type & operator()(size_type i, size_type j){return (*this)[i][j];};
+// 	const scalar_type & operator()(size_type i, size_type j) const {return (*this)[i][j];};
 
 
+// 	// matrix-vector multiplication
+// 	template <typename VectorT, typename VectorT2>
+// 	void vmult(const VectorT & v, VectorT2 & result) const {
+// 		scalar_type rowsum;
+// 		auto rit = this->cbegin();
+// 		auto resit = std::begin(result);
 
-
-
-	// class const_iterator;
-	// class iterator{
-	// public:
-	// 	friend class const_iterator;
-	// 	typedef iterator 							self_type;
-	// 	typedef std::ptrdiff_t 						difference_type;
-	//     typedef typename IteratorT::value_type 		value_type;
-	//     typedef typename IteratorT::reference 		reference;
-	//     typedef typename IteratorT::pointer 		pointer;
-	//     typedef typename IteratorT::iterator_category	iterator_category;
-
-	// 	// construction
-	// 	iterator(Matrix & m, IteratorT it)
-	// 	: mMat(Mat)
-	// 	, mIt(it){};
-
-	// 	// copy assignment
-	// 	iterator & operator=(const iterator & cit){
-	// 		iterator i(cit);
-	// 		std::swap(i,*this);
-	// 		return *this;
-	// 	}
-
-	// 	// rvalue dereferencing
-	// 	pointer operator->() {return mIt.operator->();};
-	// 	reference operator*(){ return *mIt;};
-
-	// 	// increment operators
-	// 	self_type operator++(){
-	// 		mIt++;
-	// 		return *this;
-	// 	}
-	// 	self_type operator++(int blah){
-	// 		mIt++;
-	// 		return *this;
-	// 	}
-
-	// 	// decrement operators
-	// 	self_type operator--(){
-	// 		mIt--;
-	// 		return *this;
-	// 	}
-	// 	self_type operator--(int blah){
-	// 		mIt--;
-	// 		return *this;
-	// 	}
-
-	// 	// scalar arithmetic operators
-	// 	self_type operator+(int n){
-	// 		mIt = mIt + n;
-	// 		return *this;
-	// 	}
-	// 	self_type operator-(int n){
-	// 		mIt = mIt - n;
-	// 		return *this;
-	// 	}
-	// 	int operator-(const self_type & b) const {
-	// 		return mIt - b.mIt;
-	// 	}
-
-	// 	// equivalence operators
-	// 	bool operator!=(const self_type & leaf) const {return mIt != leaf.mIt;};
-	// 	bool operator==(const self_type & leaf) const {return mIt == leaf.mIt;};
-
-	// 	// relational operators
-	// 	bool operator>(const self_type & leaf) const {return mIt > leaf.mIt;};
-	// 	bool operator>=(const self_type & leaf) const {return mIt >= leaf.mIt;};
-	// 	bool operator<(const self_type & leaf) const {return mIt < leaf.mIt;};
-	// 	bool operator<=(const self_type & leaf) const {return mIt <= leaf.mIt;};
-
-
-	// 	// compound assignment operators
-	// 	self_type operator+=(int n){
-	// 		mIt += n;
-	// 		return *this;
-	// 	}
-	// 	self_type operator-=(int n){
-	// 		mIt -= n;
-	// 		return *this;
-	// 	}
-
-
-	// 	// offset dereference operator
-	// 	reference operator[](int n){
-	// 		return mIt[n];
-	// 	}
-	// private:
-	// 	Matrix & mMat;
-	// 	IteratorT mIt;
-	// };
-
-	// iterator begin() {return iterator(*this, mRow, mCol);};
-	// iterator end()	 {return iterator(*this, mEnd);};
+// 		while (rit != this->cend() && resit != std::end(result)){
+// 			rowsum = vector::inner_product(v, (*rit));
+// 			(*resit) = rowsum;
+// 			rit++; resit++;
+// 		}
+// 	};
 
 
 
 
-	// class const_iterator{
-	// public:
-	// 	typedef typename VectorT::const_iterator 		subiterator_type;
+
+// 	// class const_iterator;
+// 	// class iterator{
+// 	// public:
+// 	// 	friend class const_iterator;
+// 	// 	typedef iterator 							self_type;
+// 	// 	typedef std::ptrdiff_t 						difference_type;
+// 	//     typedef typename IteratorT::value_type 		value_type;
+// 	//     typedef typename IteratorT::reference 		reference;
+// 	//     typedef typename IteratorT::pointer 		pointer;
+// 	//     typedef typename IteratorT::iterator_category	iterator_category;
+
+// 	// 	// construction
+// 	// 	iterator(Matrix & m, IteratorT it)
+// 	// 	: mMat(Mat)
+// 	// 	, mIt(it){};
+
+// 	// 	// copy assignment
+// 	// 	iterator & operator=(const iterator & cit){
+// 	// 		iterator i(cit);
+// 	// 		std::swap(i,*this);
+// 	// 		return *this;
+// 	// 	}
+
+// 	// 	// rvalue dereferencing
+// 	// 	pointer operator->() {return mIt.operator->();};
+// 	// 	reference operator*(){ return *mIt;};
+
+// 	// 	// increment operators
+// 	// 	self_type operator++(){
+// 	// 		mIt++;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	self_type operator++(int blah){
+// 	// 		mIt++;
+// 	// 		return *this;
+// 	// 	}
+
+// 	// 	// decrement operators
+// 	// 	self_type operator--(){
+// 	// 		mIt--;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	self_type operator--(int blah){
+// 	// 		mIt--;
+// 	// 		return *this;
+// 	// 	}
+
+// 	// 	// scalar arithmetic operators
+// 	// 	self_type operator+(int n){
+// 	// 		mIt = mIt + n;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	self_type operator-(int n){
+// 	// 		mIt = mIt - n;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	int operator-(const self_type & b) const {
+// 	// 		return mIt - b.mIt;
+// 	// 	}
+
+// 	// 	// equivalence operators
+// 	// 	bool operator!=(const self_type & leaf) const {return mIt != leaf.mIt;};
+// 	// 	bool operator==(const self_type & leaf) const {return mIt == leaf.mIt;};
+
+// 	// 	// relational operators
+// 	// 	bool operator>(const self_type & leaf) const {return mIt > leaf.mIt;};
+// 	// 	bool operator>=(const self_type & leaf) const {return mIt >= leaf.mIt;};
+// 	// 	bool operator<(const self_type & leaf) const {return mIt < leaf.mIt;};
+// 	// 	bool operator<=(const self_type & leaf) const {return mIt <= leaf.mIt;};
+
+
+// 	// 	// compound assignment operators
+// 	// 	self_type operator+=(int n){
+// 	// 		mIt += n;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	self_type operator-=(int n){
+// 	// 		mIt -= n;
+// 	// 		return *this;
+// 	// 	}
+
+
+// 	// 	// offset dereference operator
+// 	// 	reference operator[](int n){
+// 	// 		return mIt[n];
+// 	// 	}
+// 	// private:
+// 	// 	Matrix & mMat;
+// 	// 	IteratorT mIt;
+// 	// };
+
+// 	// iterator begin() {return iterator(*this, mRow, mCol);};
+// 	// iterator end()	 {return iterator(*this, mEnd);};
+
+
+
+
+// 	// class const_iterator{
+// 	// public:
+// 	// 	typedef typename VectorT::const_iterator 		subiterator_type;
 		
-	// 	typedef const_iterator 							self_type;
-	// 	typedef typename subiterator_type::difference_type		difference_type;
-	//     typedef typename subiterator_type::value_type 	value_type;
-	//     typedef typename subiterator_type::reference 	reference;
-	//     typedef typename subiterator_type::pointer 		pointer;
-	//     typedef typename subiterator_type::iterator_category	iterator_category;
+// 	// 	typedef const_iterator 							self_type;
+// 	// 	typedef typename subiterator_type::difference_type		difference_type;
+// 	//     typedef typename subiterator_type::value_type 	value_type;
+// 	//     typedef typename subiterator_type::reference 	reference;
+// 	//     typedef typename subiterator_type::pointer 		pointer;
+// 	//     typedef typename subiterator_type::iterator_category	iterator_category;
 
-	// 	// construction
-	// 	const_iterator(const Matrix & m, subiterator_type it)
-	// 	: mMat(Mat)
-	// 	, mIt(it){};
+// 	// 	// construction
+// 	// 	const_iterator(const Matrix & m, subiterator_type it)
+// 	// 	: mMat(Mat)
+// 	// 	, mIt(it){};
 
-	// 	// conversion of iterator to const_iterator
-	// 	const_iterator(const iterator & it)
-	// 	: mMat(it.mMat)
-	// 	, mIt(it.mIt) {};
-
-
-	// 	const_iterator & operator=(const const_iterator & cit){
-	// 		const_iterator i(cit);
-	// 		std::swap(i,*this);
-	// 		return *this;
-	// 	}
-
-	// 	// rvalue dereferencing
-	// 	pointer operator->() {return mIt.operator->();};
-	// 	reference operator*(){ return *mIt;};
-
-	// 	// increment operators
-	// 	self_type operator++(){
-	// 		mIt++;
-	// 		return *this;
-	// 	}
-	// 	self_type operator++(int blah){
-	// 		mIt++;
-	// 		return *this;
-	// 	}
-
-	// 	// decrement operators
-	// 	self_type operator--(){
-	// 		mIt--;
-	// 		return *this;
-	// 	}
-	// 	self_type operator--(int blah){
-	// 		mIt--;
-	// 		return *this;
-	// 	}
-
-	// 	// scalar arithmetic operators
-	// 	self_type operator+(int n){
-	// 		mIt = mIt + n;
-	// 		return *this;
-	// 	}
-	// 	self_type operator-(int n){
-	// 		mIt = mIt - n;
-	// 		return *this;
-	// 	}
-	// 	int operator-(const self_type & b) const {
-	// 		return mIt - b.mIt;
-	// 	}
-
-	// 	// equivalence operators
-	// 	bool operator!=(const self_type & leaf) const {return mIt != leaf.mIt;};
-	// 	bool operator==(const self_type & leaf) const {return mIt == leaf.mIt;};
-
-	// 	// relational operators
-	// 	bool operator>(const self_type & leaf) const {return mIt > leaf.mIt;};
-	// 	bool operator>=(const self_type & leaf) const {return mIt >= leaf.mIt;};
-	// 	bool operator<(const self_type & leaf) const {return mIt < leaf.mIt;};
-	// 	bool operator<=(const self_type & leaf) const {return mIt <= leaf.mIt;};
+// 	// 	// conversion of iterator to const_iterator
+// 	// 	const_iterator(const iterator & it)
+// 	// 	: mMat(it.mMat)
+// 	// 	, mIt(it.mIt) {};
 
 
-	// 	// compound assignment operators
-	// 	self_type operator+=(int n){
-	// 		mIt += n;
-	// 		return *this;
-	// 	}
-	// 	self_type operator-=(int n){
-	// 		mIt -= n;
-	// 		return *this;
-	// 	}
+// 	// 	const_iterator & operator=(const const_iterator & cit){
+// 	// 		const_iterator i(cit);
+// 	// 		std::swap(i,*this);
+// 	// 		return *this;
+// 	// 	}
+
+// 	// 	// rvalue dereferencing
+// 	// 	pointer operator->() {return mIt.operator->();};
+// 	// 	reference operator*(){ return *mIt;};
+
+// 	// 	// increment operators
+// 	// 	self_type operator++(){
+// 	// 		mIt++;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	self_type operator++(int blah){
+// 	// 		mIt++;
+// 	// 		return *this;
+// 	// 	}
+
+// 	// 	// decrement operators
+// 	// 	self_type operator--(){
+// 	// 		mIt--;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	self_type operator--(int blah){
+// 	// 		mIt--;
+// 	// 		return *this;
+// 	// 	}
+
+// 	// 	// scalar arithmetic operators
+// 	// 	self_type operator+(int n){
+// 	// 		mIt = mIt + n;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	self_type operator-(int n){
+// 	// 		mIt = mIt - n;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	int operator-(const self_type & b) const {
+// 	// 		return mIt - b.mIt;
+// 	// 	}
+
+// 	// 	// equivalence operators
+// 	// 	bool operator!=(const self_type & leaf) const {return mIt != leaf.mIt;};
+// 	// 	bool operator==(const self_type & leaf) const {return mIt == leaf.mIt;};
+
+// 	// 	// relational operators
+// 	// 	bool operator>(const self_type & leaf) const {return mIt > leaf.mIt;};
+// 	// 	bool operator>=(const self_type & leaf) const {return mIt >= leaf.mIt;};
+// 	// 	bool operator<(const self_type & leaf) const {return mIt < leaf.mIt;};
+// 	// 	bool operator<=(const self_type & leaf) const {return mIt <= leaf.mIt;};
 
 
-	// 	// offset dereference operator
-	// 	reference operator[](int n){
-	// 		return mIt[n];
-	// 	}
-	// private:
-	// 	const Matrix & mMat;
-	// 	subiterator_type mIt;
-	// };
-
-	// const_iterator cbegin() const {return const_iterator(*this, vector_const_iterator(mBegin));};
-	// const_iterator cend() const	 {return const_iterator(*this, vector_const_iterator(mEnd));};
-
-	// // these are required by std::cbegin()/cend()
-	// const_iterator begin() const {return cbegin();};
-	// const_iterator end() const	 {return cend();};
+// 	// 	// compound assignment operators
+// 	// 	self_type operator+=(int n){
+// 	// 		mIt += n;
+// 	// 		return *this;
+// 	// 	}
+// 	// 	self_type operator-=(int n){
+// 	// 		mIt -= n;
+// 	// 		return *this;
+// 	// 	}
 
 
+// 	// 	// offset dereference operator
+// 	// 	reference operator[](int n){
+// 	// 		return mIt[n];
+// 	// 	}
+// 	// private:
+// 	// 	const Matrix & mMat;
+// 	// 	subiterator_type mIt;
+// 	// };
 
-};
+// 	// const_iterator cbegin() const {return const_iterator(*this, vector_const_iterator(mBegin));};
+// 	// const_iterator cend() const	 {return const_iterator(*this, vector_const_iterator(mEnd));};
+
+// 	// // these are required by std::cbegin()/cend()
+// 	// const_iterator begin() const {return cbegin();};
+// 	// const_iterator end() const	 {return cend();};
 
 
-template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
-void write_matrix(Matrix<scalar_type, rows_at_compile, cols_at_compile> & m, std::ostream & os = std::cout, std::size_t ntabs = 0){
-	for (auto i=0; i<ntabs; i++) os << "\t" ;
-	os << "<Matrix>" << std::endl;
-	os << std::scientific;
-	for (auto it = std::cbegin(m); it!=std::cend(m); it++){
-		for (auto i=0; i<ntabs; i++) os << "\t" ;
-			for (auto rit = it->cbegin(); rit != it->cend(); rit++){
-				std::cout << *rit << "," ;
-			}
-		std::cout << "\b \b" ;
-		std::cout << std::endl;
-	}
-	for (auto i=0; i<ntabs; i++) os << "\t" ;
-	os << "</Matrix>" << std::endl;
-	return;
-};
+
+// };
+
+
+// template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
+// void write_matrix(Matrix<scalar_type, rows_at_compile, cols_at_compile> & m, std::ostream & os = std::cout, std::size_t ntabs = 0){
+// 	for (auto i=0; i<ntabs; i++) os << "\t" ;
+// 	os << "<Matrix>" << std::endl;
+// 	os << std::scientific;
+// 	for (auto it = std::cbegin(m); it!=std::cend(m); it++){
+// 		for (auto i=0; i<ntabs; i++) os << "\t" ;
+// 			for (auto rit = it->cbegin(); rit != it->cend(); rit++){
+// 				std::cout << *rit << "," ;
+// 			}
+// 		std::cout << "\b \b" ;
+// 		std::cout << std::endl;
+// 	}
+// 	for (auto i=0; i<ntabs; i++) os << "\t" ;
+// 	os << "</Matrix>" << std::endl;
+// 	return;
+// };
 
 
 

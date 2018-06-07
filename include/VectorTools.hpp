@@ -37,14 +37,14 @@ namespace vector{
 		os << std::scientific;
 
 		// first item
-		auto it = std::cbegin(v); 
+		auto it = v.cbegin();
 		if (AsColumn) for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 		os << *it ;
 		if (AsColumn) os << std::endl;
 		it++;
 
 		// remaining items get a delimiter
-		while (it!=std::cend(v)){
+		while (it!= v.cend()){
 			if (!AsColumn) os << dlm;
 			if (AsColumn) for (auto i=0; i<ntabs+1; i++) os << "\t" ;
 			os << *it ;
@@ -353,6 +353,33 @@ namespace vector{
 	}
 
 //***********************
+
+
+
+	// use CRTP to extend generalized vector assignment to any
+	// class that inherits this class
+	template <typename Derived>
+	struct VectorAssignment {
+	private:
+		// static_assert(type_traits::is_assignable_vector<Derived>::value, "to inherit Vector Assignment, the vector class must be assignable!");
+		
+		Derived & derived() {return *static_cast<Derived *>(this);};
+		const Derived & derived() const {return *static_cast<Derived *>(this);};
+
+	public:
+		template <typename VectorT>
+		Derived & operator=(const VectorT & v){
+			static_assert(type_traits::is_traversable_vector<VectorT>::value, "Vector Assignment requires a traversable vector input to operator=!");
+			auto it1 = derived().begin();
+			auto it2 = v.cbegin();
+			while (it1 != derived().end() && it2 != v.cend()){
+				(*it1) = (*it2);
+				it1++;
+				it2++;
+			}
+			return derived();
+		}
+	};
 
 
 } // end namespace vector

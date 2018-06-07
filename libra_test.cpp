@@ -87,7 +87,7 @@ int main(int argc, char * argv[]){
 	// }
 	// cout << "</Tensor>" << endl;
 
-	throw -1;
+	// throw -1;
 
 	//**************** VECTOR TESTS *********************//
 	cout << endl;
@@ -104,9 +104,15 @@ int main(int argc, char * argv[]){
 	libra::vector::write(dresult);
 	libra::Vector<double, 3> dresult_copy = dresult;
 	libra::vector::write(dresult_copy);
+	std::cout << std::endl;
 	
-	libra::Vector<int, libra::dynamic_size> dvec = {3,2,9,0,20, 9, 1};
-	libra::vector::write(dvec);
+	libra::Vector<int, libra::dynamic_size> dvec = {3,2,8};
+	libra::vector::write<true>(dvec);
+
+	for (auto it=dvec.begin(); it!=dvec.end(); it++){
+		(*it)++;
+	}
+	libra::vector::write<true>(dvec);
 
 
 	//**************** MATRIX TESTS *********************//
@@ -118,7 +124,7 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
-	libra::Matrix<int, 3, 3> dmat = {{1,2,3},{4,5,6},{7,8,9}}; //dmat[0][0] = 9;
+	libra::matrix::Matrix<int, 3, 3> dmat = {{1,2,3},{4,5,6},{7,8,9}}; //dmat[0][0] = 9;
 	// for (auto it = dmat.begin(); it!= dmat.end(); it++) libra::fill_randn(*it);
 	cout << "<Matrix>" << endl;
 	// for (auto it = dmat.begin(); it!= dmat.end(); it++){
@@ -126,13 +132,27 @@ int main(int argc, char * argv[]){
 	// }
 	cout << "</Matrix>" << endl;
 	dmat.vmult(dmatx, dresult);
-	libra::vector::write(dresult);
+	libra::vector::write<true>(dresult);
+
+	libra::matrix::write<true>(dmat);
+
+	libra::matrix::MatrixRow<libra::matrix::Matrix<int, 3, 3>> mrow = dmat.row(2);
+	std::cout << "row size: " << mrow.size() << std::endl;
+	for (auto it=mrow.begin(); it!=mrow.end(); it++) std::cout << *it << ", " ;
+	std::cout << std::endl;
+	mrow = dvec;
+	dmat.row(0) = dvec;
+	dmat.col(0) = dvec;
+
+	libra::vector::write<true>(mrow);
+
+	libra::matrix::write<true>(dmat);
 	
 	// libra::
 
+	throw -1;
 
-
-	unsigned int nrows=20, ncols = 5;
+	
 
 	//**************** MATRIX TESTS *********************//
 	cout << "********************************************" << endl;
@@ -141,6 +161,8 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
+
+	unsigned int nrows=20, ncols = 5;
 	Matrix A(nrows, ncols);
 	for (auto i=0; i<nrows; i++)
 	{
@@ -207,7 +229,7 @@ int main(int argc, char * argv[]){
 	// cout << "lvec: " << lvec << std::endl;
 
 	typedef std::complex<double> SolveType;
-	libra::Matrix<SolveType, 4, 4> lmat;// = {1.0, 0.1, 0.1, 0.2, 1.0, 0.2, 0.3, 0.3, 1.0};
+	libra::matrix::Matrix<SolveType, 4, 4> lmat;// = {1.0, 0.1, 0.1, 0.2, 1.0, 0.2, 0.3, 0.3, 1.0};
 	for (auto it=lmat.begin(); it!=lmat.end(); it++) libra::vector::fill_rand(*it);
 	// lmat(0,0) = lmat(1,1) = lmat(2,2) = 1.0;
 	// libra::write_matrix(lmat);
