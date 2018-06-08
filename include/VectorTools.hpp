@@ -16,8 +16,10 @@
 // These are tools for operating on GENERAL VECTORS
 // The requirements for an object to be a general vector are:
 // 		- has iterator/const_iterator of random access type that can be 
-//		  accessed through std::cbegin()/cend() and std::begin()/end()
-
+//		  accessed through std::cbegin()/cend() and/or std::begin()/end
+// 		  or by the equivalent member functions
+// 		- can determine the size either through a size() function
+//		  or by subtracting random access iterators
 
 namespace libra{
 

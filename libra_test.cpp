@@ -125,7 +125,9 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	libra::matrix::Matrix<int, 3, 3> dmat = {{1,2,3},{4,5,6},{7,8,9}}; //dmat[0][0] = 9;
-	// for (auto it = dmat.begin(); it!= dmat.end(); it++) libra::fill_randn(*it);
+	libra::matrix::Matrix<float, libra::dynamic_size, libra::dynamic_size> dmat2(5,5);
+	libra::Vector<float, libra::dynamic_size> dve2 = {-1,0,0,0,0};
+	for (auto it = dmat2.begin(); it!= dmat2.end(); it++) libra::vector::fill_randn(*it);
 	cout << "<Matrix>" << endl;
 	// for (auto it = dmat.begin(); it!= dmat.end(); it++){
 	// 	libra::write_vector(*it);
@@ -147,8 +149,17 @@ int main(int argc, char * argv[]){
 	libra::vector::write<true>(mrow);
 
 	libra::matrix::write<true>(dmat);
-	
+
+
+	libra::matrix::write<true>(dmat2);	
+	dmat2.col(3) = dve2;
+	libra::matrix::write<true>(dmat2);
 	// libra::
+
+	auto exprt1 = libra::vector::abs(dve2);
+	auto exprt2 = 3+exprt1;
+	libra::vector::write<true>(10*exprt2);
+	libra::vector::write<true>(dve2.erf());
 
 	throw -1;
 

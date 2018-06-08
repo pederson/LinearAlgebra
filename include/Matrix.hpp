@@ -309,7 +309,7 @@ namespace libra{
 
 
 
-		// fixed-length resize policy
+		// fixed-length resize policy -- do nothing
 		template <size_type rows_at_compile, size_type cols_at_compile>
 		struct MatrixResizePolicy{
 			template <typename MatrixType>
@@ -332,6 +332,8 @@ namespace libra{
 				for (auto i=0; i<r; i++)v[i].resize(c);};
 		};
 
+
+
 		// matrix class definition
 		template <typename scalar_type, size_type rows_at_compile, size_type cols_at_compile>
 		class Matrix : public Table<scalar_type, 2, rows_at_compile, cols_at_compile>{
@@ -348,7 +350,12 @@ namespace libra{
 			// 															|4, 5, 6|
 			// template <typename... Args>
 		 //    Matrix(Args &&... args) : BaseType({(std::forward<Args>(args))...}) {};
+
+
 			// explicitly define an initializer list constructor
+			// An input braces-initializer is converted to a row-major ordered matrix
+			// e.g. Matrix<int, 2, 3> mat = {{1,2,3},{4,5,6}} becomes:	|1, 2, 3|
+			// 															|4, 5, 6|
 			Matrix(std::initializer_list<std::initializer_list<scalar_type>> il){
 				auto it = std::begin(il);
 				MatrixResizePolicy<rows_at_compile, cols_at_compile>::resize(*this, il.size(), (*it).size());
@@ -370,17 +377,34 @@ namespace libra{
 
 			Matrix(){};
 
+			Matrix(size_type r, size_type c){
+				MatrixResizePolicy<rows_at_compile, cols_at_compile>::resize(*this, r, c);
+			}
+
 
 			scalar_type & operator()(size_type i, size_type j){return (*this)[i][j];};
 			const scalar_type & operator()(size_type i, size_type j) const {return (*this)[i][j];};
 
 
 
-			typename std::enable_if<rows_at_compile != dynamic_size, size_type>::type 
+			template <typename T = size_type>
+			typename std::enable_if<rows_at_compile != dynamic_size, T>::type 
 			rows() const {return rows_at_compile;};
 
-			typename std::enable_if<cols_at_compile != dynamic_size, size_type>::type 
+			template <typename T = size_type>
+			typename std::enable_if<rows_at_compile == dynamic_size, T>::type 
+			rows() const {return this->size();};
+
+			// typename std::enable_if<cols_at_compile != dynamic_size, size_type>::type 
+			// cols() const {return cols_at_compile;};
+
+			template <typename T = size_type>
+			typename std::enable_if<cols_at_compile != dynamic_size, T>::type 
 			cols() const {return cols_at_compile;};
+
+			template <typename T = size_type>
+			typename std::enable_if<cols_at_compile == dynamic_size, T>::type 
+			cols() const {return (rows() > 0 ? (*this)[0].size() : 0);};
 
 
 			// matrix-vector multiplication
@@ -401,8 +425,9 @@ namespace libra{
 
 
 			MatrixRow<SelfType> row(size_type r) {return MatrixRow<SelfType>(*this, r);};
-
 			MatrixCol<SelfType> col(size_type c) {return MatrixCol<SelfType>(*this, c);};
+		
+		private:
 		};
 
 

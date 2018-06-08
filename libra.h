@@ -17,4 +17,6 @@
 #include "include/VectorView.hpp"
 #include "include/Vector.hpp"
 
+#include "include/UnaryVectorExpression.hpp"
+
 #endif

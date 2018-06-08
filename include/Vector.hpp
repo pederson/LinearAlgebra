@@ -13,6 +13,7 @@
 
 #include "Tensor.hpp"
 #include "VectorTools.hpp"
+#include "UnaryVectorExpression.hpp"
 
 namespace libra{
 
@@ -40,7 +41,9 @@ namespace libra{
 	// vector class definition
 	template <typename scalar_type, size_type length_at_compile>
 	class Vector : public Table<scalar_type, 1, length_at_compile>, 
-				   public vector::VectorAssignment<Vector<scalar_type, length_at_compile>>{
+				   public vector::VectorAssignment<Vector<scalar_type, length_at_compile>>,
+				   public vector::UnaryVectorOperators<Vector<scalar_type, length_at_compile>>
+	{
 	public:
 		typedef Vector<scalar_type, length_at_compile> 		SelfType;
 		typedef Table<scalar_type, 1, length_at_compile> 	BaseType;
