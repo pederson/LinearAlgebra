@@ -41,6 +41,8 @@ namespace libra{
 
 			size_type size() const {return mMat->cols();};
 
+			void resize(size_type l) {};
+
 
 			template <bool is_const>
 			class matrix_row_iterator{
@@ -183,6 +185,7 @@ namespace libra{
 
 			size_type size() const {return mMat->rows();};
 
+			void resize(size_type l) {};
 
 			template <bool is_const>
 			class matrix_col_iterator{
@@ -395,8 +398,6 @@ namespace libra{
 			typename std::enable_if<rows_at_compile == dynamic_size, T>::type 
 			rows() const {return this->size();};
 
-			// typename std::enable_if<cols_at_compile != dynamic_size, size_type>::type 
-			// cols() const {return cols_at_compile;};
 
 			template <typename T = size_type>
 			typename std::enable_if<cols_at_compile != dynamic_size, T>::type 
@@ -409,12 +410,16 @@ namespace libra{
 
 			// matrix-vector multiplication
 			template <typename VectorT, typename VectorT2>
-			void vmult(const VectorT & v, VectorT2 & result) const {
+			void vmult(const VectorT & v, VectorT2 && result) const {
+				static_assert(type_traits::is_traversable_vector<VectorT>::value, "Matrix-Vector input must be a vector type!");
+				static_assert(type_traits::is_assignable_vector<VectorT2>::value, "Matrix-Vector input must be a vector type!");
+
+
 				scalar_type rowsum;
 				auto rit = this->cbegin();
-				auto resit = std::begin(result);
+				auto resit = result.begin();//std::begin(result);
 
-				while (rit != this->cend() && resit != std::end(result)){
+				while (rit != this->cend() && resit != result.end()){
 					rowsum = vector::inner_product(v, (*rit));
 					(*resit) = rowsum;
 					rit++; resit++;

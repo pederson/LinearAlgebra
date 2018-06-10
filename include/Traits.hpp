@@ -119,6 +119,25 @@ namespace type_traits{
 	        > : public std::true_type {};
 
 
+//***********************
+	// a resizable vector is one which provides a resize() method
+	// to change the length of the vector
+	template<typename T, typename _ = void>
+	struct is_resizable_vector : std::false_type {};
+
+	template<typename T>
+	struct is_resizable_vector<
+	        T,
+	        std::conditional_t<
+	            false,
+	            is_vector_helper<
+	                decltype(std::declval<T>().resize(1))
+	                >,
+	            void
+	            >
+	        > : public std::true_type {};
+
+
 
 //***********************
 	// This compile-time helper is used to detect the underlying contained
@@ -126,15 +145,35 @@ namespace type_traits{
 	// Note that we do not require that the vector has value_type defined
 	template<typename T>
 	struct contained_type{
-		typedef typename std::remove_const<typename std::remove_reference<decltype(std::declval<decltype(std::declval<T>().cbegin())>().operator*())>::type>::type type;
+		static_assert(is_vector<T>::value, "Must be a vector type in order to deduce contained type");
+		typedef typename std::remove_const<typename std::remove_reference<decltype(*std::declval<T>().cbegin())>::type>::type type;
 	};
 
-	template <typename P>
-	struct contained_type<P*>{
-		typedef P 		type;
-	};
+	// template <typename P>
+	// struct contained_type<P*>{
+	// 	typedef P 		type;
+	// };
 
 
+
+
+//***********************
+	// a random access iterator is one which has a valid
+	// operator-
+	template<typename T, typename _ = void>
+	struct is_random_access_iterator : std::false_type {};
+
+	template<typename T>
+	struct is_random_access_iterator<
+	        T,
+	        std::conditional_t<
+	            false,
+	            is_vector_helper<
+	                decltype(std::declval<T>()-std::declval<T>())
+	                >,
+	            void
+	            >
+	        > : public std::true_type {};
 
 
 
@@ -151,6 +190,16 @@ namespace type_traits{
 	template <typename T1, typename T2>
 	struct product_type{
 		typedef decltype(std::declval<T1>() * std::declval<T2>()) type;
+	};
+
+	template <typename T1, typename T2>
+	struct sum_type{
+		typedef decltype(std::declval<T1>() + std::declval<T2>()) type;
+	};
+
+	template <typename T1, typename T2>
+	struct difference_type{
+		typedef decltype(std::declval<T1>() - std::declval<T2>()) type;
 	};
 
 

@@ -98,7 +98,9 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
+	std::cout << "dynamic initializer list construction: " << std::endl;
 	libra::Vector<double, libra::dynamic_size> dmatx = {1.0,0.0,0.0};
+	std::cout << "static size initializer list construction: " << std::endl;
 	libra::Vector<double, 3> dresult = {1.0,2.0,3.0};
 	dresult = dmatx;
 	libra::vector::write(dresult);
@@ -128,11 +130,11 @@ int main(int argc, char * argv[]){
 	libra::matrix::Matrix<float, libra::dynamic_size, libra::dynamic_size> dmat2(5,5);
 	libra::Vector<float, libra::dynamic_size> dve2 = {-1,0,0,0,0};
 	for (auto it = dmat2.begin(); it!= dmat2.end(); it++) libra::vector::fill_randn(*it);
-	cout << "<Matrix>" << endl;
-	// for (auto it = dmat.begin(); it!= dmat.end(); it++){
-	// 	libra::write_vector(*it);
-	// }
-	cout << "</Matrix>" << endl;
+	// cout << "<Matrix>" << endl;
+	// // for (auto it = dmat.begin(); it!= dmat.end(); it++){
+	// // 	libra::write_vector(*it);
+	// // }
+	// cout << "</Matrix>" << endl;
 	dmat.vmult(dmatx, dresult);
 	libra::vector::write<true>(dresult);
 
@@ -153,17 +155,18 @@ int main(int argc, char * argv[]){
 
 	libra::matrix::write<true>(dmat2);	
 	dmat2.col(3) = dve2;
+
+	dmat2.col(4) = dmat2.col(2) - dmat2.col(1);
 	libra::matrix::write<true>(dmat2);
 	// libra::
 
-	auto exprt1 = libra::vector::abs(dve2);
-	auto exprt2 = 3+exprt1;
-	libra::vector::write<true>(10*exprt2);
+	// auto exprt1 = libra::vector::abs(dve2);
+	// auto exprt2 = (3+exprt1);
+	libra::vector::write<true>(10*(3+abs(dve2)));
 	libra::vector::write<true>(dve2.erf());
 
-	throw -1;
 
-	
+	// throw -1;	
 
 	//**************** MATRIX TESTS *********************//
 	cout << "********************************************" << endl;
@@ -239,40 +242,36 @@ int main(int argc, char * argv[]){
 	// Vector lvec = libra::diag(A);
 	// cout << "lvec: " << lvec << std::endl;
 
-	typedef std::complex<double> SolveType;
+	typedef double SolveType;
 	libra::matrix::Matrix<SolveType, 4, 4> lmat;// = {1.0, 0.1, 0.1, 0.2, 1.0, 0.2, 0.3, 0.3, 1.0};
 	for (auto it=lmat.begin(); it!=lmat.end(); it++) libra::vector::fill_rand(*it);
 	// lmat(0,0) = lmat(1,1) = lmat(2,2) = 1.0;
-	// libra::write_matrix(lmat);
-	libra::Vector<SolveType, libra::dynamic_size> lvec(4, 0.0);//; lvec.resize(4);// = {0.2, 0.3, 0.2};
-	libra::vector::fill_rand(lvec);
-	libra::vector::write(lvec);
+	libra::matrix::write(lmat);
+
+	// generate an exact solution
+	libra::Vector<SolveType, libra::dynamic_size> lexact(4);
+	libra::vector::fill_randn(lexact);
+	libra::vector::write<true>(lexact);
+
+	// lhs vector (i.e. the "b" in A*x = b)
+	libra::Vector<SolveType, libra::dynamic_size> lvec(4);//; lvec.resize(4);// = {0.2, 0.3, 0.2};
+	lmat.vmult(lexact, lvec);
+	libra::vector::write<true>(lvec);
 	
-	libra::Vector<SolveType, libra::dynamic_size> lresult; lresult.resize(4);// = {0,0,0};
+	// initialize the solution vector
+	libra::Vector<SolveType, libra::dynamic_size> lresult(4);//; lresult.resize(4);// = {0,0,0};
 	libra::vector::fill(lresult, 0);
-	// lmat.vmult(lvec, lresult);
-	// libra::bicgstab_l(2, lmat, lvec, lresult, 10);
-	// solve the system with BiCGSTAB
+	std::cout << "filled lresult" << std::endl;
 
+	// solve the system with BiCGSTAB-l
+	// libra::bicgstab(lmat, lvec, lresult, 10);
+	libra::bicgstab_l(2, lmat, lvec, lresult, 100);
+
+	// check the solution
 	cout << "Solution: " << endl;
-	// libra::write_vector(lresult);
-	libra::Vector<SolveType, libra::dynamic_size> lresult2 = lresult;
-	lmat.vmult(lresult, lresult2);
-	std::cout << "Reconstructed RHS: " << std::endl;
-	// libra::write_vector(lresult2);
-	std::cout << "Exact RHS: " << std::endl;
-	// libra::write_vector(lvec);
-	std::cout << "resulting norm: " << libra::vector::norm_2(lresult2-lvec) << std::endl;
+	libra::vector::write<true>(lresult);
+	std::cout << "resulting norm: " << libra::vector::norm_2(lresult-lexact) << std::endl;
 
-
-	// typedef std::complex<double> Ctype;
-	// if (libra::type_traits::is_complex<Ctype>::value){
-	// 	cout << "im complex" << endl;
-	// 	typedef typename libra::complex_detector<Ctype>::type 	MyType;
-	// 	MyType p;
-	// 	cout << "my underlying type is: " << typeid(p).name() << endl;
-
-	// } 
 	throw -1;
 
 

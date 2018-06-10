@@ -15,6 +15,7 @@
 #include "Preconditioner.hpp"
 
 #include "VectorTools.hpp"
+#include "Traits.hpp"
 
 // using namespace libra;
 
@@ -45,17 +46,17 @@ unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOu
 	static_assert(!std::is_const<ScalarType>::value, "Type Must not be const!");
 
 	// initialize stuff
-	VectorTypeIn tmp = x;
+	libra::Vector<ScalarType, libra::dynamic_size> tmp = x;
 	A.vmult(x, tmp);
-	VectorTypeIn r = b - tmp;
+	libra::Vector<ScalarType, libra::dynamic_size> r = b - tmp;
 	double resid = 1.0;
 	unsigned int it = 0;
-	VectorTypeIn rhat = r;
+	libra::Vector<ScalarType, libra::dynamic_size> rhat = r;
 	ScalarType rho=1, alpha=1, omega=1;
-	VectorTypeIn v = r; vector::fill(v, 0);
-	VectorTypeIn p = r; vector::fill(p, 0);
-	VectorTypeIn s = r;
-	VectorTypeIn t = r;
+	libra::Vector<ScalarType, libra::dynamic_size> v = r; vector::fill(v, 0);
+	libra::Vector<ScalarType, libra::dynamic_size> p = r; vector::fill(p, 0);
+	libra::Vector<ScalarType, libra::dynamic_size> s = r;
+	libra::Vector<ScalarType, libra::dynamic_size> t = r;
 	ScalarType beta, rho_old;
 
 	// std::cout << "starting iterations" << std::endl;
@@ -79,7 +80,7 @@ unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOu
 		
 		omega = vector::inner_product(t,s)/vector::inner_product(t,t);
 
-		x += alpha*p + omega*s;
+		x = x + alpha*p + omega*s;
 
 		// recalculate residual
 		r = s - omega*t;
@@ -97,35 +98,43 @@ unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOu
 
 
 
-/*
+
 // BiConjugate Gradient Stabilized L method
 template <typename MatrixType, typename VectorTypeIn, typename VectorTypeOut>
 unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn & b, VectorTypeOut & x, unsigned int max_iters, double res_thresh=1.0e-15){
-	typedef typename std::remove_const<typename std::remove_reference<typename vector_detector<VectorTypeIn>::type>::type>::type 	ScalarType;
+	typedef typename std::remove_const<typename std::remove_reference<typename type_traits::contained_type<VectorTypeIn>::type>::type>::type 	ScalarType;
 
 	static_assert(!std::is_const<ScalarType>::value, "Type Must not be const!");
 
 	// initialize stuff
-	VectorTypeIn tmp = x;
-	// A.vmult(x, tmp);
-	tmp = A*x;
-	VectorTypeIn r = b - tmp; // residual vector
-	VectorTypeIn rtilde = r;
+	libra::Vector<ScalarType, libra::dynamic_size> tmp(vector::length(x));// = x;
+	A.vmult(x, tmp);
+	// std::cout << " matmult" << std::endl;
+	// tmp = A*x;
+	libra::Vector<ScalarType, libra::dynamic_size> r = b - tmp; // residual vector
+	libra::Vector<ScalarType, libra::dynamic_size> rtilde = r;
 	double resid = 1.0;
 	unsigned int it = 0;
 
-	ScalarType beta, rho0, rho1, alpha = 0, omega = 1;
+	// std::cout << "resid" << std::endl;
+
+	ScalarType beta, rho0 = 1, rho1, alpha = 0, omega = 1;
 	
-	unsigned int N = length(x);
-	libra::Matrix<ScalarType, libra::dynamic_size, libra::dynamic_size> Tau(l,l);  fill(Tau, 0);
-	libra::Matrix<ScalarType, libra::dynamic_size, libra::dynamic_size> R(l+1, N); fill(R, 0);
-	libra::Matrix<ScalarType, libra::dynamic_size, libra::dynamic_size> U(l+1, N); fill(U, 0);
-	VectorTypeIn gamma(l+1);
-	VectorTypeIn gammap(l+1);
-	VectorTypeIn gammapp(l+1);
-	VectorTypeIn sigma(l+1);
+	unsigned int N = vector::length(x);
+	libra::matrix::Matrix<ScalarType, libra::dynamic_size, libra::dynamic_size> Tau(l+1,l+1); // fill(Tau, 0);
+	libra::matrix::Matrix<ScalarType, libra::dynamic_size, libra::dynamic_size> R(l+1, N);// fill(R, 0);
+	libra::matrix::Matrix<ScalarType, libra::dynamic_size, libra::dynamic_size> U(l+1, N);// fill(U, 0);
+	libra::Vector<ScalarType, libra::dynamic_size> gamma(l+1);
+	libra::Vector<ScalarType, libra::dynamic_size> gammap(l+1);
+	libra::Vector<ScalarType, libra::dynamic_size> gammapp(l+1);
+	libra::Vector<ScalarType, libra::dynamic_size> sigma(l+1);
+
+	// std::cout << "allocations" << std::endl;
 
 	R.row(0) = r;
+	vector::fill(U.row(0), 0);
+
+	// std::cout << "set row 0 to resid" << std::endl;
 
 	// std::cout << "starting iterations" << std::endl;
 
@@ -135,24 +144,35 @@ unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn
 
 		// ***  BiCG part *** //
 		for (auto j=0; j<l; j++){
-			rho1 = inner_product(R.row(j), R.row(0));
+			// std::cout << " ********* j = " << j << std::endl;
+			rho1 = vector::inner_product(R.row(j), rtilde);
 			beta = alpha*rho1/rho0;
 			rho0 = rho1;
+			
+
+			// std::cout << "did inner prod" << std::endl;
 
 			for (auto i=0; i<=j; i++){
 				U.row(i) = R.row(i) - beta*U.row(i);
 			}
 
-			U.row(j+1) = A*U.row(j);
-			// A.vmult(U.row(j), U.row(j+1));
-			alpha = rho0/inner_product(U.row(j+1), rtilde);
+			// std::cout << "did R - beta*U" << std::endl;
+
+			// U.row(j+1) = A*U.row(j);
+			A.vmult(U.row(j), U.row(j+1));
+			// libra::vector::write<true>(U.row(j+1));
+			// libra::vector::write<true>(rtilde);
+			// std::cout << "did vmult " << vector::inner_product(U.row(j+1), rtilde) << std::endl;
+			alpha = rho0/vector::inner_product(U.row(j+1), rtilde);
+
+			// std::cout << "did inner prod 2" << std::endl;
 
 			for (auto i=0; i<=j; i++){
 				R.row(i) = R.row(i) - alpha*U.row(i+1);
 			}
 
-			R.row(j+1) = A*R.row(j);
-			// A.vmult(R.row(j), R.row(j+1));
+			// R.row(j+1) = A*R.row(j);
+			A.vmult(R.row(j), R.row(j+1));
 			x = x + alpha*U.row(0);
 		}
 
@@ -161,12 +181,12 @@ unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn
 		// ***  Modified Gram-Schmidt part *** //
 		for (auto j=1; j<=l; j++){
 			for (auto i=1; i<j; i++){
-				Tau(i,j) = 1.0/sigma(i)*inner_product(R.row(j), R.row(i));
+				Tau(i,j) = 1.0/sigma(i)*vector::inner_product(R.row(j), R.row(i));
 				R.row(j) = R.row(j) - Tau(i,j)*R.row(i);
 			}
 
-			sigma(j) = inner_product(R.row(j), R.row(j));
-			gammap(j) = 1.0/sigma(j)*inner_product(R.row(0), R.row(j));
+			sigma(j) = vector::inner_product(R.row(j), R.row(j));
+			gammap(j) = 1.0/sigma(j)*vector::inner_product(R.row(0), R.row(j));
 		}
 		gamma(l) = gammap(l);
 		omega = gamma(l);
@@ -208,7 +228,7 @@ unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn
 	return it;
 }
 
-*/
+
 
 
 } // end namespace libra

@@ -18,5 +18,6 @@
 #include "include/Vector.hpp"
 
 #include "include/UnaryVectorExpression.hpp"
+#include "include/BinaryVectorExpression.hpp"
 
 #endif

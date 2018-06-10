@@ -24,6 +24,9 @@ public:
 	: mVec(v), mBegin(beg), mEnd(end) {};
 
 
+	size_type size() const {return mEnd - mBegin;};
+
+
 	class const_iterator;
 	class iterator{
 	public:

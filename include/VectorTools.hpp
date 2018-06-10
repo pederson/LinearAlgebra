@@ -23,8 +23,6 @@
 
 namespace libra{
 
-
-
 namespace vector{
 
 //***********************
@@ -77,7 +75,11 @@ namespace vector{
 	// this requires that we can return iterators from the vector
 	// types using std::cbegin and std::cend
 	template <typename Vector1, typename Vector2>
-	decltype(auto) inner_product(const Vector1 & v1, const Vector2 & v2){
+	typename type_traits::product_type<
+				typename type_traits::contained_type<Vector1>::type, 
+				typename type_traits::contained_type<Vector2>::type
+				>::type
+	inner_product(const Vector1 & v1, const Vector2 & v2){
 		static_assert(type_traits::is_vector<Vector1>::value, "A Vector type requires a cbegin() and a cend() method!");
 		static_assert(type_traits::is_vector<Vector2>::value, "A Vector type requires a cbegin() and a cend() method!");
 
@@ -85,12 +87,12 @@ namespace vector{
 		typedef typename type_traits::contained_type<Vector1>::type 		V1Type; // type of the first vector
 		// typedef typename type_traits::contained_type<Vector2>::type 		V2Type; // type of the second vector
 
-		auto it1=std::cbegin(v1);
-		auto it2=std::cbegin(v2);
+		auto it1=v1.cbegin();
+		auto it2=v2.cbegin();
 		typedef decltype((*it1)*(*it2))		ProductType;
 		ProductType out = inner_product_conjugation<V1Type>::get(*it1)*(*it2);
 		it1++; it2++;
-		while (it1 != std::cend(v1) && it2 != std::cend(v2)){
+		while (it1 != v1.cend() && it2 != v2.cend()){
 			out += inner_product_conjugation<V1Type>::get(*it1)*(*it2);
 			it1++;
 			it2++;
@@ -107,12 +109,12 @@ namespace vector{
 	// and that the ValueT is at least implicitly convertible to 
 	// the VectorT::value_type
 	template <typename VectorT, typename ValueT>
-	void fill(VectorT & v1, ValueT val){
+	void fill(VectorT && v1, ValueT val){
 		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a cbegin() and a cend() method!");
 
-		auto it1 = std::begin(v1);
+		auto it1 = v1.begin();
 		typedef typename std::remove_reference<decltype(*it1)>::type 		NonRefT;
-		for (auto it = std::begin(v1); it!=std::end(v1); it++){
+		for (auto it = v1.begin(); it!=v1.end(); it++){
 			*it = static_cast<NonRefT>(val);
 		}
 		return;
@@ -158,7 +160,7 @@ namespace vector{
 		std::minstd_rand0 generator(seed1);
 		std::uniform_real_distribution<DistribT> distrib(0.0,1.0);
 
-		for (auto it = std::begin(v); it!=std::end(v); it++){
+		for (auto it = v.begin(); it!=v.end(); it++){
 			*it = random_getter<NonRefT>::get(distrib, generator);//distrib(generator);
 		}
 
@@ -180,7 +182,7 @@ namespace vector{
 		std::minstd_rand0 generator(seed1);
 		std::normal_distribution<DistribT> distrib(0.0,1.0);
 
-		for (auto it = std::begin(v); it!=std::end(v); it++){
+		for (auto it = v.begin(); it!=v.end(); it++){
 			*it = random_getter<NonRefT>::get(distrib, generator);//distrib(generator);
 		}
 		return;
@@ -189,12 +191,22 @@ namespace vector{
 
 
 //***********************
+	// // this requires that we can iterate over the vector using std::cbegin and std::cend
+	// template <typename VectorT, typename T = size_type>
+	// typename std::enable_if<type_traits::is_random_access_iterator<decltype(std::declval<VectorT>().cbegin())>::value, T>::type
+	// length(const VectorT & v1){
+	// 	static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a cbegin() and a cend() method!");
+
+	// 	return v1.cend() - v1.cbegin();
+	// } 
+
 	// this requires that we can iterate over the vector using std::cbegin and std::cend
-	template <typename VectorT>
-	std::size_t length(VectorT & v1){
+	template <typename VectorT, typename T = size_type>
+	typename std::enable_if<type_traits::is_sizable_vector<VectorT>::value, T>::type
+	length(const VectorT & v1){
 		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a cbegin() and a cend() method!");
 
-		return std::cend(v1) - std::cbegin(v1);
+		return v1.size();
 	} 
 
 
@@ -206,9 +218,9 @@ namespace vector{
 
 		std::size_t res=0;
 		auto mv = *v.begin();
-		for (auto it=std::cbegin(v); it!=std::cend(v); it++){
+		for (auto it=v.cbegin(); it!=v.cend(); it++){
 			if (*it < mv){
-				res = it - std::cbegin(v);
+				res = it - v.cbegin();
 				mv = *it;
 			}
 		}
@@ -222,9 +234,9 @@ namespace vector{
 
 		std::size_t res=0;
 		auto mv = *v.begin();
-		for (auto it=std::cbegin(v); it!=std::cend(v); it++){
+		for (auto it=v.cbegin(); it!=v.cend(); it++){
 			if (*it < mv){
-				res = it - std::cbegin(v);
+				res = it - v.cbegin();
 				mv = *it;
 			}
 		}
@@ -238,9 +250,9 @@ namespace vector{
 
 		std::size_t res=0;
 		auto mv = *v.begin();
-		for (auto it=std::cbegin(v); it!=std::cend(v); it++){
+		for (auto it=v.cbegin(); it!=v.cend(); it++){
 			if (*it > mv){
-				res = it - std::cbegin(v);
+				res = it - v.cbegin();
 				mv = *it;
 			}
 		}
@@ -254,9 +266,9 @@ namespace vector{
 
 		std::size_t res=0;
 		auto mv = *v.begin();
-		for (auto it=std::cbegin(v); it!=std::cend(v); it++){
+		for (auto it=v.cbegin(); it!=v.cend(); it++){
 			if (*it > mv){
-				res = it - std::cbegin(v);
+				res = it - v.cbegin();
 				mv = *it;
 			}
 		}
@@ -276,10 +288,10 @@ namespace vector{
 	decltype(auto) norm(const VectorT & v){
 		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a cbegin() and a cend() method!");
 
-		auto it = std::cbegin(v);
+		auto it = v.cbegin();
 		auto val = NormRule::element_rule(*it);
 		it++;
-		while (it != std::cend(v)){
+		while (it != v.cend()){
 			val += NormRule::element_rule(*it);
 			it++;
 		}
@@ -289,12 +301,12 @@ namespace vector{
 	template <std::size_t p>
 	struct PNormRule {
 		template <typename T>
-		static T element_rule(T & val){
+		static T element_rule(const T & val){
 			return std::pow(val, p);
 		};
 
 		template <typename T>
-		static T function_rule(T & val){
+		static T function_rule(const T & val){
 			return std::pow(val, 1.0/static_cast<double>(p));
 		}
 	};
@@ -303,12 +315,12 @@ namespace vector{
 	template <> 
 	struct PNormRule<1> {
 		template <typename T>
-		static T element_rule(T & val){
+		static T element_rule(const T & val){
 			return std::abs(val);
 		};
 
 		template <typename T>
-		static T function_rule(T & val){
+		static T function_rule(const T & val){
 			return val;
 		}
 	};
@@ -318,10 +330,10 @@ namespace vector{
 	decltype(auto) norm_inf(const VectorT & v){
 		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a cbegin() and a cend() method!");
 
-		auto it = std::cbegin(v);
+		auto it = v.cbegin();;
 		auto val = std::abs(*it);
 		it++;
-		while (it != std::cend(v)){
+		while (it != v.cend()){
 			val = std::max(val, std::abs(*it));
 			it++;
 		}
@@ -369,9 +381,23 @@ namespace vector{
 		const Derived & derived() const {return *static_cast<Derived *>(this);};
 
 	public:
-		template <typename VectorT>
+
+
+		template <typename T = Derived>
+		typename std::enable_if<type_traits::is_resizable_vector<T>::value, void>::type
+		resize_derived(size_type l) {derived().resize(l);};
+
+		template <typename T = Derived>
+		typename std::enable_if<!type_traits::is_resizable_vector<T>::value, void>::type
+		resize_derived(size_type l) {};
+
+		// assignment operator
+		template <typename VectorT, 
+				  typename T = typename std::enable_if<!std::is_same<VectorT, Derived>::value, void>::type>
 		Derived & operator=(const VectorT & v){
 			static_assert(type_traits::is_traversable_vector<VectorT>::value, "Vector Assignment requires a traversable vector input to operator=!");
+			// std::cout << "am here non-class assignment..." << std::endl;
+			resize_derived(vector::length(v));
 			auto it1 = derived().begin();
 			auto it2 = v.cbegin();
 			while (it1 != derived().end() && it2 != v.cend()){
@@ -381,20 +407,47 @@ namespace vector{
 			}
 			return derived();
 		}
+
+
+		// move assignment operator
+		template <typename VectorT, typename T = typename std::enable_if<!std::is_same<VectorT, Derived>::value, void>::type>
+		Derived & operator=(const VectorT && v){
+			static_assert(type_traits::is_traversable_vector<VectorT>::value, "Vector Assignment requires a traversable vector input to operator=!");
+			// std::cout << "am here non-class move assignment..." << std::endl;
+			resize_derived(vector::length(v));
+			auto it1 = derived().begin();
+			auto it2 = v.cbegin();
+			while (it1 != derived().end() && it2 != v.cend()){
+				(*it1) = (*it2);
+				it1++;
+				it2++;
+			}
+			return derived();
+		}
+
+
+		// // assignment operator
+		// template <typename VectorT, 
+		// 		  typename T = typename std::enable_if<!std::is_same<VectorT, Derived>::value, void>::type>
+		// Derived & operator+=(const VectorT & v){
+		// 	static_assert(type_traits::is_traversable_vector<VectorT>::value, "Vector Assignment requires a traversable vector input to operator=!");
+		// 	// std::cout << "am here non-class assignment..." << std::endl;
+		// 	// resize_derived(vector::length(v));
+		// 	auto it1 = derived().begin();
+		// 	auto it2 = v.cbegin();
+		// 	while (it1 != derived().end() && it2 != v.cend()){
+		// 		(*it1) += (*it2);
+		// 		it1++;
+		// 		it2++;
+		// 	}
+		// 	return derived();
+		// }
 	};
 
 
 } // end namespace vector
 
 } // end namespace libra
-
-
-
-
-
-
-
-
 
 
 ///////////////////////////////////////////////////////////////////

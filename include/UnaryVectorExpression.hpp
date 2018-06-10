@@ -28,7 +28,10 @@ namespace vector{
 		static_assert(type_traits::is_traversable_vector<VectorType>::value, "UnaryVectorExpression requires traversable vector types!");
 		typedef decltype(std::declval<VectorType>().cbegin()) 	iterator_type;
 
-		UnaryVectorExpression(VectorType & vec, Functor func) : v(&vec), f(func) {};
+		UnaryVectorExpression(const VectorType & vec, Functor func) : v(vec), f(func) {};
+		// UnaryVectorExpression(const VectorType && vec, Functor func) : v(vec), f(func) {};
+
+		size_type size() const {return v.size();};
 
 		struct const_iterator{
 			typedef const_iterator					self_type;
@@ -65,13 +68,13 @@ namespace vector{
 
 		private:
 			iterator_type 		it;
-			const Functor * 			fun;
+			const Functor * 	fun;
 		};
 
-		const_iterator cbegin() const {return const_iterator(v->cbegin(), &f);};
-		const_iterator cend()	const {return const_iterator(v->cend(), &f);};
+		const_iterator cbegin() const {return const_iterator(v.cbegin(), &f);};
+		const_iterator cend()	const {return const_iterator(v.cend(), &f);};
 	private:
-		VectorType * v;
+		const VectorType & v;
 		Functor 	 f;
 	};
 
@@ -499,18 +502,29 @@ namespace vector{
 	// 	return UnaryVectorExpression<VectorType, ScalarAdditionFunctor<ScalarType>>(v, ScalarAdditionFunctor<ScalarType>(s));
 	// }
 
-	template <typename VectorType, typename ScalarType>
-	UnaryVectorExpression<VectorType, ScalarAdditionFunctor<ScalarType>> operator+(ScalarType s, VectorType & v){
+	template <typename VectorType, typename ScalarType,
+			  typename T1 = typename std::enable_if<type_traits::is_vector<VectorType>::value, void>::type,
+			  typename T2 = typename std::enable_if<!type_traits::is_vector<ScalarType>::value, void>::type
+			  >
+	const UnaryVectorExpression<VectorType, ScalarAdditionFunctor<ScalarType>> operator+(ScalarType s, const VectorType & v){
 		return UnaryVectorExpression<VectorType, ScalarAdditionFunctor<ScalarType>>(v, ScalarAdditionFunctor<ScalarType>(s));
 	}
+
+	// template <typename VectorType, typename ScalarType>
+	// UnaryVectorExpression<VectorType, ScalarAdditionFunctor<ScalarType>> operator+(ScalarType s, VectorType && v){
+	// 	return UnaryVectorExpression<VectorType, ScalarAdditionFunctor<ScalarType>>(v, ScalarAdditionFunctor<ScalarType>(s));
+	// }
 
 	// template <typename VectorType, typename ScalarType>
 	// UnaryVectorExpression<VectorType, ScalarMultiplicationFunctor<ScalarType>> operator*(VectorType & v, ScalarType s){
 	// 	return UnaryVectorExpression<VectorType, ScalarMultiplicationFunctor<ScalarType>>(v, ScalarMultiplicationFunctor<ScalarType>(s));
 	// }
 
-	template <typename VectorType, typename ScalarType>
-	UnaryVectorExpression<VectorType, ScalarMultiplicationFunctor<ScalarType>> operator*(ScalarType s, VectorType & v){
+	template <typename VectorType, typename ScalarType,
+			  typename T1 = typename std::enable_if<type_traits::is_vector<VectorType>::value, void>::type,
+			  typename T2 = typename std::enable_if<!type_traits::is_vector<ScalarType>::value, void>::type
+			  >
+	const UnaryVectorExpression<VectorType, ScalarMultiplicationFunctor<ScalarType>> operator*(ScalarType s, const VectorType & v){
 		return UnaryVectorExpression<VectorType, ScalarMultiplicationFunctor<ScalarType>>(v, ScalarMultiplicationFunctor<ScalarType>(s));
 	}
 
