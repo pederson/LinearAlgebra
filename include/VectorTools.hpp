@@ -69,7 +69,7 @@ namespace vector{
 
 	template <typename U>
 	struct inner_product_conjugation<std::complex<U>>{
-		static std::complex<U> get(const std::complex<U> & val) {return std::conj(val);};
+		static std::complex<U> get(const std::complex<U> & val) {return val;};//std::conj(val);};
 	};
 
 	// this requires that we can return iterators from the vector

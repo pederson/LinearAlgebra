@@ -6,6 +6,197 @@ using namespace std;
 
 #include <typeinfo>
 
+
+
+
+
+
+
+
+struct FDTDSim{
+private:
+	
+	struct Soln : public libra::vector::VectorAssignment<Soln>{
+		using libra::vector::VectorAssignment<Soln>::operator=;
+		int sz = 100;
+
+		Soln(){
+			fourier_E.resize(sz);
+			fourier_H.resize(sz);
+			fourier_E.fill(0);
+			fourier_H.fill(0);
+		};
+		
+		libra::Vector<std::complex<double>, libra::dynamic_size> fourier_E;
+		libra::Vector<std::complex<double>, libra::dynamic_size> fourier_H;
+
+		decltype(auto) E() {return fourier_E;};
+		decltype(auto) H() {return fourier_H;};
+		decltype(auto) E() const {return fourier_E;};
+		decltype(auto) H() const {return fourier_H;};
+
+		int size() const {return 2*sz;};
+
+		template <bool is_const>
+		class fdtd_soln_iterator{
+		public:
+			typedef std::remove_reference_t<decltype(fourier_E(0))> 		orig_value_type;
+
+			typedef fdtd_soln_iterator					self_type;
+			typedef std::ptrdiff_t 						difference_type;
+		    typedef typename std::conditional<is_const, 
+		    								  typename std::add_const<orig_value_type>::type, 
+		    								  orig_value_type>::type 						
+		    								  			value_type;
+		    typedef value_type &			  			reference;
+		    typedef value_type *						pointer;
+		    typedef std::forward_iterator_tag			iterator_category;
+
+			// construction
+			fdtd_soln_iterator(typename std::conditional<is_const, const Soln *, Soln *>::type m,
+							   typename std::conditional<is_const, typename decltype(fourier_E)::const_iterator, typename decltype(fourier_E)::iterator >::type it)
+			: mSoln(m), mIt(it) {};
+
+			// copy assignment
+			fdtd_soln_iterator & operator=(const fdtd_soln_iterator & cit){
+				fdtd_soln_iterator i(cit);
+				std::swap(i,*this);
+				return *this;
+			}
+
+			// rvalue dereferencing
+			// pointer operator->() {return *mSoln(mRow, mCol);};
+			// reference operator*(){return mSoln->operator()(mRow, mCol);};
+
+			pointer operator->() const {return mIt.operator->();};
+			reference operator*() const {return mIt.operator*();};
+
+			// increment operators
+			template <typename T = self_type>
+			typename std::enable_if<is_const, T>::type operator++(){
+				mIt++;
+				if (mIt == mSoln->E().cend()) mIt = mSoln->H().cbegin();
+				return *this;
+			}
+			template <typename T = self_type>
+			typename std::enable_if<!is_const, T>::type operator++(){
+				mIt++;
+				if (mIt == mSoln->E().end()) mIt = mSoln->H().begin();
+				return *this;
+			}
+			template <typename T = self_type>
+			typename std::enable_if<is_const, T>::type operator++(int blah){
+				mIt++;
+				if (mIt == mSoln->E().cend()) mIt = mSoln->H().cbegin();
+				return *this;
+			}
+			template <typename T = self_type>
+			typename std::enable_if<!is_const, T>::type operator++(int blah){
+				mIt++;
+				if (mIt == mSoln->E().end()) mIt = mSoln->H().begin();
+				return *this;
+			}
+			// self_type operator++(int blah){
+			// 	mIt++;
+			// 	if (mIt == mSoln->E().cend()) mIt = mSoln->H().cbegin();
+			// 	return *this;
+			// }
+
+
+			// equivalence operators
+			bool operator!=(const self_type & leaf) const {return mIt != leaf.mIt;};
+			bool operator==(const self_type & leaf) const {return mIt == leaf.mIt;};
+
+
+		private:
+			typename std::conditional<is_const, typename std::add_const<Soln>::type, Soln>::type * mSoln;
+			typename std::conditional<is_const, typename decltype(fourier_E)::const_iterator, typename decltype(fourier_E)::iterator >::type mIt;
+		};
+
+
+		typedef fdtd_soln_iterator<true> const_iterator;
+		typedef fdtd_soln_iterator<false> iterator;
+
+
+		iterator begin() {return iterator(this, fourier_E.begin());};
+		iterator end()	 {return iterator(this, fourier_H.end());};
+
+		const_iterator cbegin() const {return const_iterator(this, fourier_E.cbegin());};
+		const_iterator cend() const	 {return const_iterator(this, fourier_H.cend());};
+
+	};
+
+	Soln mS;
+	double dx = 1;
+
+public:
+	// the solution vector
+	Soln & solution() {return mS;};
+
+	void time_step(double dt) {
+		for (int i=1; i<solution().sz ; i++){
+			solution().fourier_E(i) += dt/dx*(solution().fourier_H(i) - solution().fourier_H(i-1));
+		}
+
+		for (int i=0; i<solution().sz-1 ; i++){
+			solution().fourier_H(i) += dt/dx*(solution().fourier_E(i+1) - solution().fourier_E(i));
+		}
+	}
+
+};
+
+
+
+
+
+
+// the TimeStepOperator is required to have
+// functions solution() and time_step(double deltat)
+template <typename TimeStepOperator>
+struct TimeStepFourierOperator{
+private:
+	TimeStepOperator * mTOp;
+	double freq, dt;
+	std::complex<double> ceye = std::complex<double>(0, 1);
+
+
+public:
+	TimeStepFourierOperator(TimeStepOperator & top, double f, double deltat)
+	: mTOp(&top), freq(f), dt(deltat) {};
+
+	template <typename VectorType, typename VectorTypeOut>
+	void vmult(const VectorType & v, VectorTypeOut && vout) const {
+
+		libra::Vector<std::complex<double>, libra::dynamic_size> hold = -exp(-ceye*freq*dt)*v;
+		
+		mTOp->solution() = v;
+		mTOp->time_step(dt);
+
+		vout = mTOp->solution() + hold;
+	
+	}
+};
+
+
+
+
+
+template <typename TimeStepOperator>
+TimeStepFourierOperator<TimeStepOperator> create_fourier_operator(TimeStepOperator & t, double f, double dt){
+	return TimeStepFourierOperator<TimeStepOperator>(t, f, dt);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 int main(int argc, char * argv[]){
 
 
@@ -243,7 +434,7 @@ int main(int argc, char * argv[]){
 	// Vector lvec = libra::diag(A);
 	// cout << "lvec: " << lvec << std::endl;
 
-	typedef double SolveType;
+	typedef std::complex<double> SolveType;
 	static constexpr int lmatsize = 20;
 	libra::matrix::Matrix<SolveType, lmatsize, lmatsize> lmat;// = {1.0, 0.1, 0.1, 0.2, 1.0, 0.2, 0.3, 0.3, 1.0};
 	for (auto it=lmat.begin(); it!=lmat.end(); it++) libra::vector::fill_rand(*it);
@@ -275,9 +466,41 @@ int main(int argc, char * argv[]){
 	std::cout << "resulting norm: " << libra::vector::norm_2(lresult-lexact) << std::endl;
 	lresult.fill_randn();
 
+	// throw -1;
+
+
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "**** TIME-STEPPED FOURIER SOLVER TEST ******" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+
+	FDTDSim myfsim;
+	libra::Vector<std::complex<double>, libra::dynamic_size> fourierRHS(myfsim.solution().size());
+	fourierRHS.fill(0);
+	fourierRHS(50) = -1;
+
+	libra::Vector<std::complex<double>, libra::dynamic_size> fourierResult = fourierRHS;
+
+	double omega = 0.3;
+	double dt = 0.01;
+	auto fop = create_fourier_operator(myfsim, omega, dt);
+
+	libra::bicgstab_l(10, fop, fourierRHS, fourierResult, 500);
+	libra::vector::write<true, true>(fourierResult);
+
+
+	// for (int i=0; i<200; i++){
+	// 	myfsim.solution().fourier_E(50) = sin(omega*dt*i);
+	// 	myfsim.time_step(dt);
+	// 	cout << "step..." << endl;
+	// }
+	// libra::vector::write<true, true>(myfsim.solution());
+
+	
+
 	throw -1;
-
-
 
 
 	//**************** VECTOR TESTS *********************//
