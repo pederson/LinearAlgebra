@@ -367,6 +367,64 @@ namespace vector{
 	}
 
 //***********************
+	// use CRTP to extend vector functors defined here to any
+	// class that inherits this class
+	template <typename Derived>
+	struct VectorFunctors {
+	private:
+		// static_assert(type_traits::is_vector<Derived>::value, "to inherit Vector Assignment, the vector class must be assignable!");
+		
+		Derived & derived() {return *static_cast<Derived *>(this);};
+		const Derived & derived() const {return *static_cast<const Derived *>(this);};
+
+	public:
+
+
+	/////// CONST FUNCTORS ///////////
+	// These are enabled for all vector types
+		template <bool Header = false, bool AsColumn = false>
+		void write(std::string dlm = " ", std::ostream & os = std::cout, std::size_t ntabs = 0) const {
+			vector::write<Header, AsColumn>(derived(), dlm, os, ntabs);
+		}
+
+		template <typename VectorType>
+		decltype(auto) inner_product(const VectorType & v) const { return vector::inner_product(derived(), v);}
+
+		decltype(auto) norm_inf() const { return vector::norm_inf(derived());};
+		decltype(auto) norm_1() const { return vector::norm_1(derived());};
+		decltype(auto) norm_2() const { return vector::norm_2(derived());};
+		decltype(auto) norm_3() const { return vector::norm_3(derived());};
+		decltype(auto) norm_4() const { return vector::norm_4(derived());};
+		decltype(auto) norm_5() const { return vector::norm_5(derived());};
+
+		decltype(auto) max() const { return vector::max(derived());};
+		decltype(auto) min() const { return vector::min(derived());};
+		decltype(auto) argmax() const { return vector::argmax(derived());};
+		decltype(auto) argmin() const { return vector::argmin(derived());};
+
+		// length()
+
+	/////// NON-CONST FUNCTORS ///////
+	// These are enabled only for vector types that 
+	// are assignable
+
+		template <typename ScalarType,
+				  typename T = Derived>
+		typename std::enable_if<type_traits::is_assignable_vector<T>::value, void>::type 
+		fill(ScalarType s){return vector::fill(derived(), s);};
+
+		template <typename T = Derived>
+		typename std::enable_if<type_traits::is_assignable_vector<T>::value, void>::type 
+		fill_rand() {return vector::fill_rand(derived());};
+
+		template <typename T = Derived>
+		typename std::enable_if<type_traits::is_assignable_vector<T>::value, void>::type 
+		fill_randn() {return vector::fill_randn(derived());};
+
+	};
+
+
+//***********************
 
 
 
@@ -426,22 +484,39 @@ namespace vector{
 		}
 
 
-		// // assignment operator
-		// template <typename VectorT, 
-		// 		  typename T = typename std::enable_if<!std::is_same<VectorT, Derived>::value, void>::type>
-		// Derived & operator+=(const VectorT & v){
-		// 	static_assert(type_traits::is_traversable_vector<VectorT>::value, "Vector Assignment requires a traversable vector input to operator=!");
-		// 	// std::cout << "am here non-class assignment..." << std::endl;
-		// 	// resize_derived(vector::length(v));
-		// 	auto it1 = derived().begin();
-		// 	auto it2 = v.cbegin();
-		// 	while (it1 != derived().end() && it2 != v.cend()){
-		// 		(*it1) += (*it2);
-		// 		it1++;
-		// 		it2++;
-		// 	}
-		// 	return derived();
-		// }
+		// add assignment operator
+		template <typename VectorT, 
+				  typename T = typename std::enable_if<!std::is_same<VectorT, Derived>::value, void>::type>
+		Derived & operator+=(const VectorT & v){
+			static_assert(type_traits::is_traversable_vector<VectorT>::value, "Vector Assignment requires a traversable vector input to operator=!");
+			// std::cout << "am here non-class assignment..." << std::endl;
+			// resize_derived(vector::length(v));
+			auto it1 = derived().begin();
+			auto it2 = v.cbegin();
+			while (it1 != derived().end() && it2 != v.cend()){
+				(*it1) += (*it2);
+				it1++;
+				it2++;
+			}
+			return derived();
+		}
+
+		// subtract assignment operator
+		template <typename VectorT, 
+				  typename T = typename std::enable_if<!std::is_same<VectorT, Derived>::value, void>::type>
+		Derived & operator-=(const VectorT & v){
+			static_assert(type_traits::is_traversable_vector<VectorT>::value, "Vector Assignment requires a traversable vector input to operator=!");
+			// std::cout << "am here non-class assignment..." << std::endl;
+			// resize_derived(vector::length(v));
+			auto it1 = derived().begin();
+			auto it2 = v.cbegin();
+			while (it1 != derived().end() && it2 != v.cend()){
+				(*it1) -= (*it2);
+				it1++;
+				it2++;
+			}
+			return derived();
+		}
 	};
 
 

@@ -164,6 +164,7 @@ int main(int argc, char * argv[]){
 	// auto exprt2 = (3+exprt1);
 	libra::vector::write<true>(10*(3+abs(dve2)));
 	libra::vector::write<true>(dve2.erf());
+	libra::vector::write<true>(dve2.view(0,2));
 
 
 	// throw -1;	
@@ -243,34 +244,36 @@ int main(int argc, char * argv[]){
 	// cout << "lvec: " << lvec << std::endl;
 
 	typedef double SolveType;
-	libra::matrix::Matrix<SolveType, 4, 4> lmat;// = {1.0, 0.1, 0.1, 0.2, 1.0, 0.2, 0.3, 0.3, 1.0};
+	static constexpr int lmatsize = 20;
+	libra::matrix::Matrix<SolveType, lmatsize, lmatsize> lmat;// = {1.0, 0.1, 0.1, 0.2, 1.0, 0.2, 0.3, 0.3, 1.0};
 	for (auto it=lmat.begin(); it!=lmat.end(); it++) libra::vector::fill_rand(*it);
-	// lmat(0,0) = lmat(1,1) = lmat(2,2) = 1.0;
-	libra::matrix::write(lmat);
+	// libra::matrix::write(lmat);
 
 	// generate an exact solution
-	libra::Vector<SolveType, libra::dynamic_size> lexact(4);
+	libra::Vector<SolveType, libra::dynamic_size> lexact(lmatsize);
 	libra::vector::fill_randn(lexact);
 	libra::vector::write<true>(lexact);
 
 	// lhs vector (i.e. the "b" in A*x = b)
-	libra::Vector<SolveType, libra::dynamic_size> lvec(4);//; lvec.resize(4);// = {0.2, 0.3, 0.2};
+	libra::Vector<SolveType, libra::dynamic_size> lvec(lmatsize);
 	lmat.vmult(lexact, lvec);
 	libra::vector::write<true>(lvec);
 	
 	// initialize the solution vector
-	libra::Vector<SolveType, libra::dynamic_size> lresult(4);//; lresult.resize(4);// = {0,0,0};
+	libra::Vector<SolveType, libra::dynamic_size> lresult(lmatsize);
 	libra::vector::fill(lresult, 0);
 	std::cout << "filled lresult" << std::endl;
 
 	// solve the system with BiCGSTAB-l
 	// libra::bicgstab(lmat, lvec, lresult, 10);
-	libra::bicgstab_l(2, lmat, lvec, lresult, 100);
+	libra::bicgstab_l(10, lmat, lvec, lresult, 10000);
 
 	// check the solution
 	cout << "Solution: " << endl;
-	libra::vector::write<true>(lresult);
+	lresult.write<true>();
+	// libra::vector::write<true>(lresult);
 	std::cout << "resulting norm: " << libra::vector::norm_2(lresult-lexact) << std::endl;
+	lresult.fill_randn();
 
 	throw -1;
 

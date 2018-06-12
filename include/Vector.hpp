@@ -13,6 +13,7 @@
 
 #include "Tensor.hpp"
 #include "VectorTools.hpp"
+#include "VectorView.hpp"
 #include "UnaryVectorExpression.hpp"
 
 namespace libra{
@@ -46,7 +47,9 @@ namespace libra{
 	// vector class definition
 	template <typename scalar_type, size_type length_at_compile>
 	class Vector : public Table<scalar_type, 1, length_at_compile>, 
+				   public vector::VectorFunctors<Vector<scalar_type, length_at_compile>>,
 				   public vector::VectorAssignment<Vector<scalar_type, length_at_compile>>,
+				   public VectorViewOperator<Vector<scalar_type, length_at_compile>>,
 				   public vector::UnaryVectorOperators<Vector<scalar_type, length_at_compile>>
 	{
 	public:
@@ -81,18 +84,22 @@ namespace libra{
 		}
 
 
+		// copy constructor handled by default
 		// Vector(const Vector & v) {
 		// 	std::cout << "am here copy ctor..."<< std::endl; 
 		// 	*this = AssignmentType::operator=(v);
 		// };
 
+		// assignment operator handled by default
 		// // Vector & operator=(const Vector & v) = delete;
 		// Vector & operator=(const Vector && v){
 		// 	std::cout << "am here move ctor..."<< std::endl;
 		// };
 
-		// decltype(auto) begin() {return BaseType::begin();};
-		// decltype(auto) end() {return BaseType::end();};
+		// begin() and end() are handled by the base class
+
+		// resize() and size() handled by base class
+
 
 		// explicitly define an initializer list constructor
 		Vector(std::initializer_list<scalar_type> il){
@@ -119,26 +126,13 @@ namespace libra{
 		Vector(size_type l){VectorResizePolicy<length_at_compile>::resize(*this, l);};
 
 
-		// void resize(size_type l) {VectorResizePolicy<length_at_compile>::resize(*this, l);};
+		// I'm leaving this commented code here as a cautionary tale
 		// 		BEWARE OF FORWARDING CONSTRUCTOR...
 		// 		it can be very bad for overload resolution... basically it always gets chosen
 		// // this nasty-looking code simply allows the use of initializer list for construction
 		// template <typename... Args, size_type s = length_at_compile>
 		// Vector(Args &&... args, typename std::enable_if<s != dynamic_size, void>::type * = 0) : BaseType{std::forward<Args>(args)...} {};
 
-		// compound addition with arbitrary vector
-		template <typename OtherVector>
-		Vector & operator+=(const OtherVector & v) {
-			// VectorResizePolicy<length_at_compile>::resize(out, vector::length(v));
-			auto itv = std::cbegin(v);
-			auto it = std::begin(*this);
-			while (it != std::end(*this)){
-				(*it) += (*itv);
-				it++;
-				itv++;
-			}
-			return *this;
-		};
 
 		// random access operators by index
 		scalar_type & operator()(size_type i){return (*this)[i];};

@@ -22,7 +22,7 @@
 namespace libra{
 
 template <typename MatrixType>
-auto diag(const MatrixType & mtx)
+decltype(auto) diag(const MatrixType & mtx)
 {
 	typedef decltype(mtx(0,0)) 	ScalarType;
 	std::size_t dim = std::min(mtx.rows(), mtx.cols());
@@ -80,7 +80,7 @@ unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOu
 		
 		omega = vector::inner_product(t,s)/vector::inner_product(t,t);
 
-		x = x + alpha*p + omega*s;
+		x += alpha*p + omega*s;
 
 		// recalculate residual
 		r = s - omega*t;
@@ -173,7 +173,7 @@ unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn
 
 			// R.row(j+1) = A*R.row(j);
 			A.vmult(R.row(j), R.row(j+1));
-			x = x + alpha*U.row(0);
+			x += alpha*U.row(0);
 		}
 
 
@@ -213,7 +213,7 @@ unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn
 		U.row(0) = U.row(0) - gamma(l)*U.row(l);
 		for (auto j=1; j<l; j++){
 			U.row(0) = U.row(0) - gamma(j)*U.row(j);
-			x = x + gammapp(j)*R.row(j);
+			x += gammapp(j)*R.row(j);
 			R.row(0) = R.row(0) - gammap(j)*R.row(j);
 		}
 

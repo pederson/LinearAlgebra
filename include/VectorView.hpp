@@ -241,6 +241,24 @@ VectorView<VectorT, IteratorT> vector_view(VectorT & vec, IteratorT beg, Iterato
 
 
 
+template <typename Derived>
+struct VectorViewOperator{
+private:
+	Derived & derived() {return *static_cast<Derived *>(this);};
+	const Derived & derived() const {return *static_cast<const Derived *>(this);};
+
+public:
+
+	decltype(auto) view(size_type start_ind, size_type end_ind){
+		return vector_view(derived(), derived().begin()+start_ind, derived().begin()+end_ind+1);
+	}
+
+	decltype(auto) view(size_type start_ind, size_type end_ind) const {
+		return vector_view(derived(), derived().cbegin()+start_ind, derived().cbegin()+end_ind+1);
+	}
+};
+
+
 
 
 } // end namespace libra

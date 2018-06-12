@@ -315,182 +315,182 @@ namespace vector{
 	// overload for vector types to return an expression template
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, CosFunctor> cos(VectorType & v){
+	UnaryVectorExpression<VectorType, CosFunctor> cos(const VectorType & v){
 		return UnaryVectorExpression<VectorType,CosFunctor>(v, CosFunctor()); 
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, SinFunctor> sin(VectorType & v){
+	UnaryVectorExpression<VectorType, SinFunctor> sin(const VectorType & v){
 		return UnaryVectorExpression<VectorType,SinFunctor>(v, SinFunctor()); 
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, TanFunctor> tan(VectorType & v){
+	UnaryVectorExpression<VectorType, TanFunctor> tan(const VectorType & v){
 		return UnaryVectorExpression<VectorType,TanFunctor>(v, TanFunctor()); 
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, AcosFunctor> acos(VectorType & v){
+	UnaryVectorExpression<VectorType, AcosFunctor> acos(const VectorType & v){
 		return UnaryVectorExpression<VectorType, AcosFunctor>(v, AcosFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, AsinFunctor> asin(VectorType & v){
+	UnaryVectorExpression<VectorType, AsinFunctor> asin(const VectorType & v){
 		return UnaryVectorExpression<VectorType, AsinFunctor>(v, AsinFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, AtanFunctor> atan(VectorType & v){
+	UnaryVectorExpression<VectorType, AtanFunctor> atan(const VectorType & v){
 		return UnaryVectorExpression<VectorType, AtanFunctor>(v, AtanFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, CoshFunctor> cosh(VectorType & v){
+	UnaryVectorExpression<VectorType, CoshFunctor> cosh(const VectorType & v){
 		return UnaryVectorExpression<VectorType, CoshFunctor>(v, CoshFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, SinhFunctor> sinh(VectorType & v){
+	UnaryVectorExpression<VectorType, SinhFunctor> sinh(const VectorType & v){
 		return UnaryVectorExpression<VectorType, SinhFunctor>(v, SinhFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, TanhFunctor> tanh(VectorType & v){
+	UnaryVectorExpression<VectorType, TanhFunctor> tanh(const VectorType & v){
 		return UnaryVectorExpression<VectorType, TanhFunctor>(v, TanhFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, AcoshFunctor> acosh(VectorType & v){
+	UnaryVectorExpression<VectorType, AcoshFunctor> acosh(const VectorType & v){
 		return UnaryVectorExpression<VectorType, AcoshFunctor>(v, AcoshFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, AsinhFunctor> asinh(VectorType & v){
+	UnaryVectorExpression<VectorType, AsinhFunctor> asinh(const VectorType & v){
 		return UnaryVectorExpression<VectorType, AsinhFunctor>(v, AsinhFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, AtanhFunctor> atanh(VectorType & v){
+	UnaryVectorExpression<VectorType, AtanhFunctor> atanh(const VectorType & v){
 		return UnaryVectorExpression<VectorType, AtanhFunctor>(v, AtanhFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, ExpFunctor> exp(VectorType & v){
+	UnaryVectorExpression<VectorType, ExpFunctor> exp(const VectorType & v){
 		return UnaryVectorExpression<VectorType,ExpFunctor>(v, ExpFunctor()); 
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, LogFunctor> log(VectorType & v){
+	UnaryVectorExpression<VectorType, LogFunctor> log(const VectorType & v){
 		return UnaryVectorExpression<VectorType,LogFunctor>(v, LogFunctor()); 
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, Log10Functor> log10(VectorType & v){
+	UnaryVectorExpression<VectorType, Log10Functor> log10(const VectorType & v){
 		return UnaryVectorExpression<VectorType, Log10Functor>(v, Log10Functor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, Exp2Functor> exp2(VectorType & v){
+	UnaryVectorExpression<VectorType, Exp2Functor> exp2(const VectorType & v){
 		return UnaryVectorExpression<VectorType, Exp2Functor>(v, Exp2Functor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, Expm1Functor> expm1(VectorType & v){
+	UnaryVectorExpression<VectorType, Expm1Functor> expm1(const VectorType & v){
 		return UnaryVectorExpression<VectorType, Expm1Functor>(v, Expm1Functor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, IlogbFunctor> ilogb(VectorType & v){
+	UnaryVectorExpression<VectorType, IlogbFunctor> ilogb(const VectorType & v){
 		return UnaryVectorExpression<VectorType, IlogbFunctor>(v, IlogbFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, Log1pFunctor> log1p(VectorType & v){
+	UnaryVectorExpression<VectorType, Log1pFunctor> log1p(const VectorType & v){
 		return UnaryVectorExpression<VectorType, Log1pFunctor>(v, Log1pFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, Log2Functor> log2(VectorType & v){
+	UnaryVectorExpression<VectorType, Log2Functor> log2(const VectorType & v){
 		return UnaryVectorExpression<VectorType, Log2Functor>(v, Log2Functor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, LogbFunctor> logb(VectorType & v){
+	UnaryVectorExpression<VectorType, LogbFunctor> logb(const VectorType & v){
 		return UnaryVectorExpression<VectorType, LogbFunctor>(v, LogbFunctor());
 	}
 
 	// template <typename VectorType>
-	// UnaryVectorExpression<VectorType, PowFunctor> pow(VectorType & v){
+	// UnaryVectorExpression<VectorType, PowFunctor> pow(const VectorType & v){
 	// 	return UnaryVectorExpression<VectorType,PowFunctor>(v, PowFunctor()); 
 	// }
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, SqrtFunctor> sqrt(VectorType & v){
+	UnaryVectorExpression<VectorType, SqrtFunctor> sqrt(const VectorType & v){
 		return UnaryVectorExpression<VectorType, SqrtFunctor>(v, SqrtFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, CbrtFunctor> cbrt(VectorType & v){
+	UnaryVectorExpression<VectorType, CbrtFunctor> cbrt(const VectorType & v){
 		return UnaryVectorExpression<VectorType, CbrtFunctor>(v, CbrtFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, HypotFunctor> hypot(VectorType & v){
+	UnaryVectorExpression<VectorType, HypotFunctor> hypot(const VectorType & v){
 		return UnaryVectorExpression<VectorType, HypotFunctor>(v, HypotFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, ErfFunctor> erf(VectorType & v){
+	UnaryVectorExpression<VectorType, ErfFunctor> erf(const VectorType & v){
 		return UnaryVectorExpression<VectorType,ErfFunctor>(v, ErfFunctor()); 
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, ErfcFunctor> erfc(VectorType & v){
+	UnaryVectorExpression<VectorType, ErfcFunctor> erfc(const VectorType & v){
 		return UnaryVectorExpression<VectorType, ErfcFunctor>(v, ErfcFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, TgammaFunctor> tgamma(VectorType & v){
+	UnaryVectorExpression<VectorType, TgammaFunctor> tgamma(const VectorType & v){
 		return UnaryVectorExpression<VectorType, TgammaFunctor>(v, TgammaFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, LgammaFunctor> lgamma(VectorType & v){
+	UnaryVectorExpression<VectorType, LgammaFunctor> lgamma(const VectorType & v){
 		return UnaryVectorExpression<VectorType, LgammaFunctor>(v, LgammaFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, CeilFunctor> ceil(VectorType & v){
+	UnaryVectorExpression<VectorType, CeilFunctor> ceil(const VectorType & v){
 		return UnaryVectorExpression<VectorType, CeilFunctor>(v, CeilFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, FloorFunctor> floor(VectorType & v){
+	UnaryVectorExpression<VectorType, FloorFunctor> floor(const VectorType & v){
 		return UnaryVectorExpression<VectorType, FloorFunctor>(v, FloorFunctor());
 	}
 
 	// template <typename VectorType>
-	// UnaryVectorExpression<VectorType, FmodFunctor> fmod(VectorType & v){
+	// UnaryVectorExpression<VectorType, FmodFunctor> fmod(const VectorType & v){
 	// 	return UnaryVectorExpression<VectorType, FmodFunctor>(v, FmodFunctor());
 	// }
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, TruncFunctor> trunc(VectorType & v){
+	UnaryVectorExpression<VectorType, TruncFunctor> trunc(const VectorType & v){
 		return UnaryVectorExpression<VectorType, TruncFunctor>(v, TruncFunctor());
 	}
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, RoundFunctor> round(VectorType & v){
+	UnaryVectorExpression<VectorType, RoundFunctor> round(const VectorType & v){
 		return UnaryVectorExpression<VectorType, RoundFunctor>(v, RoundFunctor());
 	}
 
 	// template <typename VectorType>
-	// UnaryVectorExpression<VectorType, CopySignFunctor> copysign(VectorType & v){
+	// UnaryVectorExpression<VectorType, CopySignFunctor> copysign(const VectorType & v){
 	// 	return UnaryVectorExpression<VectorType, CopySignFunctor>(v, CopySignFunctor());
 	// }
 
 	template <typename VectorType>
-	UnaryVectorExpression<VectorType, AbsFunctor> abs(VectorType & v){
+	UnaryVectorExpression<VectorType, AbsFunctor> abs(const VectorType & v){
 		return UnaryVectorExpression<VectorType, AbsFunctor>(v, AbsFunctor());
 	}
 
@@ -533,171 +533,43 @@ namespace vector{
 
 	template <typename Derived>
 	struct UnaryVectorOperators{
+	private:	
 		Derived & derived() {return *static_cast<Derived *>(this);};
-		const Derived & derived() const {return *static_cast<Derived *>(this);};
-
-		UnaryVectorExpression<Derived, CosFunctor> cos(){
-			return libra::vector::cos(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, SinFunctor> sin(){
-			return libra::vector::sin(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, TanFunctor> tan(){
-			return libra::vector::tan(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, AcosFunctor> acos(){
-			return libra::vector::acos(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, AsinFunctor> asin(){
-			return libra::vector::asin(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, AtanFunctor> atan(){
-			return libra::vector::atan(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, CoshFunctor> cosh(){
-			return libra::vector::cosh(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, SinhFunctor> sinh(){
-			return libra::vector::sinh(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, TanhFunctor> tanh(){
-			return libra::vector::tanh(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, AcoshFunctor> acosh(){
-			return libra::vector::acosh(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, AsinhFunctor> asinh(){
-			return libra::vector::asinh(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, AtanhFunctor> atanh(){
-			return libra::vector::atanh(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, ExpFunctor> exp(){
-			return libra::vector::exp(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, LogFunctor> log(){
-			return libra::vector::log(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, Log10Functor> log10(){
-			return libra::vector::log10(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, Exp2Functor> exp2(){
-			return libra::vector::exp2(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, Expm1Functor> expm1(){
-			return libra::vector::expm1(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, IlogbFunctor> ilogb(){
-			return libra::vector::ilogb(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, Log1pFunctor> log1p(){
-			return libra::vector::log1p(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, Log2Functor> log2(){
-			return libra::vector::log2(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, LogbFunctor> logb(){
-			return libra::vector::logb(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, SqrtFunctor> sqrt(){
-			return libra::vector::sqrt(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, CbrtFunctor> cbrt(){
-			return libra::vector::cbrt(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, HypotFunctor> hypot(){
-			return libra::vector::hypot(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, ErfFunctor> erf(){
-			return libra::vector::erf(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, ErfcFunctor> erfc(){
-			return libra::vector::erfc(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, TgammaFunctor> tgamma(){
-			return libra::vector::tgamma(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, LgammaFunctor> lgamma(){
-			return libra::vector::lgamma(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, CeilFunctor> ceil(){
-			return libra::vector::ceil(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, FloorFunctor> floor(){
-			return libra::vector::floor(derived());
-		}
-		
-		UnaryVectorExpression<Derived, TruncFunctor> trunc(){
-			return libra::vector::trunc(derived());
-		}
-
-		
-		UnaryVectorExpression<Derived, RoundFunctor> round(){
-			return libra::vector::round(derived());
-		}
-
-
-		UnaryVectorExpression<Derived, AbsFunctor> abs(){
-			return libra::vector::abs(derived());
-		}
+		const Derived & derived() const {return *static_cast<const Derived *>(this);}
+	public:
+		decltype(auto) cos() const {return libra::vector::cos(derived());};
+		decltype(auto) sin() const {return libra::vector::sin(derived());};
+		decltype(auto) tan() const {return libra::vector::tan(derived());};
+		decltype(auto) acos() const {return libra::vector::acos(derived());};
+		decltype(auto) asin() const {return libra::vector::asin(derived());};
+		decltype(auto) atan() const {return libra::vector::atan(derived());};
+		decltype(auto) cosh() const {return libra::vector::cosh(derived());};
+		decltype(auto) sinh() const {return libra::vector::sinh(derived());};
+		decltype(auto) tanh() const {return libra::vector::tanh(derived());};
+		decltype(auto) acosh() const {return libra::vector::acosh(derived());};
+		decltype(auto) asinh() const {return libra::vector::asinh(derived());};
+		decltype(auto) atanh() const {return libra::vector::atanh(derived());};
+		decltype(auto) exp() const {return libra::vector::exp(derived());};
+		decltype(auto) log() const {return libra::vector::log(derived());};
+		decltype(auto) log10() const {return libra::vector::log10(derived());};
+		decltype(auto) exp2() const {return libra::vector::exp2(derived());};
+		decltype(auto) expm1() const {return libra::vector::expm1(derived());};
+		decltype(auto) ilogb() const {return libra::vector::ilogb(derived());};
+		decltype(auto) log1p() const {return libra::vector::log1p(derived());};
+		decltype(auto) log2() const {return libra::vector::log2(derived());};
+		decltype(auto) logb() const {return libra::vector::logb(derived());};
+		decltype(auto) sqrt() const {return libra::vector::sqrt(derived());};
+		decltype(auto) cbrt() const {return libra::vector::cbrt(derived());};
+		decltype(auto) hypot() const {return libra::vector::hypot(derived());};
+		decltype(auto) erf() const {return libra::vector::erf(derived());};
+		decltype(auto) erfc() const {return libra::vector::erfc(derived());};
+		decltype(auto) tgamma() const {return libra::vector::tgamma(derived());};
+		decltype(auto) lgamma() const {return libra::vector::lgamma(derived());};
+		decltype(auto) ceil() const {return libra::vector::ceil(derived());};
+		decltype(auto) floor() const {return libra::vector::floor(derived());};
+		decltype(auto) trunc() const {return libra::vector::trunc(derived());};
+		decltype(auto) round() const {return libra::vector::round(derived());};
+		decltype(auto) abs() const {return libra::vector::abs(derived());};
 	};
 
 

@@ -26,7 +26,8 @@ namespace libra{
 	namespace matrix{
 
 		template <typename MatrixType>
-		struct MatrixRow : public vector::VectorAssignment<MatrixRow<MatrixType>>{
+		struct MatrixRow : public vector::VectorFunctors<MatrixRow<MatrixType>>,
+						   public vector::VectorAssignment<MatrixRow<MatrixType>>{
 		public:
 
 			typedef MatrixRow<MatrixType> 					SelfType;
@@ -170,7 +171,8 @@ namespace libra{
 
 
 		template <typename MatrixType>
-		struct MatrixCol : public vector::VectorAssignment<MatrixCol<MatrixType>>{
+		struct MatrixCol : public vector::VectorFunctors<MatrixRow<MatrixType>>,
+						   public vector::VectorAssignment<MatrixCol<MatrixType>>{
 		public:
 
 			typedef MatrixCol<MatrixType> 					SelfType;
