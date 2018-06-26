@@ -387,6 +387,11 @@ public:
 
 	constexpr size_type rank() const {return derived().rank();};
 
+
+	// operators
+
+	
+
 	// void hello() {return derived.hello();};
 };
 

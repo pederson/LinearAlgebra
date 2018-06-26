@@ -105,9 +105,13 @@ unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn
 	typedef typename std::remove_const<typename std::remove_reference<typename type_traits::contained_type<VectorTypeIn>::type>::type>::type 	ScalarType;
 
 	static_assert(!std::is_const<ScalarType>::value, "Type Must not be const!");
+	// std::cout << "pre matmult" << std::endl;
+
 
 	// initialize stuff
 	libra::Vector<ScalarType, libra::dynamic_size> tmp(vector::length(x));// = x;
+	// std::cout << "pre matmult" << std::endl;
+
 	A.vmult(x, tmp);
 	// std::cout << " matmult" << std::endl;
 	// tmp = A*x;

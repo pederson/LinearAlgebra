@@ -20,4 +20,8 @@
 #include "include/UnaryVectorExpression.hpp"
 #include "include/BinaryVectorExpression.hpp"
 
+#include "include/Macros.hpp"
+#include "include/VectorizeContainerFunctor.hpp"
+#include "include/VectorizeContainerMultifunctor.hpp"
+
 #endif

@@ -2,7 +2,7 @@
 
 using namespace std;
 // using namespace libra;
-// g++ -std=c++14 -I./ libra_test.cpp -o matrixtest
+// g++ -std=c++14 -O2 -I./ libra_test.cpp -o matrixtest
 
 #include <typeinfo>
 
@@ -18,29 +18,36 @@ private:
 	
 	struct Soln : public libra::vector::VectorAssignment<Soln>{
 		using libra::vector::VectorAssignment<Soln>::operator=;
-		int sz = 100;
+		int szx = 70;
+		int szy = 70;
+		int sz = 70*70;
 
 		Soln(){
-			fourier_E.resize(sz);
-			fourier_H.resize(sz);
-			fourier_E.fill(0);
-			fourier_H.fill(0);
+			fourier_Ex.resize(sz);
+			fourier_Ey.resize(sz);
+			fourier_Hz.resize(sz);
+			fourier_Ex.fill(0);
+			fourier_Ey.fill(0);
+			fourier_Hz.fill(0);
 		};
 		
-		libra::Vector<std::complex<double>, libra::dynamic_size> fourier_E;
-		libra::Vector<std::complex<double>, libra::dynamic_size> fourier_H;
+		libra::Vector<std::complex<double>, libra::dynamic_size> fourier_Ex;
+		libra::Vector<std::complex<double>, libra::dynamic_size> fourier_Ey;
+		libra::Vector<std::complex<double>, libra::dynamic_size> fourier_Hz;
 
-		decltype(auto) E() {return fourier_E;};
-		decltype(auto) H() {return fourier_H;};
-		decltype(auto) E() const {return fourier_E;};
-		decltype(auto) H() const {return fourier_H;};
+		decltype(auto) Ex() {return fourier_Ex;};
+		decltype(auto) Ey() {return fourier_Ey;};
+		decltype(auto) Hz() {return fourier_Hz;};
+		decltype(auto) Ex() const {return fourier_Ex;};
+		decltype(auto) Ey() const {return fourier_Ey;};
+		decltype(auto) Hz() const {return fourier_Hz;};
 
-		int size() const {return 2*sz;};
+		int size() const {return 3*sz;};
 
 		template <bool is_const>
 		class fdtd_soln_iterator{
 		public:
-			typedef std::remove_reference_t<decltype(fourier_E(0))> 		orig_value_type;
+			typedef std::remove_reference_t<decltype(fourier_Ex(0))> 		orig_value_type;
 
 			typedef fdtd_soln_iterator					self_type;
 			typedef std::ptrdiff_t 						difference_type;
@@ -54,7 +61,7 @@ private:
 
 			// construction
 			fdtd_soln_iterator(typename std::conditional<is_const, const Soln *, Soln *>::type m,
-							   typename std::conditional<is_const, typename decltype(fourier_E)::const_iterator, typename decltype(fourier_E)::iterator >::type it)
+							   typename std::conditional<is_const, typename decltype(fourier_Ex)::const_iterator, typename decltype(fourier_Ex)::iterator >::type it)
 			: mSoln(m), mIt(it) {};
 
 			// copy assignment
@@ -75,25 +82,29 @@ private:
 			template <typename T = self_type>
 			typename std::enable_if<is_const, T>::type operator++(){
 				mIt++;
-				if (mIt == mSoln->E().cend()) mIt = mSoln->H().cbegin();
+				if (mIt == mSoln->Ex().cend()) mIt = mSoln->Ey().cbegin();
+				if (mIt == mSoln->Ey().cend()) mIt = mSoln->Hz().cbegin();
 				return *this;
 			}
 			template <typename T = self_type>
 			typename std::enable_if<!is_const, T>::type operator++(){
 				mIt++;
-				if (mIt == mSoln->E().end()) mIt = mSoln->H().begin();
+				if (mIt == mSoln->Ex().end()) mIt = mSoln->Ey().begin();
+				if (mIt == mSoln->Ey().end()) mIt = mSoln->Hz().begin();
 				return *this;
 			}
 			template <typename T = self_type>
 			typename std::enable_if<is_const, T>::type operator++(int blah){
 				mIt++;
-				if (mIt == mSoln->E().cend()) mIt = mSoln->H().cbegin();
+				if (mIt == mSoln->Ex().cend()) mIt = mSoln->Ey().cbegin();
+				if (mIt == mSoln->Ey().cend()) mIt = mSoln->Hz().cbegin();
 				return *this;
 			}
 			template <typename T = self_type>
 			typename std::enable_if<!is_const, T>::type operator++(int blah){
 				mIt++;
-				if (mIt == mSoln->E().end()) mIt = mSoln->H().begin();
+				if (mIt == mSoln->Ex().end()) mIt = mSoln->Ey().begin();
+				if (mIt == mSoln->Ey().end()) mIt = mSoln->Hz().begin();
 				return *this;
 			}
 			// self_type operator++(int blah){
@@ -110,7 +121,7 @@ private:
 
 		private:
 			typename std::conditional<is_const, typename std::add_const<Soln>::type, Soln>::type * mSoln;
-			typename std::conditional<is_const, typename decltype(fourier_E)::const_iterator, typename decltype(fourier_E)::iterator >::type mIt;
+			typename std::conditional<is_const, typename decltype(fourier_Ex)::const_iterator, typename decltype(fourier_Ex)::iterator >::type mIt;
 		};
 
 
@@ -118,11 +129,11 @@ private:
 		typedef fdtd_soln_iterator<false> iterator;
 
 
-		iterator begin() {return iterator(this, fourier_E.begin());};
-		iterator end()	 {return iterator(this, fourier_H.end());};
+		iterator begin() {return iterator(this, fourier_Ex.begin());};
+		iterator end()	 {return iterator(this, fourier_Hz.end());};
 
-		const_iterator cbegin() const {return const_iterator(this, fourier_E.cbegin());};
-		const_iterator cend() const	 {return const_iterator(this, fourier_H.cend());};
+		const_iterator cbegin() const {return const_iterator(this, fourier_Ex.cbegin());};
+		const_iterator cend() const	 {return const_iterator(this, fourier_Hz.cend());};
 
 	};
 
@@ -134,13 +145,49 @@ public:
 	Soln & solution() {return mS;};
 
 	void time_step(double dt) {
-		for (int i=1; i<solution().sz ; i++){
-			solution().fourier_E(i) += dt/dx*(solution().fourier_H(i) - solution().fourier_H(i-1));
+		int szy = solution().szy;
+		int szx = solution().szx;
+
+		for (int i=1; i<szx; i++){
+			for (int j=0; j<szy; j++){
+				
+				solution().fourier_Ey(j*szx + i) -= dt/(sqrt(2.0)*dx)*(solution().fourier_Hz(j*szx + i) - solution().fourier_Hz(j*szx + i-1));	
+			}
 		}
 
-		for (int i=0; i<solution().sz-1 ; i++){
-			solution().fourier_H(i) += dt/dx*(solution().fourier_E(i+1) - solution().fourier_E(i));
+		for (int i=0; i<szx; i++){
+			for (int j=1; j<szy; j++){
+				solution().fourier_Ex(j*szx + i) += dt/(sqrt(2.0)*dx)*(solution().fourier_Hz(j*szx + i) - solution().fourier_Hz((j-1)*szx + i));
+			}
 		}
+
+
+		for (int i=0; i<szx-1; i++){
+			for (int j=0; j<szy; j++){
+				solution().fourier_Hz(j*szx + i) -= dt/(sqrt(2.0)*dx)*(solution().fourier_Ey(j*szx + i+1) - solution().fourier_Ey(j*szx + i));
+															  // (solution().fourier_Ex((j+1)*szx + i) - solution().fourier_Ex(j*szx + i)));
+			}
+		}
+
+		for (int i=0; i<szx; i++){
+			for (int j=0; j<szy-1; j++){
+				solution().fourier_Hz(j*szx + i) -= dt/(sqrt(2.0)*dx)*(-(solution().fourier_Ex((j+1)*szx + i) - solution().fourier_Ex(j*szx + i)));
+			}
+		}
+
+		// for (int i=szx-1; i<szx; i++){
+		// 	for (int j=0; j<szy; j++){
+		// 		solution().fourier_Hz(j*szx + i) -= dt/(sqrt(2.0)*dx)*(0.0 - solution().fourier_Ey(j*szx + i));
+		// 													  // (solution().fourier_Ex((j+1)*szx + i) - solution().fourier_Ex(j*szx + i)));
+		// 	}
+		// }
+
+		// for (int i=0; i<szx; i++){
+		// 	for (int j=szy-1; j<szy; j++){
+		// 		solution().fourier_Hz(j*szx + i) -= dt/(sqrt(2.0)*dx)*(-(0.0 - solution().fourier_Ex(j*szx + i)));
+		// 	}
+		// }
+
 	}
 
 };
@@ -479,20 +526,29 @@ int main(int argc, char * argv[]){
 	FDTDSim myfsim;
 	libra::Vector<std::complex<double>, libra::dynamic_size> fourierRHS(myfsim.solution().size());
 	fourierRHS.fill(0);
-	fourierRHS(50) = -1;
+	// std::cout << "filled with zeros" << std::endl;
+	fourierRHS(2*70*70 + 10*70 + 32  ) = -1;
+	fourierRHS(2*70*70 + 10*70 + 33  ) = -1;
+	fourierRHS(2*70*70 + 10*70 + 34  ) = -1;
+	fourierRHS(2*70*70 + 10*70 + 35  ) = -1;
+	fourierRHS(2*70*70 + 10*70 + 36  ) = -1;
+	// std::cout << "set source location" << std::endl;
 
 	libra::Vector<std::complex<double>, libra::dynamic_size> fourierResult = fourierRHS;
-
+	// std::cout << "set initial guess" << std::endl;
 	double omega = 0.3;
-	double dt = 0.01;
+	double dt = 0.9;
 	auto fop = create_fourier_operator(myfsim, omega, dt);
 
-	libra::bicgstab_l(10, fop, fourierRHS, fourierResult, 500);
+	// std::cout << "created fourier operator" << std::endl;
+
+	libra::bicgstab_l(5, fop, fourierRHS, fourierResult, 3000, 1.0e-8);
+	// std::cout << "iterated to completion" << std::endl;
 	libra::vector::write<true, true>(fourierResult);
 
 
 	// for (int i=0; i<200; i++){
-	// 	myfsim.solution().fourier_E(50) = sin(omega*dt*i);
+	// 	myfsim.solution().fourier_Hz(50) = sin(omega*dt*i);
 	// 	myfsim.time_step(dt);
 	// 	cout << "step..." << endl;
 	// }
@@ -500,7 +556,8 @@ int main(int argc, char * argv[]){
 
 	
 
-	throw -1;
+	// throw -1;
+	return 0;
 
 
 	//**************** VECTOR TESTS *********************//

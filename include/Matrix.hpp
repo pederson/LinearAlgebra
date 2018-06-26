@@ -416,10 +416,12 @@ namespace libra{
 				static_assert(type_traits::is_traversable_vector<VectorT>::value, "Matrix-Vector input must be a vector type!");
 				static_assert(type_traits::is_assignable_vector<VectorT2>::value, "Matrix-Vector input must be a vector type!");
 
-
+				// std::cout << "at begin of matmult" << std::endl;
 				scalar_type rowsum;
 				auto rit = this->cbegin();
 				auto resit = result.begin();//std::begin(result);
+
+				// std::cout << "at middle of matmult" << std::endl;
 
 				while (rit != this->cend() && resit != result.end()){
 					rowsum = vector::inner_product(v, (*rit));
