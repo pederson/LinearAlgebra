@@ -307,6 +307,18 @@ namespace vector{
 		ScalarType c;
 	};
 
+	// vector / scalar
+	template <typename ScalarType>
+	struct ScalarDivisionFunctor{
+		ScalarDivisionFunctor(ScalarType cval) : c(cval) {};
+
+		template <typename T>
+		T get(const T & val) const {return val/c;};
+
+	private:
+		ScalarType c;
+	};
+
 
 
 
@@ -526,6 +538,15 @@ namespace vector{
 			  >
 	const UnaryVectorExpression<VectorType, ScalarMultiplicationFunctor<ScalarType>> operator*(ScalarType s, const VectorType & v){
 		return UnaryVectorExpression<VectorType, ScalarMultiplicationFunctor<ScalarType>>(v, ScalarMultiplicationFunctor<ScalarType>(s));
+	}
+
+
+	template <typename VectorType, typename ScalarType,
+			  typename T1 = typename std::enable_if<type_traits::is_vector<VectorType>::value, void>::type,
+			  typename T2 = typename std::enable_if<!type_traits::is_vector<ScalarType>::value, void>::type
+			  >
+	const UnaryVectorExpression<VectorType, ScalarDivisionFunctor<ScalarType>> operator/(const VectorType & v, ScalarType s){
+		return UnaryVectorExpression<VectorType, ScalarDivisionFunctor<ScalarType>>(v, ScalarDivisionFunctor<ScalarType>(s));
 	}
 
 
