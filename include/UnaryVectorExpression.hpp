@@ -270,6 +270,11 @@ namespace vector{
 	struct AbsFunctor{
 		template <typename T>
 		T get(const T & val) const {return std::abs(val);};
+
+
+		template <typename T>
+		T get(const std::complex<T> & val) const {return std::abs(val);};
+
 	};
 
 

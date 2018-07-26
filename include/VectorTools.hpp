@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <set>
 #include <iterator>
+#include <iomanip>
 
 
 #include "Traits.hpp"
@@ -34,7 +35,7 @@ namespace vector{
 		for (auto i=0; i<ntabs; i++) os << "\t" ;
 		if (Header) os << "<Vector>";
 		if (Header && AsColumn) os << std::endl;
-		os << std::scientific;
+		os << std::scientific << std::setprecision(10);
 
 		// first item
 		auto it = v.cbegin();
@@ -248,13 +249,14 @@ namespace vector{
 	std::size_t argmax(const VectorT & v){
 		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a cbegin() and a cend() method!");
 
-		std::size_t res=0;
-		auto mv = *v.begin();
+		std::size_t res=0, pos=0;
+		auto mv = *v.cbegin();
 		for (auto it=v.cbegin(); it!=v.cend(); it++){
 			if (*it > mv){
-				res = it - v.cbegin();
+				res = pos;
 				mv = *it;
 			}
+			pos++;
 		}
 		return res;
 	}
@@ -264,13 +266,14 @@ namespace vector{
 	decltype(auto) max(const VectorT & v){
 		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a cbegin() and a cend() method!");
 
-		std::size_t res=0;
-		auto mv = *v.begin();
+		std::size_t res=0, pos=0;
+		auto mv = *v.cbegin();
 		for (auto it=v.cbegin(); it!=v.cend(); it++){
 			if (*it > mv){
-				res = it - v.cbegin();
+				res = pos;//it - v.cbegin();
 				mv = *it;
 			}
+			pos++;
 		}
 		return mv;
 	}
