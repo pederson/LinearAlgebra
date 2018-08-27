@@ -244,6 +244,23 @@ namespace vector{
 		return mv;
 	}
 
+	// the min value with comparator
+	template <typename VectorT, typename Compare>
+	decltype(auto) min(const VectorT & v, Compare comp){
+		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a cbegin() and a cend() method!");
+
+		std::size_t res=0, pos=0;
+		auto mv = *v.cbegin();
+		for (auto it=v.cbegin(); it!=v.cend(); it++){
+			if (comp(*it, mv)){
+				res = pos;//it - v.cbegin();
+				mv = *it;
+			}
+			pos++;
+		}
+		return mv;
+	}
+
 	// index of the max value
 	template <typename VectorT>
 	std::size_t argmax(const VectorT & v){
@@ -270,6 +287,24 @@ namespace vector{
 		auto mv = *v.cbegin();
 		for (auto it=v.cbegin(); it!=v.cend(); it++){
 			if (*it > mv){
+				res = pos;//it - v.cbegin();
+				mv = *it;
+			}
+			pos++;
+		}
+		return mv;
+	}
+
+
+	// the max value with comparator
+	template <typename VectorT, typename Compare>
+	decltype(auto) max(const VectorT & v, Compare comp){
+		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a cbegin() and a cend() method!");
+
+		std::size_t res=0, pos=0;
+		auto mv = *v.cbegin();
+		for (auto it=v.cbegin(); it!=v.cend(); it++){
+			if (!comp(*it, mv)){
 				res = pos;//it - v.cbegin();
 				mv = *it;
 			}
@@ -401,7 +436,11 @@ namespace vector{
 		decltype(auto) norm_5() const { return vector::norm_5(derived());};
 
 		decltype(auto) max() const { return vector::max(derived());};
+		template <typename Compare>
+		decltype(auto) max(Compare comp) const { return vector::max(derived(), comp);};
 		decltype(auto) min() const { return vector::min(derived());};
+		template <typename Compare>
+		decltype(auto) min(Compare comp) const { return vector::min(derived(), comp);};
 		decltype(auto) argmax() const { return vector::argmax(derived());};
 		decltype(auto) argmin() const { return vector::argmin(derived());};
 
