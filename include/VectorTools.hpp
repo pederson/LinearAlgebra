@@ -8,6 +8,7 @@
 #include <set>
 #include <iterator>
 #include <iomanip>
+#include <cstring>
 
 
 #include "Traits.hpp"
@@ -57,6 +58,82 @@ namespace vector{
 		return;
 	} 
 
+
+	// the read from a stream into a general vector
+	// returns the length of the read
+	template <bool count_only=false, typename VectorT>
+	std::size_t read_to(std::istream & is, VectorT & v){
+		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a begin() and a end() method!");
+
+		// underlying data type of VectorT
+		typedef std::remove_reference_t<decltype(*v.begin())> T;
+		// determine if type T has a defined stream operator>>
+
+
+		// save the beginning of the stream
+		std::streampos beg0 = is.tellg();
+		std::streampos isbegin = is.tellg();
+
+		// determine if there is a <Vector> header
+		char ch;
+		std::string head;
+		is.get(ch);
+		if (ch=='<'){
+			is >> head;
+			if (!strcmp(head.c_str(),"Vector>")){
+				// go past the carrot
+				isbegin = is.tellg();
+			}
+		}
+		is.seekg(isbegin);
+
+
+		// determine delimiter
+		char dlm;
+		T val;
+		is >> val;
+		// std::cout << "first value: " << val << std::endl;
+		is.get(ch); 
+		dlm = ch;
+		is.seekg(isbegin);
+
+
+		// std::cout << "delimiter is determined to be: " << dlm << std::endl;
+
+
+		// start going through the stream
+		std::size_t ct=0;
+		std::string line;
+		std::stringstream ss;
+		if (count_only){
+			while (getline(is, line, dlm)){
+				ss << line;
+				ss >> val;
+				ct++;
+			}
+		}
+		else{
+			auto it=v.begin();
+			while (getline(is, line, dlm)){
+				ss << line;
+				ss >> *it;
+				// proceed
+				it++;
+				ct++;
+			}
+		}
+
+		// std::cout << "looped through " << ct << " values" << std::endl;
+
+		// if (is.good()) std::cout << "istream is still GOOD" << std::endl;
+		// else std::cout << "istream is BAD" << std::endl;
+		is.clear();
+		is.seekg(beg0);
+		// if (is.good()) std::cout << "istream is still GOOD" << std::endl;
+		// else std::cout << "istream is BAD" << std::endl;
+		// return the count
+		return ct;
+	}
 
 
 
@@ -463,6 +540,27 @@ namespace vector{
 		typename std::enable_if<type_traits::is_assignable_vector<T>::value, void>::type 
 		fill_randn() {return vector::fill_randn(derived());};
 
+		template <typename T = Derived>
+		typename std::enable_if<type_traits::is_assignable_vector<T>::value
+							 && type_traits::is_resizable_vector<T>::value, void>::type 
+		read(std::string filename) {
+			std::ifstream fs(filename.c_str(), std::ifstream::in);
+			if (!fs.is_open()){
+				std::cerr << "libra::vector Error attempting to open file: " << filename << std::endl;
+				throw -1;
+			}
+
+			// read vector size
+			std::size_t s = vector::read_to<true>(fs, derived());
+
+			// resize self
+			derived().resize(s);
+			
+			// read to vector
+			vector::read_to(fs, derived());
+			return;
+		};
+
 	};
 
 
@@ -560,6 +658,9 @@ namespace vector{
 			return derived();
 		}
 	};
+
+
+
 
 
 } // end namespace vector
