@@ -27,6 +27,9 @@ namespace libra{
 #define LIBRA_DEFER(...) __VA_ARGS__
 
 
+// #define LIBRA_SWAP_ARGS(Arg1, Arg2) Arg2, Arg1
+
+
 // LIBRA_FOR_EACH takes a macro called "what", and applies it
 // to every item passed in the variadic argument list. The argument "op"
 // is a macro that is expanded in between each application of "what"
@@ -105,11 +108,21 @@ namespace libra{
 // for each that creates seperation... just inserts semicolons between items
 #define LIBRA_FOR_EACH_SEP(what, x, ...) LIBRA_FOR_EACH(what, LIBRA_DEFER(LIBRA_SEMICOLON), x, __VA_ARGS__)
 
+// define a function macro overload on number of arguments (up to 2)
+#define LIBRA_GET_MACRO(_1, _2, NAME, ...) NAME
+
+
+struct DefaultNullInterfacePolicy{
+	template <typename iterator_reference>
+	static decltype(auto) get(iterator_reference & it) {
+		return std::forward<iterator_reference>(it);
+	}
+};
 
 
 
 // helper dummy type
-template <typename... Args>
+template <typename InterfacePolicy, typename... Args>
 struct LibraHasMethodHelper{};
 
 // macro for defining the struct LibraHasMethod##MethodName
@@ -134,11 +147,17 @@ struct LibraHasMethodHelper{};
 
 
 
+
+
+
+
+
+
 // macro for name of the struct LibraFunctorFor##MethodName
 #define LIBRA_FUNCTOR_FOR(FunctionName) LibraFunctorFor##FunctionName
 #define LIBRA_INSTANTIATE_FUNCTOR_FOR(Name) LIBRA_FUNCTOR_FOR(Name)()
 // macro for defining the struct LibraFunctorFor##FunctionName
-#define LIBRA_FUNCTOR_FOR_DEF(FunctionName) 									\
+#define LIBRA_FUNCTOR_FOR_DEF_NOINTERFACE(FunctionName) 									\
 	struct LIBRA_FUNCTOR_FOR(FunctionName) { 									\
 		template <typename Iterator,											\
 				  typename T = 													\
@@ -157,12 +176,37 @@ struct LibraHasMethodHelper{};
 
 
 
+// macro for defining the struct LibraFunctorFor##FunctionName
+#define LIBRA_FUNCTOR_FOR_DEF_INTERFACE(FunctionName) 									\
+	struct LIBRA_FUNCTOR_FOR(FunctionName) { 									\
+		template <typename Iterator,											\
+				  typename T = 													\
+				  typename std::enable_if<										\
+				  		   LIBRA_HAS_METHOD(FunctionName)<decltype(InterfacePolicy::get(*std::declval<Iterator>()))>::value, 		\
+				  		   Iterator 											\
+				  		   >::type 												\
+				  		   > 													\
+		static decltype(auto) get(Iterator & it){return InterfacePolicy::get(*it).FunctionName();}; 	\
+																				\
+		template <typename Iterator>											\
+		decltype(auto) operator()(Iterator & it){return get(it);};				\
+	};
+
+
+// define an overloaded version of FUNCTOR_FOR_DEF
+#define LIBRA_FUNCTOR_FOR_DEF(...) LIBRA_GET_MACRO(__VA_ARGS__, LIBRA_FUNCTOR_FOR_DEF_INTERFACE, LIBRA_FUNCTOR_FOR_DEF_NOINTERFACE)(__VA_ARGS__)
+
 
 					
 
 #define LIBRA_FUNCTOR_PREPARE(FunctionName, ...)	\
 	LIBRA_HAS_METHOD_DEF(FunctionName);			\
-	LIBRA_FUNCTOR_FOR_DEF(FunctionName);			
+	LIBRA_FUNCTOR_FOR_DEF_NOINTERFACE(FunctionName);			
+
+
+#define LIBRA_FUNCTOR_PREPARE_INTERFACE(FunctionName)	\
+	LIBRA_HAS_METHOD_DEF(FunctionName);			\
+	LIBRA_FUNCTOR_FOR_DEF_INTERFACE(FunctionName);	
 
 
 } // end namespace libra

@@ -18,6 +18,8 @@
 
  namespace libra{
 
+
+
 /** @class VectorizeContainerFunctor
  *  @brief VectorizeContainerFunctor class to extend vector-type iteration
  *		   to a functor of the contained object iterator
@@ -101,7 +103,7 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 
 
 #define LIBRA_VECTORIZE_FUNCTOR(FunctionName) CRTP_Vectorize_Functor_##FunctionName
-#define LIBRA_VECTORIZE_FUNCTOR_DEF(FunctionName)			\
+#define LIBRA_VECTORIZE_FUNCTOR_DEF_NOINTERFACE(FunctionName)			\
 															\
 	namespace libra{										\
 		namespace detail{									\
@@ -127,6 +129,37 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 
 
 
+
+// Vectorize a function 
+#define LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE(FunctionName, InterfaceName)			\
+															\
+	namespace libra{										\
+		namespace detail{									\
+			namespace vectorize_functor{					\
+				namespace FunctionName {					\
+					typedef InterfaceName InterfacePolicy;	\
+					LIBRA_FUNCTOR_PREPARE_INTERFACE(FunctionName);	\
+				}											\
+			} 												\
+		}													\
+	}														\
+															\
+	template <typename Derived> 							\
+	struct LIBRA_VECTORIZE_FUNCTOR(FunctionName){ 			\
+	private: 												\
+		Derived & derived() {return *static_cast<Derived *>(this);};	\
+		const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
+	public: 																			\
+		libra::VCF<Derived, libra::detail::vectorize_functor::FunctionName::LIBRA_FUNCTOR_FOR(FunctionName)> 	\
+		FunctionName() 																	\
+		{return libra::VCF<Derived, libra::detail::vectorize_functor::FunctionName::LIBRA_FUNCTOR_FOR(FunctionName)>(derived());};	\
+	};
+
+
+
+
+// define an overloaded version of VECTORIZE_FUNCTOR_DEF
+#define LIBRA_VECTORIZE_FUNCTOR_DEF(...) LIBRA_GET_MACRO(__VA_ARGS__, LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE, LIBRA_VECTORIZE_FUNCTOR_DEF_NOINTERFACE)(__VA_ARGS__)
 
 
 

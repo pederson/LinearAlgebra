@@ -151,5 +151,35 @@ using VCM = libra::VectorizeContainerMultifunctor<ContainerT, Functor>;
 
 
 
+#define LIBRA_VECTORIZE_MULTIFUNCTOR_INTERFACE_DEF(ResultName, InterfaceName, FunctorType, ...)					\
+																							\
+	namespace libra{																		\
+		namespace detail{																	\
+			namespace vectorize_multifunctor{												\
+				namespace ResultName {														\
+					typedef InterfaceName InterfacePolicy;									\
+					LIBRA_FOR_EACH_SEP(LIBRA_FUNCTOR_PREPARE_INTERFACE, __VA_ARGS__);		\
+					std::vector<FunctorType> functs = 										\
+					{LIBRA_FOR_EACH_SEQ(LIBRA_INSTANTIATE_FUNCTOR_FOR, __VA_ARGS__)};		\
+				}																			\
+			} 																				\
+		}																					\
+	}																						\
+																						\
+	template <typename Derived> 														\
+	struct LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName){ 									\
+	private: 																			\
+		Derived & derived() {return *static_cast<Derived *>(this);};					\
+		const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
+	public: 																			\
+		libra::VCM<Derived, FunctorType> 												\
+		ResultName() 																	\
+		{return libra::VCM<Derived, FunctorType>(derived(), 							\
+					libra::detail::vectorize_multifunctor::ResultName::functs);};		\
+	};
+
+
+
+
 } // end namespace simbox
 #endif
