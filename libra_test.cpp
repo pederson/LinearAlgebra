@@ -18,9 +18,9 @@ private:
 	
 	struct Soln : public libra::vector::VectorAssignment<Soln>{
 		using libra::vector::VectorAssignment<Soln>::operator=;
-		int szx = 70;
-		int szy = 70;
-		int sz = 70*70;
+		int szx = 10;
+		int szy = 10;
+		int sz = 10*10;
 
 		Soln(){
 			fourier_Ex.resize(sz);
@@ -522,7 +522,7 @@ int main(int argc, char * argv[]){
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
-
+/*
 	FDTDSim myfsim;
 	libra::Vector<std::complex<double>, libra::dynamic_size> fourierRHS(myfsim.solution().size());
 	fourierRHS.fill(0);
@@ -553,8 +553,29 @@ int main(int argc, char * argv[]){
 	// 	cout << "step..." << endl;
 	// }
 	// libra::vector::write<true, true>(myfsim.solution());
-
+*/
 	
+
+
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "************** VECTOR STACK TEST ***********" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	libra::Vector<double, libra::dynamic_size> mystacker(5);
+	mystacker.fill(5.0);
+	auto vstack = libra::make_vector_stack(ga1, mystacker);
+	auto vstackit = vstack.begin();
+	std::cout << "first value: " << *vstackit << std::endl;
+	ga1[0] = 1.1;
+	*vstackit = 1.2;
+	// vstackit.operator->() = 1.1;
+	std::cout << "first value: " << *vstackit << std::endl;
+
+	for (auto it=vstack.begin(); it != vstack.end(); it++){
+		std::cout << "vstack: " << *it << std::endl;
+	}
 
 	// throw -1;
 	return 0;

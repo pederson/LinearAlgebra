@@ -80,7 +80,7 @@ private:
 			unsigned int mod = mCtr_functs/mVSM->mFuncts.size();
 			mCtr_objs += mod;
 			mCtr_functs -= mod*mVSM->mFuncts.size();
-			mIt += mod;
+			for (int i=0; i<mod; i++) mIt++; // have to do it this way because iterator_type could possibly be forward_iterator only
 			return *this;
 		};
 		self_type operator++(int blah) {
@@ -88,7 +88,7 @@ private:
 			unsigned int mod = mCtr_functs/mVSM->mFuncts.size();
 			mCtr_objs += mod;
 			mCtr_functs -= mod*mVSM->mFuncts.size();
-			mIt += mod;
+			for (int i=0; i<mod; i++) mIt++;
 			return *this;
 		};
 

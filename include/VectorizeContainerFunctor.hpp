@@ -102,6 +102,11 @@ template <typename ContainerT, typename Functor>
 using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 
 
+
+// This takes a member function of a value_type that is held in a container
+// and adds a vectorized version of that member function to the 
+// entire container. 
+//
 #define LIBRA_VECTORIZE_FUNCTOR(FunctionName) CRTP_Vectorize_Functor_##FunctionName
 #define LIBRA_VECTORIZE_FUNCTOR_DEF_NOINTERFACE(FunctionName)			\
 															\
@@ -130,7 +135,12 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 
 
 
-// Vectorize a function 
+// This takes a member function of a value_type that is held in a container
+// and adds a vectorized version of that member function to the 
+// entire container. 
+//
+// This version adds an interface for when e.g. the value_type is a std::pair
+// and you need to call ".second" before you can access the member function
 #define LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE(FunctionName, InterfaceName)			\
 															\
 	namespace libra{										\

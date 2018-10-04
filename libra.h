@@ -23,5 +23,6 @@
 #include "include/Macros.hpp"
 #include "include/VectorizeContainerFunctor.hpp"
 #include "include/VectorizeContainerMultifunctor.hpp"
+#include "include/VectorStack.hpp"
 
 #endif

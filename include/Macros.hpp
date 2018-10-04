@@ -14,20 +14,18 @@ namespace libra{
 
 // concatenate
 #define LIBRA_CONCATENATE(arg1, arg2)  arg1##arg2
+	
 // create a string from the argument
 #define LIBRA_STRINGIZE(arg) #arg
 
 // a comma macro for convenience
 #define LIBRA_COMMA ,
+
 // a semicolon macro for convenience
 #define LIBRA_SEMICOLON ;
 
-
 // this macro tool will defer the expansion of a macro
 #define LIBRA_DEFER(...) __VA_ARGS__
-
-
-// #define LIBRA_SWAP_ARGS(Arg1, Arg2) Arg2, Arg1
 
 
 // LIBRA_FOR_EACH takes a macro called "what", and applies it
@@ -178,7 +176,7 @@ struct LibraHasMethodHelper{};
 
 // macro for defining the struct LibraFunctorFor##FunctionName
 #define LIBRA_FUNCTOR_FOR_DEF_INTERFACE(FunctionName) 									\
-	struct LIBRA_FUNCTOR_FOR(FunctionName) { 									\
+	struct LIBRA_FUNCTOR_FOR(FunctionName) { 							 		\
 		template <typename Iterator,											\
 				  typename T = 													\
 				  typename std::enable_if<										\
