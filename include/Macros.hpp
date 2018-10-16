@@ -27,6 +27,9 @@ namespace libra{
 // this macro tool will defer the expansion of a macro
 #define LIBRA_DEFER(...) __VA_ARGS__
 
+// this returns the first argument of a parameter pack
+#define LIBRA_GET_FIRST(first, ...) first
+
 
 // LIBRA_FOR_EACH takes a macro called "what", and applies it
 // to every item passed in the variadic argument list. The argument "op"
@@ -106,7 +109,7 @@ namespace libra{
 // for each that creates seperation... just inserts semicolons between items
 #define LIBRA_FOR_EACH_SEP(what, x, ...) LIBRA_FOR_EACH(what, LIBRA_DEFER(LIBRA_SEMICOLON), x, __VA_ARGS__)
 
-// define a function macro overload on number of arguments (up to 2)
+// define a function macro overload on number of arguments (up to 3)
 #define LIBRA_GET_MACRO(_1, _2, NAME, ...) NAME
 
 
