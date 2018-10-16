@@ -17,7 +17,6 @@
 #include "VectorTools.hpp"
 #include "Traits.hpp"
 
-// using namespace libra;
 
 namespace libra{
 
@@ -68,30 +67,30 @@ unsigned int bicgstab(const MatrixType & A, const VectorTypeIn & b, VectorTypeOu
 		rho = vector::inner_product(rhat, r);
 		beta = (rho/rho_old)*(alpha/omega);
 		p = r + beta*(p-omega*v);
-		std::cout << "beta: " << beta << std::endl;
-		std::cout << "p.norm_2(): " << p.norm_2() << std::endl;
+		// std::cout << "beta: " << beta << std::endl;
+		// std::cout << "p.norm_2(): " << p.norm_2() << std::endl;
 
-		std::cout << "rho: " << rho << std::endl;
+		// std::cout << "rho: " << rho << std::endl;
 
 		A.vmult(p, v);
 		// v = A*p;
 
-		std::cout << "v.norm_2(): " << v.norm_2() << std::endl;
+		// std::cout << "v.norm_2(): " << v.norm_2() << std::endl;
 
 		alpha = rho/vector::inner_product(rhat,v);
-		std::cout << "alpha: " << alpha << std::endl;
+		// std::cout << "alpha: " << alpha << std::endl;
 		s = r - alpha*v;
 
-		std::cout << "norm(s): " << s.norm_2() << std::endl;
+		// std::cout << "norm(s): " << s.norm_2() << std::endl;
 
 		A.vmult(s, t);
 		// t = A*s;
 
-		std::cout << "t.norm_2(): " << t.norm_2() << std::endl;
+		// std::cout << "t.norm_2(): " << t.norm_2() << std::endl;
 		
 		omega = vector::inner_product(t,s)/vector::inner_product(t,t);
 
-		std::cout << "omega: " << omega << std::endl;
+		// std::cout << "omega: " << omega << std::endl;
 
 		x += alpha*p + omega*s;
 

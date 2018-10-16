@@ -197,13 +197,12 @@ namespace detail{
  *
  */
 template <typename... VectorType>
-class VectorStack {
- // : public vector::VectorFunctors<VectorStack<VectorType...>>,
-	// 				public vector::VectorAssignment<VectorStack<VectorType...>>{
+class VectorStack : public vector::VectorFunctors<VectorStack<VectorType...>>,
+					public vector::VectorAssignment<VectorStack<VectorType...>>{
 public:
 	typedef VectorStack<VectorType...> 					SelfType;
-	// typedef vector::VectorAssignment<SelfType> 			AssignmentType;
-	// using AssignmentType::operator=;
+	typedef vector::VectorAssignment<SelfType> 			AssignmentType;
+	using AssignmentType::operator=;
 
 
 private:
@@ -221,41 +220,74 @@ private:
 		typedef typename std::conditional<is_const, 
 						const VectorStack, 
 						VectorStack>::type 	container_type;
-		// typedef typename std::conditional<is_const, 
-		// 		typename ContainerType::const_iterator, 
-		// 		typename ContainerType::iterator>::type 	iterator_type;
+
+		typedef typename std::conditional<is_const, 
+				typename detail::FirstTypeOf<VectorType...>::type ::const_iterator, 
+				typename detail::FirstTypeOf<VectorType...>::type ::iterator>::type 	iterator_type;
+
+		typedef typename std::conditional<is_const, 
+				std::tuple<typename VectorType::const_iterator ..., typename detail::LastTypeOf<VectorType...>::type ::const_iterator>,
+				std::tuple<typename VectorType::iterator ..., typename detail::LastTypeOf<VectorType...>::type ::iterator>
+				>::type 			iterator_tuple_type;
+
+		typedef typename std::conditional<is_const, 
+				std::tuple<typename VectorType::const_iterator ...>,
+				std::tuple<typename VectorType::iterator ...>
+				>::type 			first_iterator_tuple_types;
+
+		typedef typename std::conditional<is_const, 
+				std::tuple<typename detail::LastTypeOf<VectorType...>::type  ::const_iterator>,
+				std::tuple<typename detail::LastTypeOf<VectorType...>::type ::iterator>
+				>::type 			last_iterator_tuple_type;
 
 		container_type * mCont;
-		// PointerTupleType * mPTup;
 
 		unsigned int mIdx;		// tracker index... starts at 0, goes to size()-1
 		unsigned int mContIdx; // index of which container we are at
-		std::tuple<typename VectorType::iterator ..., 
-				   typename detail::LastTypeOf<VectorType...>::type ::iterator> mIters; // tuple of iterators, plus one extra iterator at the end
-	public:
-		typedef vs_iterator									self_type;
-		typedef typename detail::FirstTypeOf<VectorType...>::type ::iterator::difference_type		difference_type;
-		typedef std::remove_reference_t<decltype(*std::get<0>(std::declval<PointerTupleType>())->begin())> 	value_type;
-		typedef value_type & 								reference;
-		typedef value_type * 								pointer;
-		typedef typename detail::FirstTypeOf<VectorType...>::type ::iterator::iterator_category	iterator_category;
+		iterator_tuple_type mIters; // tuple of iterators, plus one extra iterator at the end
+	
 
 		struct tupleganger{
-			template <typename T1, typename T2>
-			void operator()(T1 & t1, T2 & t2) {t1 = t2->begin();};
+			template <typename T1, typename T2, bool C = is_const>
+			typename std::enable_if<C==false, void>::type 
+			operator()(T1 & t1, T2 & t2) {
+				t1 = t2->begin();
+			};
+
+			template <typename T1, typename T2, bool C = is_const>
+			typename std::enable_if<C==true, void>::type 
+			operator()(T1 & t1, T2 & t2) {
+				t1 = t2->cbegin();
+			};
 		};
+
+	public:
+		typedef vs_iterator									self_type;
+		typedef typename iterator_type::difference_type		difference_type;
+		typedef std::remove_reference_t<decltype(*std::get<0>(std::declval<PointerTupleType>())->begin())> 	value_type;
+		typedef typename std::conditional<is_const, 
+						 const value_type,
+						 value_type>::type &				reference;
+		typedef typename std::conditional<is_const, 
+						 const value_type,
+						 value_type>::type * 				pointer;
+		typedef typename iterator_type::iterator_category	iterator_category;
+
+
 
 		vs_iterator(container_type * cont, unsigned int idx)
 		: mCont(cont), mIdx(idx) {
-			std::tuple<typename VectorType::iterator ...> its;
-			for (unsigned int i=0; i<mNumVecs; i++){
-				detail::visit_at(its, mCont->mVectors, i, tupleganger()); //it1 = std::begin(*it2);
-			}
-			// end it
-			std::tuple<typename detail::LastTypeOf<VectorType...>::type ::iterator> endit;
-			std::get<0>(endit) = std::get<mNumVecs-1>(mCont->mVectors)->end();
 
-			mIters = std::tuple_cat(its, endit);
+				first_iterator_tuple_types its;
+				for (unsigned int i=0; i<mNumVecs; i++){
+					detail::visit_at(its, mCont->mVectors, i, tupleganger()); //it1 = std::begin(*it2);
+				}
+				// end it
+				last_iterator_tuple_type endit;
+				std::get<0>(endit) = std::get<mNumVecs-1>(mCont->mVectors)->end();
+
+				mIters = std::tuple_cat(its, endit);
+			// }
 
 			// std::cout << "Idx: " << idx ;
 			if (idx == 0){
@@ -325,9 +357,21 @@ public:
 	iterator begin() {return iterator(this, 0);};
 	iterator end()	 {return iterator(this, mCumSize[mNumVecs-1]);};
 
-	// const_iterator cbegin() const {return const_iterator(this, mCont->cbegin());};
-	// const_iterator cend() const	 {return const_iterator(this, mCont->cend());};
+	const_iterator cbegin() const {return const_iterator(this, 0);};
+	const_iterator cend() const	 {return const_iterator(this, mCumSize[mNumVecs-1]);};
 
+
+	template <std::size_t I>
+	typename std::tuple_element<I, std::tuple<VectorType...>>::type & 
+	get() {
+		return *std::get<I>(mVectors);
+	}
+
+	template <std::size_t I>
+	const typename std::tuple_element<I, std::tuple<VectorType...>>::type & 
+	get() const {
+		return *std::get<I>(mVectors);
+	}
 
 };
 
@@ -342,6 +386,13 @@ template <typename... VectorType>
 VectorStack<VectorType...> make_vector_stack(VectorType & ... vectors){
 	return VectorStack<VectorType...>(std::make_tuple(&vectors...));
 }
+
+
+// implementation with rvalue references as arguments
+// template <typename... VectorType>
+// VectorStack<VectorType...> make_vector_stack(VectorType && ... vectors){
+// 	return VectorStack<VectorType...>(std::make_tuple(&vectors...));
+// }
 
 
 } // end namespace libra

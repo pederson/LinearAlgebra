@@ -109,27 +109,35 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 //
 #define LIBRA_VECTORIZE_FUNCTOR(FunctionName) CRTP_Vectorize_Functor_##FunctionName
 #define LIBRA_VECTORIZE_FUNCTOR_DEF_NOINTERFACE(FunctionName)			\
-															\
-	namespace libra{										\
-		namespace detail{									\
-			namespace vectorize_functor{					\
-				namespace FunctionName {					\
-					LIBRA_FUNCTOR_PREPARE(FunctionName);	\
-				}											\
-			} 												\
-		}													\
-	}														\
-															\
-	template <typename Derived> 							\
-	struct LIBRA_VECTORIZE_FUNCTOR(FunctionName){ 			\
-	private: 												\
-		Derived & derived() {return *static_cast<Derived *>(this);};	\
-		const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
-	public: 																			\
-		libra::VCF<Derived, libra::detail::vectorize_functor::FunctionName::LIBRA_FUNCTOR_FOR(FunctionName)> 	\
-		FunctionName() 																	\
-		{return libra::VCF<Derived, libra::detail::vectorize_functor::FunctionName::LIBRA_FUNCTOR_FOR(FunctionName)>(derived());};	\
-	};
+																		\
+	namespace libra{													\
+		namespace detail{												\
+			namespace vectorize_functor{								\
+				namespace FunctionName {								\
+					LIBRA_FUNCTOR_PREPARE(FunctionName);				\
+																		\
+					template <typename Derived> 						\
+					struct LIBRA_VECTORIZE_FUNCTOR(FunctionName){ 		\
+					private: 											\
+						Derived & derived() {return *static_cast<Derived *>(this);};	\
+						const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
+																										\
+					public: 																			\
+						libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)> 							\
+						FunctionName() 																	\
+						{																				\
+									static_assert(LIBRA_HAS_METHOD(FunctionName)< 						\
+									  decltype(*derived().begin())>::value, 							\
+									  LIBRA_STRINGIZE(FunctionName)); 									\
+							return libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());};	\
+					};																					\
+				}														\
+			} 															\
+		}																\
+	}																	\
+																		\
+	using libra::detail::vectorize_functor::FunctionName::LIBRA_VECTORIZE_FUNCTOR(FunctionName);		\
+
 
 
 
@@ -141,29 +149,36 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 //
 // This version adds an interface for when e.g. the value_type is a std::pair
 // and you need to call ".second" before you can access the member function
-#define LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE(FunctionName, InterfaceName)			\
-															\
-	namespace libra{										\
-		namespace detail{									\
-			namespace vectorize_functor{					\
-				namespace FunctionName {					\
-					typedef InterfaceName InterfacePolicy;	\
-					LIBRA_FUNCTOR_PREPARE_INTERFACE(FunctionName);	\
-				}											\
-			} 												\
-		}													\
-	}														\
-															\
-	template <typename Derived> 							\
-	struct LIBRA_VECTORIZE_FUNCTOR(FunctionName){ 			\
-	private: 												\
-		Derived & derived() {return *static_cast<Derived *>(this);};	\
-		const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
-	public: 																			\
-		libra::VCF<Derived, libra::detail::vectorize_functor::FunctionName::LIBRA_FUNCTOR_FOR(FunctionName)> 	\
-		FunctionName() 																	\
-		{return libra::VCF<Derived, libra::detail::vectorize_functor::FunctionName::LIBRA_FUNCTOR_FOR(FunctionName)>(derived());};	\
-	};
+#define LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE(FunctionName, InterfaceName)		\
+																				\
+	namespace libra{															\
+		namespace detail{														\
+			namespace vectorize_functor{										\
+				namespace FunctionName {										\
+					typedef InterfaceName InterfacePolicy;						\
+					LIBRA_FUNCTOR_PREPARE_INTERFACE(FunctionName);				\
+																				\
+					template <typename Derived> 								\
+					struct LIBRA_VECTORIZE_FUNCTOR(FunctionName){ 				\
+					private: 													\
+						Derived & derived() {return *static_cast<Derived *>(this);};	\
+						const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
+					public: 																			\
+						libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)> 	\
+						FunctionName() 											\
+						{														\
+							static_assert(LIBRA_HAS_METHOD(FunctionName)< 		\
+									  decltype(InterfaceName::get(*derived().begin()))>::value, \
+									  LIBRA_STRINGIZE(FunctionName)); 			\
+							return libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());};	\
+					};															\
+				}																\
+			} 																	\
+		}																		\
+	}																			\
+																				\
+	using libra::detail::vectorize_functor::FunctionName::LIBRA_VECTORIZE_FUNCTOR(FunctionName);		\
+
 
 
 

@@ -576,6 +576,12 @@ int main(int argc, char * argv[]){
 	for (auto it=vstack.begin(); it != vstack.end(); it++){
 		std::cout << "vstack: " << *it << std::endl;
 	}
+	std::cout << "reassigning... (size = " << vstack.size() << ")" << std::endl;
+	vstack.fill_randn();
+	//libra::Vector<double, libra::dynamic_size> stacker2(vstack.size())
+	for (auto it=vstack.begin(); it != vstack.end(); it++){
+		std::cout << "vstack: " << *it << std::endl;
+	}
 
 	// throw -1;
 	return 0;

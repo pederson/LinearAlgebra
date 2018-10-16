@@ -119,64 +119,86 @@ template <typename ContainerT, typename Functor>
 using VCM = libra::VectorizeContainerMultifunctor<ContainerT, Functor>;				
 
 
+#define LIBRA_ASSERT_EXISTENCE(FunctionName) 				\
+	static_assert(LIBRA_HAS_METHOD(FunctionName)< 			\
+				  decltype(*derived().begin())>::value 		\
+				  ,LIBRA_STRINGIZE(FunctionName)); 
+
+
+#define LIBRA_ASSERT_EXISTENCE_INTERFACE(FunctionName) 		\
+	static_assert(LIBRA_HAS_METHOD(FunctionName)< 			\
+				  decltype(InterfacePolicy::get(*derived().begin()))>::value 		\
+				  ,LIBRA_STRINGIZE(FunctionName)); 
+
+
 #define LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName) CRTP_Vectorize_Multifunctor_##ResultName
 #define LIBRA_VECTORIZE_MULTIFUNCTOR_DEF(ResultName, FunctorType, ...)					\
-																							\
-	namespace libra{																		\
-		namespace detail{																	\
-			namespace vectorize_multifunctor{												\
-				namespace ResultName {														\
+																						\
+	namespace libra{																	\
+		namespace detail{																\
+			namespace vectorize_multifunctor{											\
+				namespace ResultName {													\
 					LIBRA_FOR_EACH_SEP(LIBRA_FUNCTOR_PREPARE, __VA_ARGS__);				\
-					std::vector<FunctorType> functs = 										\
-					{LIBRA_FOR_EACH_SEQ(LIBRA_INSTANTIATE_FUNCTOR_FOR, __VA_ARGS__)};		\
-				}																			\
-			} 																				\
-		}																					\
-	}																						\
+					std::vector<FunctorType> functs = 									\
+					{LIBRA_FOR_EACH_SEQ(LIBRA_INSTANTIATE_FUNCTOR_FOR, __VA_ARGS__)};	\
 																						\
-	template <typename Derived> 														\
-	struct LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName){ 									\
-	private: 																			\
-		Derived & derived() {return *static_cast<Derived *>(this);};					\
-		const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
-	public: 																			\
-		libra::VCM<Derived, FunctorType> 												\
-		ResultName() 																	\
-		{return libra::VCM<Derived, FunctorType>(derived(), 							\
-					libra::detail::vectorize_multifunctor::ResultName::functs);};		\
-	};
-
-
-
-
-
-
-#define LIBRA_VECTORIZE_MULTIFUNCTOR_INTERFACE_DEF(ResultName, InterfaceName, FunctorType, ...)					\
-																							\
-	namespace libra{																		\
-		namespace detail{																	\
-			namespace vectorize_multifunctor{												\
-				namespace ResultName {														\
-					typedef InterfaceName InterfacePolicy;									\
-					LIBRA_FOR_EACH_SEP(LIBRA_FUNCTOR_PREPARE_INTERFACE, __VA_ARGS__);		\
-					std::vector<FunctorType> functs = 										\
-					{LIBRA_FOR_EACH_SEQ(LIBRA_INSTANTIATE_FUNCTOR_FOR, __VA_ARGS__)};		\
-				}																			\
-			} 																				\
-		}																					\
-	}																						\
 																						\
-	template <typename Derived> 														\
-	struct LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName){ 									\
-	private: 																			\
-		Derived & derived() {return *static_cast<Derived *>(this);};					\
-		const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
-	public: 																			\
-		libra::VCM<Derived, FunctorType> 												\
-		ResultName() 																	\
-		{return libra::VCM<Derived, FunctorType>(derived(), 							\
-					libra::detail::vectorize_multifunctor::ResultName::functs);};		\
-	};
+					template <typename Derived> 										\
+					struct LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName){ 					\
+					private: 															\
+						Derived & derived() {return *static_cast<Derived *>(this);};	\
+						const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
+					public: 															\
+						libra::VCM<Derived, FunctorType> 								\
+						ResultName() 													\
+						{																\
+							LIBRA_FOR_EACH_SEP(LIBRA_ASSERT_EXISTENCE, __VA_ARGS__);	\
+							return libra::VCM<Derived, FunctorType>(derived(), 			\
+									functs);};											\
+					};																	\
+				}																		\
+			} 																			\
+		}																				\
+	}																					\
+																						\
+	using libra::detail::vectorize_multifunctor::ResultName::LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName);	\
+
+
+
+
+
+
+#define LIBRA_VECTORIZE_MULTIFUNCTOR_INTERFACE_DEF(ResultName, InterfaceName, FunctorType, ...)		\
+																						\
+	namespace libra{																	\
+		namespace detail{																\
+			namespace vectorize_multifunctor{											\
+				namespace ResultName {													\
+					typedef InterfaceName InterfacePolicy;								\
+					LIBRA_FOR_EACH_SEP(LIBRA_FUNCTOR_PREPARE_INTERFACE, __VA_ARGS__);	\
+					std::vector<FunctorType> functs = 									\
+					{LIBRA_FOR_EACH_SEQ(LIBRA_INSTANTIATE_FUNCTOR_FOR, __VA_ARGS__)};	\
+																						\
+																						\
+					template <typename Derived> 										\
+					struct LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName){ 					\
+					private: 															\
+						Derived & derived() {return *static_cast<Derived *>(this);};	\
+						const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
+					public: 															\
+						libra::VCM<Derived, FunctorType> 								\
+						ResultName() 													\
+						{																\
+							LIBRA_FOR_EACH_SEP(LIBRA_ASSERT_EXISTENCE_INTERFACE, __VA_ARGS__);	\
+							return libra::VCM<Derived, FunctorType>(derived(), 			\
+									functs);};											\
+					};																	\
+				}																		\
+			} 																			\
+		}																				\
+	}																					\
+																						\
+	using libra::detail::vectorize_multifunctor::ResultName::LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName);	\
 
 
 

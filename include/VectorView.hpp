@@ -16,10 +16,11 @@ namespace libra{
 
 template <typename VectorT, typename IteratorT>
 class VectorView{
-public:
+private:
 	typedef typename VectorT::const_iterator 		vector_const_iterator;
 
 
+public:
 	VectorView(VectorT & v, IteratorT beg, IteratorT end)
 	: mVec(v), mBegin(beg), mEnd(end) {};
 
@@ -224,8 +225,8 @@ public:
 	const_iterator cend() const	 {return const_iterator(*this, vector_const_iterator(mEnd));};
 
 	// these are required by std::cbegin()/cend()
-	const_iterator begin() const {return cbegin();};
-	const_iterator end() const	 {return cend();};
+	// const_iterator begin() {return cbegin();};
+	// const_iterator end() {return cend();};
 
 protected:
 	VectorT & mVec;
