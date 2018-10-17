@@ -62,6 +62,11 @@ private:
 								  std::remove_reference_t<value_type> *>::type 		pointer;
 		typedef typename iterator_type::iterator_category 							iterator_category;
 
+		vcm_iterator() {};
+
+		vcm_iterator(const vcm_iterator & v)
+		: mVSM(v.mVSM), mIt(v.mIt), mCtr_functs(v.mCtr_functs), mCtr_objs(v.mCtr_objs) {};
+
 		vcm_iterator(container_type * vcm, iterator_type it, unsigned int fctr)
 		: mVSM(vcm), mIt(it), mCtr_functs(fctr), mCtr_objs(0) {};
 

@@ -211,7 +211,7 @@ private:
 
 
 	PointerTupleType mVectors;
-	std::tuple<VectorType ...> mDerr;
+	// std::tuple<VectorType ...> mDerr;
 	std::vector<std::size_t> mCumSize; // cumulative size
 
 	template <bool is_const>
@@ -378,10 +378,6 @@ public:
 
 
 
-// template <typename ContainerT, typename Functor>
-// using VS = libra::VectorStack<ContainerT, Functor>;
-
-
 template <typename... VectorType>
 VectorStack<VectorType...> make_vector_stack(VectorType & ... vectors){
 	return VectorStack<VectorType...>(std::make_tuple(&vectors...));
@@ -389,10 +385,10 @@ VectorStack<VectorType...> make_vector_stack(VectorType & ... vectors){
 
 
 // implementation with rvalue references as arguments
-// template <typename... VectorType>
-// VectorStack<VectorType...> make_vector_stack(VectorType && ... vectors){
-// 	return VectorStack<VectorType...>(std::make_tuple(&vectors...));
-// }
+template <typename... VectorType>
+VectorStack<VectorType...> make_vector_stack(VectorType && ... vectors){
+	return VectorStack<VectorType...>(std::make_tuple(new VectorType(vectors)...));
+}
 
 
 } // end namespace libra

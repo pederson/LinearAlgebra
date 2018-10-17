@@ -39,7 +39,7 @@ private:
 	ContainerType * mCont;
 
 	template <bool is_const>
-	class vcm_iterator{
+	class vcf_iterator{
 	private:
 		typedef typename std::conditional<is_const, 
 						const VectorizeContainerFunctor, 
@@ -51,19 +51,28 @@ private:
 		container_type * mVCM;
 		iterator_type 	mIt;
 	public:
-		typedef vcm_iterator								self_type;
+		typedef vcf_iterator								self_type;
 		typedef typename iterator_type::difference_type		difference_type;
-		typedef decltype(StaticMethodFunctor::get(mIt)) 	value_type;
-		typedef value_type & 								reference;
-		typedef value_type  								pointer;
+		typedef std::remove_reference_t<decltype(StaticMethodFunctor::get(mIt))> 	value_type;
+		typedef typename std::conditional<is_const, 
+						 const value_type,
+						 value_type>::type &				reference;
+		typedef typename std::conditional<is_const, 
+						 const value_type,
+						 value_type>::type * 				pointer;
 		typedef typename iterator_type::iterator_category 	iterator_category;
 
-		vcm_iterator(container_type * vcm, iterator_type it)
+		vcf_iterator() {};
+
+		vcf_iterator(const vcf_iterator & v)
+		: mVCM(v.mVCM), mIt(v.mIt) {};
+
+		vcf_iterator(container_type * vcm, iterator_type it)
 		: mVCM(vcm), mIt(it) {};
 
 		// copy assignment
-		vcm_iterator & operator=(const vcm_iterator & cit){
-			vcm_iterator i(cit);
+		vcf_iterator & operator=(const vcf_iterator & cit){
+			vcf_iterator i(cit);
 			std::swap(i,*this);
 			return *this;
 		}
@@ -79,8 +88,8 @@ private:
 
 	};
 public:
-	typedef vcm_iterator<true> 		const_iterator;
-	typedef vcm_iterator<false> 	iterator;
+	typedef vcf_iterator<true> 		const_iterator;
+	typedef vcf_iterator<false> 	iterator;
 
 	VectorizeContainerFunctor(ContainerType & c) : mCont(&c) {};
 
