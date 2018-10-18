@@ -148,8 +148,20 @@ struct LibraHasMethodHelper{};
 
 
 
-
-
+template<typename T, typename _ = void> 					
+struct LibraHasDereferenceOperator : std::false_type {};	
+															
+template <typename T>										
+struct LibraHasDereferenceOperator <						
+        T,													
+        std::conditional_t<									
+            false,											
+            libra::LibraHasMethodHelper<					
+                decltype(std::declval<T>().operator*())	
+                >,											
+            void											
+            >												
+        > : public std::true_type {};	
 
 
 
@@ -160,38 +172,38 @@ struct LibraHasMethodHelper{};
 // macro for defining the struct LibraFunctorFor##FunctionName
 #define LIBRA_FUNCTOR_FOR_DEF_NOINTERFACE(FunctionName) 									\
 	struct LIBRA_FUNCTOR_FOR(FunctionName) { 									\
-		template <typename Iterator,											\
-				  typename T = 													\
-				  typename std::enable_if<										\
-				  		   LIBRA_HAS_METHOD(FunctionName)<decltype(*std::declval<Iterator>())>::value, 		\
-				  		   Iterator 											\
-				  		   >::type 												\
-				  		   > 													\
-		static decltype(auto) get(Iterator & it){return it->FunctionName();}; 	\
+		template <typename Iterator> \
+		static decltype(auto) get(Iterator & it){	\
+			static_assert(LibraHasDereferenceOperator<decltype(it)>::value,	\
+						 "Iterator does not have a dereference operator!");		\
+			static_assert(LIBRA_HAS_METHOD(FunctionName)<decltype(*it)>::value,	\
+						 "Dereferenced iterator does not have the desired function! [Check const-ness just in case]");		\
+			return it->FunctionName();}; 										\
 																				\
 		template <typename Iterator>											\
 		decltype(auto) operator()(Iterator & it){return get(it);};				\
+																				\
 	};
-
-
 
 
 
 // macro for defining the struct LibraFunctorFor##FunctionName
 #define LIBRA_FUNCTOR_FOR_DEF_INTERFACE(FunctionName) 									\
 	struct LIBRA_FUNCTOR_FOR(FunctionName) { 							 		\
-		template <typename Iterator,											\
-				  typename T = 													\
-				  typename std::enable_if<										\
-				  		   LIBRA_HAS_METHOD(FunctionName)<decltype(InterfacePolicy::get(*std::declval<Iterator>()))>::value, 		\
-				  		   Iterator 											\
-				  		   >::type 												\
-				  		   > 													\
-		static decltype(auto) get(Iterator & it){return InterfacePolicy::get(*it).FunctionName();}; 	\
+		template <typename Iterator>				\
+		static decltype(auto) get(Iterator & it){	\
+			static_assert(LibraHasDereferenceOperator<decltype(it)>::value,	\
+						 "Iterator does not have a dereference operator!");		\
+			static_assert(std::is_rvalue_reference<decltype(InterfacePolicy::get(*it))>::value,	\
+						 "InterfacePolicy must return rvalue reference!");		\
+			static_assert(LIBRA_HAS_METHOD(FunctionName)<decltype(InterfacePolicy::get(*it))>::value,	\
+						 "Dereferenced iterator does not have the desired function! [Check const-ness just in case]");		\
+			return InterfacePolicy::get(*it).FunctionName();}; 										\
 																				\
 		template <typename Iterator>											\
 		decltype(auto) operator()(Iterator & it){return get(it);};				\
 	};
+
 
 
 // define an overloaded version of FUNCTOR_FOR_DEF

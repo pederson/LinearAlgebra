@@ -15,8 +15,32 @@
 #include <iostream>
 
 #include "Macros.hpp"
+#include "Traits.hpp"
 
  namespace libra{
+
+
+
+ 	//***********************
+	// an assignable vector requires the non-const begin() and end()
+	// iterator accessors
+	template<typename StaticFunctor, typename IteratorType, typename _ = void>
+	struct can_apply_static_functor : std::false_type {};
+
+	template<typename StaticFunctor, typename IteratorType>
+	struct can_apply_static_functor<
+	        StaticFunctor,
+	        IteratorType,
+	        std::conditional_t<
+	            false,
+	            type_traits::is_vector_helper<
+	                decltype(std::declval<StaticFunctor>().operator()(std::declval<IteratorType>()))
+	                >,
+	            void
+	            >
+	        > : public std::true_type {};
+
+
 
 /** @class VectorizeContainerMultifunctor
  *  @brief VectorizeContainerMultifunctor class to extend vector-type iteration
@@ -43,8 +67,15 @@ private:
 	private:
 		typedef typename std::conditional<is_const, 
 						const VectorizeContainerMultifunctor, 
-						VectorizeContainerMultifunctor>::type 	container_type;
-		typedef typename ContainerType::iterator 			iterator_type;
+						VectorizeContainerMultifunctor>::type 			container_type;
+		typedef typename std::conditional<is_const, 
+						typename ContainerType::const_iterator, 
+						typename ContainerType::iterator>::type 		iterator_type;
+
+
+		static_assert(can_apply_static_functor<StaticMethodFunctor, iterator_type>::value, 
+					  "Must be able to apply static functor to iterator type");
+		// typedef decltype(std::declval<StaticMethodFunctor>().operator()(mIt)) 		value_type_base;
 
 		container_type * mVSM;
 		iterator_type 	mIt;
@@ -53,7 +84,10 @@ private:
 	public:
 		typedef vcm_iterator														self_type;
 		typedef typename iterator_type::difference_type								difference_type;
-		typedef decltype(std::declval<StaticMethodFunctor>().operator()(mIt)) 		value_type;
+		// typedef value_type_base value_type;
+		typedef std::remove_reference_t<decltype(std::declval<StaticMethodFunctor>().operator()(mIt))> 		value_type;
+		// typedef typename iterator_type::reference reference;
+		// typedef typename iterator_type::pointer pointer;
 		typedef typename std::conditional<is_const, 
 								  std::add_lvalue_reference_t<const std::remove_reference_t<value_type>>,
 								  value_type &>::type 								reference;
@@ -111,8 +145,8 @@ public:
 	iterator begin() {return iterator(this, mCont->begin(), 0);};
 	iterator end()	 {return iterator(this, mCont->end(), 0);};
 
-	const_iterator cbegin() const {return const_iterator(this, mCont->begin(), 0);};
-	const_iterator cend() const	 {return const_iterator(this, mCont->end(), 0);};
+	const_iterator cbegin() const {return const_iterator(this, mCont->cbegin(), 0);};
+	const_iterator cend() const	 {return const_iterator(this, mCont->cend(), 0);};
 };
 
 
@@ -127,13 +161,19 @@ using VCM = libra::VectorizeContainerMultifunctor<ContainerT, Functor>;
 #define LIBRA_ASSERT_EXISTENCE(FunctionName) 				\
 	static_assert(LIBRA_HAS_METHOD(FunctionName)< 			\
 				  decltype(*derived().begin())>::value 		\
+				  ,LIBRA_STRINGIZE(FunctionName)); 			\
+	static_assert(LIBRA_HAS_METHOD(FunctionName)< 			\
+				  decltype(*derived().cbegin())>::value 	\
 				  ,LIBRA_STRINGIZE(FunctionName)); 
 
 
 #define LIBRA_ASSERT_EXISTENCE_INTERFACE(FunctionName) 		\
 	static_assert(LIBRA_HAS_METHOD(FunctionName)< 			\
 				  decltype(InterfacePolicy::get(*derived().begin()))>::value 		\
-				  ,LIBRA_STRINGIZE(FunctionName)); 
+				  ,LIBRA_STRINGIZE(FunctionName)); 			\
+	static_assert(LIBRA_HAS_METHOD(FunctionName)< 			\
+				  decltype(InterfacePolicy::get(*derived().cbegin()))>::value 		\
+				  ,LIBRA_STRINGIZE(FunctionName));
 
 
 #define LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName) CRTP_Vectorize_Multifunctor_##ResultName

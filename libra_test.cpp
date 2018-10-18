@@ -9,9 +9,33 @@ using namespace std;
 
 
 
+struct DummyStruct{
+private:
+	double mA, mB, mC;
+
+public:
+	double & a() {return mA;};
+	double & b() {return mB;};
+	double & c() {return mC;};
+
+	const double & a() const {return mA;};
+	const double & b() const {return mB;};
+	const double & c() const {return mC;};
+};
+LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(avec, a);
+LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(bvec, b);
+LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(cvec, c);
 
 
+struct MapInterface{
+	template <typename Iterator>
+	static decltype(auto)
+	get(Iterator & it) {return std::move(it.second);};
+};
 
+LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(amap, a, MapInterface);
+LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(bmap, b, MapInterface);
+LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(cmap, c, MapInterface);
 
 struct FDTDSim{
 private:
@@ -554,7 +578,91 @@ int main(int argc, char * argv[]){
 	// }
 	// libra::vector::write<true, true>(myfsim.solution());
 */
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "************ VECTOR FUNCTOR TEST ***********" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
 	
+	std::cout << "expanded vector... " << std::endl;
+	typedef std::vector<DummyStruct> 	vector_container_type;
+	typedef libra::ExpandContainer<vector_container_type, 
+								   LIBRA_VECTORIZE_FUNCTOR(avec),
+								   LIBRA_VECTORIZE_FUNCTOR(bvec),
+								   LIBRA_VECTORIZE_FUNCTOR(cvec)> 
+								   					exp_vector_type;
+	exp_vector_type myexpvec(5);
+
+	// regular iteration
+	for (auto it=myexpvec.avec().begin(); it != myexpvec.avec().end(); it++){
+		*it = 1.0;
+	}
+
+	for (auto it=myexpvec.begin(); it!= myexpvec.end(); it++){
+		std::cout << it->a() << std::endl;
+	}
+
+	// fill
+	myexpvec.avec().fill(3.0);
+	// const iteration
+	for (auto it=myexpvec.avec().cbegin(); it != myexpvec.avec().cend(); it++){
+		std::cout << *it << std::endl;
+	}
+
+	// fill 
+	myexpvec.bvec().fill(2.0);
+	for (auto it=myexpvec.bvec().cbegin(); it != myexpvec.bvec().cend(); it++){
+		std::cout << *it << std::endl;
+	}
+
+	for (auto it=myexpvec.cvec().cbegin(); it != myexpvec.cvec().cend(); it++){
+		std::cout << *it << std::endl;
+	}
+
+
+
+	std::cout << "expanded map... " << std::endl;
+	typedef std::map<int, DummyStruct> 	map_container_type;
+	typedef libra::ExpandContainer<map_container_type, 
+								   LIBRA_VECTORIZE_FUNCTOR(amap),
+								   LIBRA_VECTORIZE_FUNCTOR(bmap),
+								   LIBRA_VECTORIZE_FUNCTOR(cmap)> 
+								   					exp_map_type;
+
+	exp_map_type myexpmap;
+	myexpmap[0]; myexpmap[1]; myexpmap[2]; myexpmap[3]; myexpmap[4];
+	myexpmap.amap().fill(2.0);
+
+
+	// regular iteration
+	for (auto it=myexpmap.amap().begin(); it != myexpmap.amap().end(); it++){
+		std::cout << "before: " << *it ;
+		*it = 1.0;
+		std::cout << " after: " << *it << std::endl;
+	}
+
+	for (auto it=myexpmap.begin(); it!= myexpmap.end(); it++){
+		std::cout << it->second.a() << std::endl;
+	}
+
+	// fill
+	myexpmap.amap().fill(3.0);
+	// const iteration
+	for (auto it=myexpmap.amap().cbegin(); it != myexpmap.amap().cend(); it++){
+		std::cout << *it << std::endl;
+	}
+
+	// fill 
+	myexpmap.bmap().fill(2.0);
+	for (auto it=myexpmap.bmap().cbegin(); it != myexpmap.bmap().cend(); it++){
+		std::cout << *it << std::endl;
+	}
+
+	for (auto it=myexpmap.cmap().cbegin(); it != myexpmap.cmap().cend(); it++){
+		std::cout << *it << std::endl;
+	}
+
 
 
 	cout << "********************************************" << endl;
@@ -580,6 +688,11 @@ int main(int argc, char * argv[]){
 	vstack.fill_randn();
 	//libra::Vector<double, libra::dynamic_size> stacker2(vstack.size())
 	for (auto it=vstack.begin(); it != vstack.end(); it++){
+		std::cout << "vstack: " << *it << std::endl;
+	}
+
+
+	for (auto it=vstack.cbegin(); it != vstack.cend(); it++){
 		std::cout << "vstack: " << *it << std::endl;
 	}
 

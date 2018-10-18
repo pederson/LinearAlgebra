@@ -261,10 +261,27 @@ private:
 			};
 		};
 
+		// struct tupleganger_end{
+		// 	template <typename T1, typename T2, bool C = is_const>
+		// 	static typename std::enable_if<C==false, void>::type 
+		// 	do_it()(T1 & t1, T2 & t2) {
+		// 		t1 = t2->end();
+		// 	};
+
+		// 	template <typename T1, typename T2, bool C = is_const>
+		// 	static typename std::enable_if<C==true, void>::type 
+		// 	do_it()(T1 & t1, T2 & t2) {
+		// 		t1 = t2->cend();
+		// 	};
+		// };
+
 	public:
 		typedef vs_iterator									self_type;
 		typedef typename iterator_type::difference_type		difference_type;
-		typedef std::remove_reference_t<decltype(*std::get<0>(std::declval<PointerTupleType>())->begin())> 	value_type;
+		typedef typename std::conditional<is_const, 
+						 std::remove_reference_t<decltype(*std::get<0>(std::declval<PointerTupleType>())->cbegin())>,
+						 std::remove_reference_t<decltype(*std::get<0>(std::declval<PointerTupleType>())->begin())>>::type
+						 value_type;
 		typedef typename std::conditional<is_const, 
 						 const value_type,
 						 value_type>::type &				reference;
@@ -284,6 +301,8 @@ private:
 				}
 				// end it
 				last_iterator_tuple_type endit;
+				// detail::visit_at(endit, mCont->mVectors, mNumVecs-1, tupleganger_end());
+				// tupleganger_end::do_it(std::get<0>(endit), std::get<mNumVecs-1>(mCont->mVectors));
 				std::get<0>(endit) = std::get<mNumVecs-1>(mCont->mVectors)->end();
 
 				mIters = std::tuple_cat(its, endit);
