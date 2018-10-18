@@ -30,6 +30,9 @@ namespace libra{
 // this returns the first argument of a parameter pack
 #define LIBRA_GET_FIRST(first, ...) first
 
+// this returns the first argument of a parameter pack
+#define LIBRA_INSTANTIATE(arg) arg()
+
 
 // LIBRA_FOR_EACH takes a macro called "what", and applies it
 // to every item passed in the variadic argument list. The argument "op"

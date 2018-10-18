@@ -115,9 +115,15 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 // and adds a vectorized version of that member function to the 
 // entire container. 
 //
-#define LIBRA_VECTORIZE_FUNCTOR(ResultName) CRTP_Vectorize_Functor_Named_##ResultName
+// #define LIBRA_VECTORIZE_FUNCTOR(ResultName) CRTP_Vectorize_Functor_Named_##ResultName
+#define LIBRA_VECTORIZE_FUNCTOR_NO_INTERFACE(ResultName) CRTP_Vectorize_Functor_Named_##ResultName
+#define LIBRA_VECTORIZE_FUNCTOR_INTERFACE(ResultName, InterfaceName) CRTP_Vectorize_Functor_Named_ ##ResultName ##_With_Interface_ ##InterfaceName
+#define LIBRA_VECTORIZE_FUNCTOR(...) LIBRA_GET_MACRO(__VA_ARGS__, LIBRA_VECTORIZE_FUNCTOR_INTERFACE, LIBRA_VECTORIZE_FUNCTOR_NO_INTERFACE)(__VA_ARGS__)
 
-#define LIBRA_VECTORIZE_FUNCTOR_DEF_NOINTERFACE(ResultName, FunctionName)			\
+
+
+
+#define LIBRA_VECTORIZE_FUNCTOR_DEF_NO_INTERFACE(ResultName, FunctionName)			\
 																		\
 	namespace libra{													\
 		namespace detail{												\
@@ -173,47 +179,49 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 		namespace detail{														\
 			namespace vectorize_functor{										\
 				namespace ResultName {											\
-					typedef InterfaceName InterfacePolicy;						\
-					LIBRA_FUNCTOR_PREPARE_INTERFACE(FunctionName);				\
-																				\
-					template <typename Derived> 								\
-					struct LIBRA_VECTORIZE_FUNCTOR(ResultName){ 				\
-					private: 													\
-						Derived & derived() {return *static_cast<Derived *>(this);};	\
-						const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
-					public: 													\
-						libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)> 	\
-						ResultName() 											\
-						{														\
-							static_assert(LIBRA_HAS_METHOD(FunctionName)< 		\
-									  decltype(InterfaceName::get(*derived().begin()))>::value, \
-									  LIBRA_STRINGIZE(FunctionName)); 			\
-							return libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());	\
-						};														\
-																				\
-						libra::VCF<const Derived, LIBRA_FUNCTOR_FOR(FunctionName)> 	\
-						ResultName() const										\
-						{														\
-							static_assert(LIBRA_HAS_METHOD(FunctionName)< 		\
-									  decltype(InterfaceName::get(*derived().cbegin()))>::value, \
-									  LIBRA_STRINGIZE(FunctionName)); 			\
-							return libra::VCF<const Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());	\
-						};														\
-					};															\
+					namespace InterfaceName_space {								\
+						typedef InterfaceName InterfacePolicy;						\
+						LIBRA_FUNCTOR_PREPARE_INTERFACE(FunctionName);				\
+																					\
+						template <typename Derived> 								\
+						struct LIBRA_VECTORIZE_FUNCTOR(ResultName, InterfaceName){ 				\
+						private: 													\
+							Derived & derived() {return *static_cast<Derived *>(this);};	\
+							const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
+						public: 													\
+							libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)> 	\
+							ResultName() 											\
+							{														\
+								static_assert(LIBRA_HAS_METHOD(FunctionName)< 		\
+										  decltype(InterfaceName::get(*derived().begin()))>::value, \
+										  LIBRA_STRINGIZE(FunctionName)); 			\
+								return libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());	\
+							};														\
+																					\
+							libra::VCF<const Derived, LIBRA_FUNCTOR_FOR(FunctionName)> 	\
+							ResultName() const										\
+							{														\
+								static_assert(LIBRA_HAS_METHOD(FunctionName)< 		\
+										  decltype(InterfaceName::get(*derived().cbegin()))>::value, \
+										  LIBRA_STRINGIZE(FunctionName)); 			\
+								return libra::VCF<const Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());	\
+							};														\
+						};															\
+					}																\
 				}																\
 			} 																	\
 		}																		\
 	}																			\
 																				\
-	using libra::detail::vectorize_functor::ResultName::LIBRA_VECTORIZE_FUNCTOR(ResultName);		\
+	using libra::detail::vectorize_functor::ResultName::InterfaceName_space::LIBRA_VECTORIZE_FUNCTOR(ResultName, InterfaceName);		\
 
 
 
 
 
 // define an overloaded version of VECTORIZE_FUNCTOR_DEF
-#define LIBRA_VECTORIZE_FUNCTOR_DEF(...) LIBRA_GET_MACRO(__VA_ARGS__, LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE, LIBRA_VECTORIZE_FUNCTOR_DEF_NOINTERFACE)(LIBRA_GET_FIRST(__VA_ARGS__), __VA_ARGS__)
-#define LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(ResultName, ...) LIBRA_GET_MACRO(__VA_ARGS__, LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE, LIBRA_VECTORIZE_FUNCTOR_DEF_NOINTERFACE)(ResultName, __VA_ARGS__)
+#define LIBRA_VECTORIZE_FUNCTOR_DEF(...) LIBRA_GET_MACRO(__VA_ARGS__, LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE, LIBRA_VECTORIZE_FUNCTOR_DEF_NO_INTERFACE)(LIBRA_GET_FIRST(__VA_ARGS__), __VA_ARGS__)
+#define LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(ResultName, ...) LIBRA_GET_MACRO(__VA_ARGS__, LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE, LIBRA_VECTORIZE_FUNCTOR_DEF_NO_INTERFACE)(ResultName, __VA_ARGS__)
 
 
 

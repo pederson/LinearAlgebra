@@ -5,7 +5,7 @@ using namespace std;
 // g++ -std=c++14 -O2 -I./ libra_test.cpp -o matrixtest
 
 #include <typeinfo>
-
+#include <functional>
 
 
 
@@ -27,6 +27,10 @@ LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(bvec, b);
 LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(cvec, c);
 
 
+// typedef std::function<double &(std::vector<double>::iterator &)> functor_type;
+LIBRA_VECTORIZE_MULTIFUNCTOR_DEF(multi, a, b, c);
+
+
 struct MapInterface{
 	template <typename Iterator>
 	static decltype(auto)
@@ -36,6 +40,8 @@ struct MapInterface{
 LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(amap, a, MapInterface);
 LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(bmap, b, MapInterface);
 LIBRA_VECTORIZE_FUNCTOR_RENAME_DEF(cmap, c, MapInterface);
+
+LIBRA_VECTORIZE_MULTIFUNCTOR_INTERFACE_DEF(multi, MapInterface, a, b, c);
 
 struct FDTDSim{
 private:
@@ -625,9 +631,9 @@ int main(int argc, char * argv[]){
 	std::cout << "expanded map... " << std::endl;
 	typedef std::map<int, DummyStruct> 	map_container_type;
 	typedef libra::ExpandContainer<map_container_type, 
-								   LIBRA_VECTORIZE_FUNCTOR(amap),
-								   LIBRA_VECTORIZE_FUNCTOR(bmap),
-								   LIBRA_VECTORIZE_FUNCTOR(cmap)> 
+								   LIBRA_VECTORIZE_FUNCTOR(amap, MapInterface),
+								   LIBRA_VECTORIZE_FUNCTOR(bmap, MapInterface),
+								   LIBRA_VECTORIZE_FUNCTOR(cmap, MapInterface)> 
 								   					exp_map_type;
 
 	exp_map_type myexpmap;
@@ -663,6 +669,43 @@ int main(int argc, char * argv[]){
 		std::cout << *it << std::endl;
 	}
 
+
+
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********** VECTOR MULTIFUNCTOR TEST ********" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+	cout << "********************************************" << endl;
+
+	std::cout << "multifunctor expanded vector... " << std::endl;
+	typedef libra::ExpandContainer<vector_container_type, 
+								   LIBRA_VECTORIZE_MULTIFUNCTOR(multi)> 
+								   					exp_multi_vec_type;
+	exp_multi_vec_type myexpmultivec(3);
+
+	auto multivec = myexpmultivec.multi();
+	myexpmultivec.multi().fill(1.0);
+
+	for (auto it = myexpmultivec.multi().cbegin(); it!=myexpmultivec.multi().cend(); it++){
+		std::cout << *it << std::endl;
+	}
+
+
+
+	std::cout << "multifunctor expanded map... " << std::endl;
+	typedef libra::ExpandContainer<map_container_type, 
+								   LIBRA_VECTORIZE_MULTIFUNCTOR(multi, MapInterface)> 
+								   					exp_multi_map_type;
+	exp_multi_map_type myexpmultimap;
+	myexpmultimap[0]; myexpmultimap[1]; myexpmultimap[3];
+
+	auto multimap = myexpmultimap.multi();
+	myexpmultimap.multi().fill(2.0);
+
+	for (auto it = myexpmultimap.multi().cbegin(); it!=myexpmultimap.multi().cend(); it++){
+		std::cout << *it << std::endl;
+	}
 
 
 	cout << "********************************************" << endl;
