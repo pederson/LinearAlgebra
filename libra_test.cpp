@@ -708,36 +708,56 @@ int main(int argc, char * argv[]){
 	}
 
 
+	std::cout << "setting equal to 1,2,3..." << std::endl;
+	for (auto it = myexpmultimap.begin(); it!=myexpmultimap.end(); it++){
+		it->second.a() = 1.0;
+		it->second.b() = 2.0;
+		it->second.c() = 3.0;
+	}
+
+	for (auto it = myexpmultimap.multi().cbegin(); it!=myexpmultimap.multi().cend(); it++){
+		std::cout << *it << std::endl;
+	}
+
+
+
+	auto expstack = libra::make_vector_stack(myexpmultivec.multi(), myexpmultimap.multi());
+
+	auto expstack_begin = expstack.begin();
+	for (auto it = expstack.begin(); it!=expstack.end(); it++){
+		std::cout << "STACK_VALUE: " << *it << std::endl;
+	}
+
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	cout << "************** VECTOR STACK TEST ***********" << endl;
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
 	cout << "********************************************" << endl;
-	libra::Vector<double, libra::dynamic_size> mystacker(5);
-	mystacker.fill(5.0);
-	auto vstack = libra::make_vector_stack(ga1, mystacker);
-	auto vstackit = vstack.begin();
-	std::cout << "first value: " << *vstackit << std::endl;
-	ga1[0] = 1.1;
-	*vstackit = 1.2;
-	// vstackit.operator->() = 1.1;
-	std::cout << "first value: " << *vstackit << std::endl;
+	// libra::Vector<double, libra::dynamic_size> mystacker(5);
+	// mystacker.fill(5.0);
+	// auto vstack = libra::make_vector_stack(ga1, mystacker);
+	// auto vstackit = vstack.begin();
+	// std::cout << "first value: " << *vstackit << std::endl;
+	// ga1[0] = 1.1;
+	// *vstackit = 1.2;
+	// // vstackit.operator->() = 1.1;
+	// std::cout << "first value: " << *vstackit << std::endl;
 
-	for (auto it=vstack.begin(); it != vstack.end(); it++){
-		std::cout << "vstack: " << *it << std::endl;
-	}
-	std::cout << "reassigning... (size = " << vstack.size() << ")" << std::endl;
-	vstack.fill_randn();
-	//libra::Vector<double, libra::dynamic_size> stacker2(vstack.size())
-	for (auto it=vstack.begin(); it != vstack.end(); it++){
-		std::cout << "vstack: " << *it << std::endl;
-	}
+	// for (auto it=vstack.begin(); it != vstack.end(); it++){
+	// 	std::cout << "vstack: " << *it << std::endl;
+	// }
+	// std::cout << "reassigning... (size = " << vstack.size() << ")" << std::endl;
+	// vstack.fill_randn();
+	// //libra::Vector<double, libra::dynamic_size> stacker2(vstack.size())
+	// for (auto it=vstack.begin(); it != vstack.end(); it++){
+	// 	std::cout << "vstack: " << *it << std::endl;
+	// }
 
 
-	for (auto it=vstack.cbegin(); it != vstack.cend(); it++){
-		std::cout << "vstack: " << *it << std::endl;
-	}
+	// for (auto it=vstack.cbegin(); it != vstack.cend(); it++){
+	// 	std::cout << "vstack: " << *it << std::endl;
+	// }
 
 	// throw -1;
 	return 0;

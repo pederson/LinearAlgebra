@@ -22,24 +22,24 @@ namespace libra{
 
 
 namespace detail{
-	template<typename T, typename... Ts>
+	template <typename T, typename... Ts>
 	struct LastTypeOf {
 	   typedef typename LastTypeOf<Ts...>::type type;
 	};
 
-	template<typename T>
+	template <typename T>
 	struct LastTypeOf<T> {
 	  typedef T type;
 	};
 
 
 
-	template<typename T, typename... Ts>
+	template <typename T, typename... Ts>
 	struct FirstTypeOf {
 	   typedef T type;
 	};
 
-	template<typename T>
+	template <typename T>
 	struct FirstTypeOf<T> {
 	  typedef T type;
 	};
@@ -103,6 +103,7 @@ namespace detail{
         template <typename Tuple1, typename Tuple2, typename F>
         inline static constexpr int visit(Tuple1 &tup1, Tuple2 & tup2, std::size_t idx, F fun) //noexcept(noexcept(fun(std::get<I - 1U>(tuple), std::forward<Args>(args)...)) && noexcept(visit_impl<I - 1U>::visit(tuple, idx, fun, std::forward<Args>(args)...)))
         {
+        	// std::cout << "idx = " << idx << " : Visiting Tuple Index =" << I << std::endl;
             return (idx == (I - 1U) ? (fun(std::get<I - 1U>(tup1), std::get<I - 1U>(tup2)), void(), 0) : visit_impl<I - 1U>::visit(tup1, tup2, idx, fun));
         }
     };
@@ -127,6 +128,7 @@ namespace detail{
         template <typename Tuple1, typename Tuple2, typename F>
         inline static constexpr int visit(Tuple1 &tup1, Tuple2 & tup2, std::size_t idx, F fun) //noexcept(noexcept(fun(std::get<I - 1U>(tuple), std::forward<Args>(args)...)) && noexcept(visit_impl<I - 1U>::visit(tuple, idx, fun, std::forward<Args>(args)...)))
         {
+        	// std::cout << "idx = " << idx << " : Visiting Tuple Index =" << 0 << std::endl;
             return 0;
         }
     };
@@ -211,7 +213,6 @@ private:
 
 
 	PointerTupleType mVectors;
-	// std::tuple<VectorType ...> mDerr;
 	std::vector<std::size_t> mCumSize; // cumulative size
 
 	template <bool is_const>
@@ -226,19 +227,21 @@ private:
 				typename detail::FirstTypeOf<VectorType...>::type ::iterator>::type 	iterator_type;
 
 		typedef typename std::conditional<is_const, 
-				std::tuple<typename VectorType::const_iterator ..., typename detail::LastTypeOf<VectorType...>::type ::const_iterator>,
-				std::tuple<typename VectorType::iterator ..., typename detail::LastTypeOf<VectorType...>::type ::iterator>
-				>::type 			iterator_tuple_type;
-
-		typedef typename std::conditional<is_const, 
 				std::tuple<typename VectorType::const_iterator ...>,
 				std::tuple<typename VectorType::iterator ...>
 				>::type 			first_iterator_tuple_types;
 
 		typedef typename std::conditional<is_const, 
-				std::tuple<typename detail::LastTypeOf<VectorType...>::type  ::const_iterator>,
+				std::tuple<typename detail::LastTypeOf<VectorType...>::type ::const_iterator>,
 				std::tuple<typename detail::LastTypeOf<VectorType...>::type ::iterator>
 				>::type 			last_iterator_tuple_type;
+
+
+		typedef typename std::conditional<is_const, 
+				std::tuple<typename VectorType::const_iterator ..., typename detail::LastTypeOf<VectorType...>::type ::const_iterator>,
+				std::tuple<typename VectorType::iterator ..., typename detail::LastTypeOf<VectorType...>::type ::iterator>
+				>::type 			iterator_tuple_type;
+
 
 		container_type * mCont;
 
@@ -251,7 +254,14 @@ private:
 			template <typename T1, typename T2, bool C = is_const>
 			typename std::enable_if<C==false, void>::type 
 			operator()(T1 & t1, T2 & t2) {
+				// std::cout << "0000: am inside tupleganger" << std::endl;
+				// t1;
+				// t2->begin();
+				// std::cout << "t2 begin value: " << *t2->begin() << std::endl;
+				// std::cout << "am inside tupleganger" << std::endl;
 				t1 = t2->begin();
+				// std::cout << "finished copying inside tupleganger" << std::endl;
+				// static_assert(std::is_same<bool, T1>::value, "check 1 2" );
 			};
 
 			template <typename T1, typename T2, bool C = is_const>
@@ -261,19 +271,19 @@ private:
 			};
 		};
 
-		// struct tupleganger_end{
-		// 	template <typename T1, typename T2, bool C = is_const>
-		// 	static typename std::enable_if<C==false, void>::type 
-		// 	do_it()(T1 & t1, T2 & t2) {
-		// 		t1 = t2->end();
-		// 	};
+		struct tupleganger_end{
+			template <typename T1, typename T2, bool C = is_const>
+			static typename std::enable_if<C==false, void>::type 
+			do_it(T1 & t1, T2 & t2) {
+				t1 = t2->end();
+			};
 
-		// 	template <typename T1, typename T2, bool C = is_const>
-		// 	static typename std::enable_if<C==true, void>::type 
-		// 	do_it()(T1 & t1, T2 & t2) {
-		// 		t1 = t2->cend();
-		// 	};
-		// };
+			template <typename T1, typename T2, bool C = is_const>
+			static typename std::enable_if<C==true, void>::type 
+			do_it(T1 & t1, T2 & t2) {
+				t1 = t2->cend();
+			};
+		};
 
 	public:
 		typedef vs_iterator									self_type;
@@ -295,17 +305,39 @@ private:
 		vs_iterator(container_type * cont, unsigned int idx)
 		: mCont(cont), mIdx(idx) {
 
-				first_iterator_tuple_types its;
+				// std::cout << "instantiating iterator***" << std::endl;
+				first_iterator_tuple_types its;// = std::make_tuple(mCont);
+				// std::cout << "its size: " << std::tuple_size<first_iterator_tuple_types>::value << std::endl;
+				// std::cout << "mVectors size: " << std::tuple_size<decltype(mCont->mVectors)>::value << std::endl;
+				detail::visit_at(its, mCont->mVectors, 1, tupleganger());
 				for (unsigned int i=0; i<mNumVecs; i++){
+					// std::cout << i << " copying begin iterators" << std::endl;
 					detail::visit_at(its, mCont->mVectors, i, tupleganger()); //it1 = std::begin(*it2);
 				}
+				// std::cout << "* copied begin iterators" << std::endl;
+				
 				// end it
 				last_iterator_tuple_type endit;
-				// detail::visit_at(endit, mCont->mVectors, mNumVecs-1, tupleganger_end());
-				// tupleganger_end::do_it(std::get<0>(endit), std::get<mNumVecs-1>(mCont->mVectors));
-				std::get<0>(endit) = std::get<mNumVecs-1>(mCont->mVectors)->end();
+				tupleganger_end::do_it(std::get<0>(endit), std::get<mNumVecs-1>(mCont->mVectors));
 
+				// std::cout << "** copied end iterator" << std::endl;
 				mIters = std::tuple_cat(its, endit);
+				// auto blah = std::make_tuple(std::get<0>(mCont->mVectors)->begin());
+				// std::cout << "one down" << std::endl;
+				// auto blah2 = std::make_tuple(std::get<0>(mCont->mVectors)->begin(),
+				// 							 std::get<1>(mCont->mVectors)->begin());
+				// auto blahit = std::get<1>(mCont->mVectors)->end();
+				// std::cout << "two down" << std::endl;
+				// auto blah3 = std::make_tuple(std::get<0>(mCont->mVectors)->begin(), 
+				// 	std::get<1>(mCont->mVectors)->begin(), 
+				// 	std::get<1>(mCont->mVectors)->end());
+				// std::cout << "three down" << std::endl;
+
+				// std::cout << "about to swap\n\n\n\n\n\n\n\n\n" << std::endl;
+				// mIters.swap(blah3);
+				// static_assert(std::is_same<decltype(blah3), iterator_tuple_type>::value, "check 3 4");
+
+				// std::cout << "*** concatenated iterators" << std::endl;
 			// }
 
 			// std::cout << "Idx: " << idx ;
@@ -322,6 +354,8 @@ private:
 			}
 			if (mContIdx == mNumVecs-1) mContIdx = mNumVecs;
 
+			// std::cout << "**** initialized contIdx" << std::endl;
+
 			// std::cout << " complete " << std::endl;
 		};
 
@@ -332,10 +366,10 @@ private:
 			return *this;
 		}
 
-		pointer operator->() const {
+		pointer operator->() {
 			return detail::visit_at<pointer>(mIters, mContIdx, [&](auto & it){return it.operator->();});
 		};
-		reference operator*() const {
+		reference operator*() {
 			// reference 
 			return *detail::visit_at<pointer>(mIters, mContIdx, [&](auto & it){return it.operator->();});
 		};

@@ -80,8 +80,6 @@ private:
 		// static_assert(can_apply_static_functor<StaticMethodFunctor, iterator_type>::value, 
 		// 			  "Must be able to apply static functor to iterator type");
 
-		// typedef decltype(std::declval<StaticMethodFunctor>().operator()(mIt)) 		value_type_base;
-
 		container_type * mVSM;
 		iterator_type 	mIt;
 		unsigned int 	mCtr_functs;
@@ -100,27 +98,62 @@ private:
 
 	private:
 		typedef std::function<reference(iterator_type &)> functor_type;
-		// typedef typename std::conditional<is_const, 
-		// 						  std::function<reference&(iterator_type &)>,
-		// 						  std::function<reference&(iterator_type &)>>::type 				functor_type;
-		std::vector<functor_type> mFuncts = {StaticMethodFunctor()...}; //  instantiate into seperate generic functors
+		std::vector<functor_type> mFuncts;// = {StaticMethodFunctor()...}; //  instantiate into seperate generic functors
 	public:
-		vcm_iterator() {};
+		vcm_iterator() {
+			// std::cout << "constructed empty vcm_iterator" << std::endl;
+		};
+
+		vcm_iterator(vcm_iterator && v)
+		: mVSM(v.mVSM), mIt(v.mIt), mCtr_functs(v.mCtr_functs), mCtr_objs(v.mCtr_objs), mFuncts(v.mFuncts) {
+			// std::cout << "move-constructed vcm_iterator" << std::endl;
+			// static_assert(std::is_same<bool, iterator_type>::value, "check 4 5");
+			// *this = std::move(v);
+		};
 
 		vcm_iterator(const vcm_iterator & v)
-		: mVSM(v.mVSM), mIt(v.mIt), mCtr_functs(v.mCtr_functs), mCtr_objs(v.mCtr_objs) {};
+		: mVSM(v.mVSM), mIt(v.mIt), mCtr_functs(v.mCtr_functs), mCtr_objs(v.mCtr_objs), mFuncts(v.mFuncts) {
+			// std::cout << "copy-constructed vcm_iterator" << std::endl;
+			// static_assert(std::is_same<bool, iterator_type>::value, "check 4 5");
+
+		};
 
 		vcm_iterator(container_type * vcm, iterator_type it, unsigned int fctr)
-		: mVSM(vcm), mIt(it), mCtr_functs(fctr), mCtr_objs(0) {};
+		: mVSM(vcm), mIt(it), mCtr_functs(fctr), mCtr_objs(0), mFuncts({StaticMethodFunctor()...}) {
+			// std::cout << "constructed vcm_iterator" << std::endl;
+		};
 
 		// copy assignment
 		vcm_iterator & operator=(const vcm_iterator & cit){
-			vcm_iterator i(cit);
-			std::swap(i,*this);
+			if (this != &cit){
+				// std::cout << "copy assign vcm_iterator" << std::endl;
+				vcm_iterator i(cit);
+				// std::swap(i,*this);
+				std::swap(mVSM, i.mVSM); 
+				std::swap(mIt, i.mIt); 
+				std::swap(mCtr_functs, i.mCtr_functs); 
+				std::swap(mCtr_objs, i.mCtr_objs); 
+				std::swap(mFuncts, i.mFuncts);	
+			}
 			return *this;
 		}
 
-		pointer operator->() const {return &mFuncts[mCtr_functs](mIt);};
+		// move assignment
+		vcm_iterator & operator=(vcm_iterator && cit){
+			if (this != &cit){
+				// std::cout << "move assign vcm_iterator" << std::endl;
+				vcm_iterator i(std::move(cit));
+				// std::swap(i,*this);
+				std::swap(mVSM, i.mVSM); 
+				std::swap(mIt, i.mIt); 
+				std::swap(mCtr_functs, i.mCtr_functs); 
+				std::swap(mCtr_objs, i.mCtr_objs); 
+				std::swap(mFuncts, i.mFuncts);			}
+			// std::cout << "exiting move-assign" << std::endl;
+			return *this;
+		}
+
+		pointer operator->() {return &mFuncts[mCtr_functs](mIt);};
 		reference operator*()  {return mFuncts[mCtr_functs](mIt);};
 
 		self_type operator++(){
@@ -185,12 +218,12 @@ using VCM = libra::VectorizeContainerMultifunctor<ContainerT, Functor...>;
 				  ,"Const Iterator does not have the requested function");
 
 
-#define LIBRA_VECTORIZE_MULTIFUNCTOR_NO_INTERFACE(ResultName) CRTP_Vectorize_Multifunctor_Named_##ResultName
-#define LIBRA_VECTORIZE_MULTIFUNCTOR_INTERFACE(ResultName, InterfaceName) CRTP_Vectorize_Multifunctor_Named_##ResultName_With_Interface_##InterfaceName
+#define LIBRA_VECTORIZE_MULTIFUNCTOR_NO_INTERFACE(ResultName) CRTP_Vectorize_Multifunctor_Named_ ##ResultName
+#define LIBRA_VECTORIZE_MULTIFUNCTOR_INTERFACE(ResultName, InterfaceName) CRTP_Vectorize_Multifunctor_Named_ ##ResultName ##_With_Interface_ ##InterfaceName
 #define LIBRA_VECTORIZE_MULTIFUNCTOR(...) LIBRA_GET_MACRO(__VA_ARGS__, LIBRA_VECTORIZE_MULTIFUNCTOR_INTERFACE, LIBRA_VECTORIZE_MULTIFUNCTOR_NO_INTERFACE)(__VA_ARGS__)
 
 
-#define LIBRA_VECTORIZE_MULTIFUNCTOR_DEF(ResultName, ...)					\
+#define LIBRA_VECTORIZE_MULTIFUNCTOR_DEF(ResultName, ...)								\
 																						\
 	namespace libra{																	\
 		namespace detail{																\
@@ -199,7 +232,7 @@ using VCM = libra::VectorizeContainerMultifunctor<ContainerT, Functor...>;
 					LIBRA_FOR_EACH_SEP(LIBRA_FUNCTOR_PREPARE, __VA_ARGS__);				\
 																						\
 					typedef std::tuple<LIBRA_FOR_EACH_SEQ(LIBRA_FUNCTOR_FOR, __VA_ARGS__)> functor_tuple;	\
-					functor_tuple ftup;																	\
+					functor_tuple ftup;													\
 																						\
 					template <typename Derived> 										\
 					struct LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName){ 					\
@@ -222,21 +255,6 @@ using VCM = libra::VectorizeContainerMultifunctor<ContainerT, Functor...>;
 	using libra::detail::vectorize_multifunctor::ResultName::LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName);	\
 
 
-/*
-
-typedef decltype(LIBRA_FUNCTOR_FOR(LIBRA_GET_FIRST(__VA_ARGS__))::get(derived().begin())) return_type; \
-							typedef std::function<return_type &(iterator_type &)>	functor_type;		\
-
-// std::vector<FunctorType> functs = 									\
-// 					{LIBRA_FOR_EACH_SEQ(LIBRA_INSTANTIATE_FUNCTOR_FOR, __VA_ARGS__)};	\
-
-// libra::VCM<Derived, FunctorType> 								\
-															\
-
-
-						typedef std::tuple<LIBRA_FOR_EACH_SEQ(LIBRA_FUNCTOR_FOR, __VA_ARGS__)> functor_tuple;	\
-						functor_tuple ftup;													\
-*/
 
 
 #define LIBRA_VECTORIZE_MULTIFUNCTOR_INTERFACE_DEF(ResultName, InterfaceName, ...)			\
@@ -244,13 +262,13 @@ typedef decltype(LIBRA_FUNCTOR_FOR(LIBRA_GET_FIRST(__VA_ARGS__))::get(derived().
 		namespace detail{																	\
 			namespace vectorize_multifunctor{												\
 				namespace ResultName{														\
-					namespace InterfaceName_space {												\
+					namespace InterfaceName_space {											\
 						typedef InterfaceName InterfacePolicy;								\
 						LIBRA_FOR_EACH_SEP(LIBRA_FUNCTOR_PREPARE_INTERFACE, __VA_ARGS__);	\
 																							\
 																							\
 						template <typename Derived> 										\
-						struct LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName, InterfaceName){ 					\
+						struct LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName, InterfaceName){ 	\
 						private: 															\
 							Derived & derived() {return *static_cast<Derived *>(this);};	\
 							const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
@@ -258,49 +276,17 @@ typedef decltype(LIBRA_FUNCTOR_FOR(LIBRA_GET_FIRST(__VA_ARGS__))::get(derived().
 																							\
 							decltype(auto) ResultName() 									\
 							{																\
-								LIBRA_FOR_EACH_SEP(LIBRA_ASSERT_EXISTENCE_INTERFACE, __VA_ARGS__);	\
+								LIBRA_FOR_EACH_SEP(LIBRA_ASSERT_EXISTENCE_INTERFACE, __VA_ARGS__);			\
 								return libra::VCM<Derived, LIBRA_FOR_EACH_SEQ(LIBRA_FUNCTOR_FOR, __VA_ARGS__)>(derived());	\
 							};																\
 						};																	\
 					}																		\
 				}																			\
-			} 																			\
-		}																				\
-	}																					\
-																						\
+			} 																				\
+		}																					\
+	}																						\
+																							\
 	using libra::detail::vectorize_multifunctor::ResultName::InterfaceName_space::LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName,InterfaceName);	
-
-
-// 																						\
-// 	namespace libra{																	\
-// 		namespace detail{																\
-// 			namespace vectorize_multifunctor{											\
-// 				namespace ResultName {													\
-// 					typedef InterfaceName InterfacePolicy;								\
-// 					LIBRA_FOR_EACH_SEP(LIBRA_FUNCTOR_PREPARE_INTERFACE, __VA_ARGS__);	\
-// 					std::vector<FunctorType> functs = 									\
-// 					{LIBRA_FOR_EACH_SEQ(LIBRA_INSTANTIATE_FUNCTOR_FOR, __VA_ARGS__)};	\
-// 																						\
-// 																						\
-// 					template <typename Derived> 										\
-// 					struct LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName){ 					\
-// 					private: 															\
-// 						Derived & derived() {return *static_cast<Derived *>(this);};	\
-// 						const Derived & derived() const {return *static_cast<const Derived *>(this);};	\
-// 					public: 															\
-// 						libra::VCM<Derived, FunctorType> 								\
-// 						ResultName() 													\
-// 						{																\
-// 							LIBRA_FOR_EACH_SEP(LIBRA_ASSERT_EXISTENCE_INTERFACE, __VA_ARGS__);	\
-// 							return libra::VCM<Derived, FunctorType>(derived(), 			\
-// 									functs);};											\
-// 					};																	\
-// 				}																		\
-// 			} 																			\
-// 		}																				\
-// 	}																					\
-// 																						\
-// 	using libra::detail::vectorize_multifunctor::ResultName::LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName);	\
 
 
 

@@ -116,7 +116,7 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 // entire container. 
 //
 // #define LIBRA_VECTORIZE_FUNCTOR(ResultName) CRTP_Vectorize_Functor_Named_##ResultName
-#define LIBRA_VECTORIZE_FUNCTOR_NO_INTERFACE(ResultName) CRTP_Vectorize_Functor_Named_##ResultName
+#define LIBRA_VECTORIZE_FUNCTOR_NO_INTERFACE(ResultName) CRTP_Vectorize_Functor_Named_ ##ResultName
 #define LIBRA_VECTORIZE_FUNCTOR_INTERFACE(ResultName, InterfaceName) CRTP_Vectorize_Functor_Named_ ##ResultName ##_With_Interface_ ##InterfaceName
 #define LIBRA_VECTORIZE_FUNCTOR(...) LIBRA_GET_MACRO(__VA_ARGS__, LIBRA_VECTORIZE_FUNCTOR_INTERFACE, LIBRA_VECTORIZE_FUNCTOR_NO_INTERFACE)(__VA_ARGS__)
 
@@ -143,7 +143,7 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 						{																				\
 									static_assert(LIBRA_HAS_METHOD(FunctionName)< 						\
 									  decltype(*derived().begin())>::value, 							\
-									  LIBRA_STRINGIZE(FunctionName)); 									\
+									  "Iterator does not have the requested function"); 									\
 							return libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());};	\
 																					\
 						libra::VCF<const Derived, LIBRA_FUNCTOR_FOR(FunctionName)> 	\
@@ -151,7 +151,7 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 						{															\
 							static_assert(LIBRA_HAS_METHOD(FunctionName)< 			\
 									  decltype(*derived().cbegin())>::value, 		\
-									  LIBRA_STRINGIZE(FunctionName)); 				\
+									  "Const Iterator does not have the requested function"); 				\
 							return libra::VCF<const Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());	\
 						};												\
 					};													\
@@ -194,7 +194,7 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 							{														\
 								static_assert(LIBRA_HAS_METHOD(FunctionName)< 		\
 										  decltype(InterfaceName::get(*derived().begin()))>::value, \
-										  LIBRA_STRINGIZE(FunctionName)); 			\
+										  "Iterator does not have the requested function"); 			\
 								return libra::VCF<Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());	\
 							};														\
 																					\
@@ -203,7 +203,7 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 							{														\
 								static_assert(LIBRA_HAS_METHOD(FunctionName)< 		\
 										  decltype(InterfaceName::get(*derived().cbegin()))>::value, \
-										  LIBRA_STRINGIZE(FunctionName)); 			\
+										  "Const Iterator does not have the requested function"); 			\
 								return libra::VCF<const Derived, LIBRA_FUNCTOR_FOR(FunctionName)>(derived());	\
 							};														\
 						};															\
