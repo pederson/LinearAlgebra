@@ -10,7 +10,7 @@
 #include "include/SparseMatrix.hpp"
 #include "include/Preconditioner.hpp"
 #include "include/LinearSolvers.hpp"
-
+#include "include/CompositeOperators.hpp"
 
 #include "include/Tensor.hpp"
 #include "include/VectorTools.hpp"
