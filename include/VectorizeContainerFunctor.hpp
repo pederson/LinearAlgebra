@@ -63,6 +63,9 @@ private:
 
 		vcf_iterator() {};
 
+		vcf_iterator(vcf_iterator && v)
+		: mVCM(v.mVCM), mIt(v.mIt) {};
+
 		vcf_iterator(const vcf_iterator & v)
 		: mVCM(v.mVCM), mIt(v.mIt) {};
 
@@ -71,8 +74,21 @@ private:
 
 		// copy assignment
 		vcf_iterator & operator=(const vcf_iterator & cit){
-			vcf_iterator i(cit);
-			std::swap(i,*this);
+			if (this != &cit){
+				vcf_iterator i(cit);
+				std::swap(i.mVCM, mVCM);
+				std::swap(i.mIt, mIt);
+			}
+			return *this;
+		}
+
+		// move assignment
+		vcf_iterator & operator=(vcf_iterator && cit){
+			if (this != &cit){
+				vcf_iterator i(std::move(cit));
+				std::swap(i.mVCM, mVCM);
+				std::swap(i.mIt, mIt);
+			}
 			return *this;
 		}
 
@@ -125,8 +141,7 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 
 #define LIBRA_VECTORIZE_FUNCTOR_DEF_NO_INTERFACE(ResultName, FunctionName)			\
 																		\
-	namespace libra{													\
-		namespace detail{												\
+		namespace libra_detail{												\
 			namespace vectorize_functor{								\
 				namespace ResultName {									\
 					LIBRA_FUNCTOR_PREPARE(FunctionName);				\
@@ -158,9 +173,8 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 				}														\
 			} 															\
 		}																\
-	}																	\
 																		\
-	using libra::detail::vectorize_functor::ResultName::LIBRA_VECTORIZE_FUNCTOR(ResultName);		\
+	using libra_detail::vectorize_functor::ResultName::LIBRA_VECTORIZE_FUNCTOR(ResultName);		\
 
 
 
@@ -175,8 +189,7 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 // and you need to call ".second" before you can access the member function
 #define LIBRA_VECTORIZE_FUNCTOR_DEF_INTERFACE(ResultName, FunctionName, InterfaceName)		\
 																				\
-	namespace libra{															\
-		namespace detail{														\
+		namespace libra_detail{														\
 			namespace vectorize_functor{										\
 				namespace ResultName {											\
 					namespace InterfaceName_space {								\
@@ -210,10 +223,9 @@ using VCF = libra::VectorizeContainerFunctor<ContainerT, Functor>;
 					}																\
 				}																\
 			} 																	\
-		}																		\
 	}																			\
 																				\
-	using libra::detail::vectorize_functor::ResultName::InterfaceName_space::LIBRA_VECTORIZE_FUNCTOR(ResultName, InterfaceName);		\
+	using libra_detail::vectorize_functor::ResultName::InterfaceName_space::LIBRA_VECTORIZE_FUNCTOR(ResultName, InterfaceName);		\
 
 
 

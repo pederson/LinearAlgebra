@@ -719,12 +719,13 @@ int main(int argc, char * argv[]){
 		std::cout << *it << std::endl;
 	}
 
-
+	const auto expstack_cbegin_it = myexpmultimap.multi().cbegin();
+	std::cout << "cbegin: " << *expstack_cbegin_it << std::endl;
 
 	auto expstack = libra::make_vector_stack(myexpmultivec.multi(), myexpmultimap.multi());
 
 	auto expstack_begin = expstack.begin();
-	for (auto it = expstack.begin(); it!=expstack.end(); it++){
+	for (auto it = expstack.cbegin(); it!=expstack.cend(); it++){
 		std::cout << "STACK_VALUE: " << *it << std::endl;
 	}
 

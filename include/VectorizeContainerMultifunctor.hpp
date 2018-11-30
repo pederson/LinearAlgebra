@@ -98,37 +98,29 @@ private:
 
 	private:
 		typedef std::function<reference(iterator_type &)> functor_type;
+		typedef std::function<reference(const iterator_type &)> const_functor_type;
 		std::vector<functor_type> mFuncts;// = {StaticMethodFunctor()...}; //  instantiate into seperate generic functors
+		std::vector<const_functor_type> mFunctsConst = {StaticMethodFunctor()...}; //  instantiate into seperate generic functors
+
 	public:
-		vcm_iterator() {
-			// std::cout << "constructed empty vcm_iterator" << std::endl;
-		};
+		vcm_iterator() {};
 
 		vcm_iterator(vcm_iterator && v)
 		: mVSM(v.mVSM), mIt(v.mIt), mCtr_functs(v.mCtr_functs), mCtr_objs(v.mCtr_objs), mFuncts(v.mFuncts) {
-			// std::cout << "move-constructed vcm_iterator" << std::endl;
-			// static_assert(std::is_same<bool, iterator_type>::value, "check 4 5");
-			// *this = std::move(v);
 		};
 
 		vcm_iterator(const vcm_iterator & v)
 		: mVSM(v.mVSM), mIt(v.mIt), mCtr_functs(v.mCtr_functs), mCtr_objs(v.mCtr_objs), mFuncts(v.mFuncts) {
-			// std::cout << "copy-constructed vcm_iterator" << std::endl;
-			// static_assert(std::is_same<bool, iterator_type>::value, "check 4 5");
-
 		};
 
 		vcm_iterator(container_type * vcm, iterator_type it, unsigned int fctr)
 		: mVSM(vcm), mIt(it), mCtr_functs(fctr), mCtr_objs(0), mFuncts({StaticMethodFunctor()...}) {
-			// std::cout << "constructed vcm_iterator" << std::endl;
 		};
 
 		// copy assignment
 		vcm_iterator & operator=(const vcm_iterator & cit){
 			if (this != &cit){
-				// std::cout << "copy assign vcm_iterator" << std::endl;
 				vcm_iterator i(cit);
-				// std::swap(i,*this);
 				std::swap(mVSM, i.mVSM); 
 				std::swap(mIt, i.mIt); 
 				std::swap(mCtr_functs, i.mCtr_functs); 
@@ -141,20 +133,21 @@ private:
 		// move assignment
 		vcm_iterator & operator=(vcm_iterator && cit){
 			if (this != &cit){
-				// std::cout << "move assign vcm_iterator" << std::endl;
 				vcm_iterator i(std::move(cit));
-				// std::swap(i,*this);
 				std::swap(mVSM, i.mVSM); 
 				std::swap(mIt, i.mIt); 
 				std::swap(mCtr_functs, i.mCtr_functs); 
 				std::swap(mCtr_objs, i.mCtr_objs); 
-				std::swap(mFuncts, i.mFuncts);			}
-			// std::cout << "exiting move-assign" << std::endl;
+				std::swap(mFuncts, i.mFuncts);			
+			}
 			return *this;
 		}
 
 		pointer operator->() {return &mFuncts[mCtr_functs](mIt);};
 		reference operator*()  {return mFuncts[mCtr_functs](mIt);};
+
+		const pointer operator->() const {return &mFunctsConst[mCtr_functs](mIt);};
+		const reference operator*() const {return mFunctsConst[mCtr_functs](mIt);};
 
 		self_type operator++(){
 			mCtr_functs++;
@@ -225,8 +218,7 @@ using VCM = libra::VectorizeContainerMultifunctor<ContainerT, Functor...>;
 
 #define LIBRA_VECTORIZE_MULTIFUNCTOR_DEF(ResultName, ...)								\
 																						\
-	namespace libra{																	\
-		namespace detail{																\
+		namespace libra_detail{																\
 			namespace vectorize_multifunctor{											\
 				namespace ResultName {													\
 					LIBRA_FOR_EACH_SEP(LIBRA_FUNCTOR_PREPARE, __VA_ARGS__);				\
@@ -250,16 +242,14 @@ using VCM = libra::VectorizeContainerMultifunctor<ContainerT, Functor...>;
 				}																		\
 			} 																			\
 		}																				\
-	}																					\
 																						\
-	using libra::detail::vectorize_multifunctor::ResultName::LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName);	\
+	using libra_detail::vectorize_multifunctor::ResultName::LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName);	\
 
 
 
 
 #define LIBRA_VECTORIZE_MULTIFUNCTOR_INTERFACE_DEF(ResultName, InterfaceName, ...)			\
-	namespace libra{																		\
-		namespace detail{																	\
+		namespace libra_detail{																	\
 			namespace vectorize_multifunctor{												\
 				namespace ResultName{														\
 					namespace InterfaceName_space {											\
@@ -284,9 +274,8 @@ using VCM = libra::VectorizeContainerMultifunctor<ContainerT, Functor...>;
 				}																			\
 			} 																				\
 		}																					\
-	}																						\
 																							\
-	using libra::detail::vectorize_multifunctor::ResultName::InterfaceName_space::LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName,InterfaceName);	
+	using libra_detail::vectorize_multifunctor::ResultName::InterfaceName_space::LIBRA_VECTORIZE_MULTIFUNCTOR(ResultName,InterfaceName);	
 
 
 

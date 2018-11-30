@@ -42,8 +42,11 @@ namespace vector{
 
 			// copy assignment
 			const_iterator & operator=(const const_iterator & cit){
-				const_iterator i(cit);
-				std::swap(i,*this);
+				if (cit != *this){
+					const_iterator i(cit);
+					std::swap(i.v,v);
+					std::swap(i.f,f);
+				}
 				return *this;
 			}
 

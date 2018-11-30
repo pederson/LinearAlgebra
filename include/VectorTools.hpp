@@ -62,7 +62,7 @@ namespace vector{
 	// the read from a stream into a general vector
 	// returns the length of the read
 	template <bool count_only=false, typename VectorT>
-	std::size_t read_to(std::istream & is, VectorT & v){
+	std::size_t read_to(std::istream & is, VectorT && v){
 		static_assert(type_traits::is_vector<VectorT>::value, "A Vector type requires a begin() and a end() method!");
 
 		// underlying data type of VectorT

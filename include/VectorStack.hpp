@@ -244,7 +244,6 @@ private:
 
 
 		container_type * mCont;
-
 		unsigned int mIdx;		// tracker index... starts at 0, goes to size()-1
 		unsigned int mContIdx; // index of which container we are at
 		iterator_tuple_type mIters; // tuple of iterators, plus one extra iterator at the end
@@ -254,14 +253,7 @@ private:
 			template <typename T1, typename T2, bool C = is_const>
 			typename std::enable_if<C==false, void>::type 
 			operator()(T1 & t1, T2 & t2) {
-				// std::cout << "0000: am inside tupleganger" << std::endl;
-				// t1;
-				// t2->begin();
-				// std::cout << "t2 begin value: " << *t2->begin() << std::endl;
-				// std::cout << "am inside tupleganger" << std::endl;
 				t1 = t2->begin();
-				// std::cout << "finished copying inside tupleganger" << std::endl;
-				// static_assert(std::is_same<bool, T1>::value, "check 1 2" );
 			};
 
 			template <typename T1, typename T2, bool C = is_const>
@@ -305,42 +297,18 @@ private:
 		vs_iterator(container_type * cont, unsigned int idx)
 		: mCont(cont), mIdx(idx) {
 
-				// std::cout << "instantiating iterator***" << std::endl;
 				first_iterator_tuple_types its;// = std::make_tuple(mCont);
-				// std::cout << "its size: " << std::tuple_size<first_iterator_tuple_types>::value << std::endl;
-				// std::cout << "mVectors size: " << std::tuple_size<decltype(mCont->mVectors)>::value << std::endl;
 				detail::visit_at(its, mCont->mVectors, 1, tupleganger());
 				for (unsigned int i=0; i<mNumVecs; i++){
-					// std::cout << i << " copying begin iterators" << std::endl;
 					detail::visit_at(its, mCont->mVectors, i, tupleganger()); //it1 = std::begin(*it2);
 				}
-				// std::cout << "* copied begin iterators" << std::endl;
-				
+
 				// end it
 				last_iterator_tuple_type endit;
 				tupleganger_end::do_it(std::get<0>(endit), std::get<mNumVecs-1>(mCont->mVectors));
 
-				// std::cout << "** copied end iterator" << std::endl;
 				mIters = std::tuple_cat(its, endit);
-				// auto blah = std::make_tuple(std::get<0>(mCont->mVectors)->begin());
-				// std::cout << "one down" << std::endl;
-				// auto blah2 = std::make_tuple(std::get<0>(mCont->mVectors)->begin(),
-				// 							 std::get<1>(mCont->mVectors)->begin());
-				// auto blahit = std::get<1>(mCont->mVectors)->end();
-				// std::cout << "two down" << std::endl;
-				// auto blah3 = std::make_tuple(std::get<0>(mCont->mVectors)->begin(), 
-				// 	std::get<1>(mCont->mVectors)->begin(), 
-				// 	std::get<1>(mCont->mVectors)->end());
-				// std::cout << "three down" << std::endl;
 
-				// std::cout << "about to swap\n\n\n\n\n\n\n\n\n" << std::endl;
-				// mIters.swap(blah3);
-				// static_assert(std::is_same<decltype(blah3), iterator_tuple_type>::value, "check 3 4");
-
-				// std::cout << "*** concatenated iterators" << std::endl;
-			// }
-
-			// std::cout << "Idx: " << idx ;
 			if (idx == 0){
 				mContIdx = 0;
 				return;
@@ -353,16 +321,38 @@ private:
 				}
 			}
 			if (mContIdx == mNumVecs-1) mContIdx = mNumVecs;
-
-			// std::cout << "**** initialized contIdx" << std::endl;
-
-			// std::cout << " complete " << std::endl;
 		};
+
+		// copy constructor
+		vs_iterator(const vs_iterator & v)
+		: mCont(v.mCont), mIdx(v.mIdx), mContIdx(v.mContIdx), mIters(v.mIters) {};
+
+
+		// move constructor
+		vs_iterator(vs_iterator && v)
+		: mCont(v.mCont), mIdx(v.mIdx), mContIdx(v.mContIdx), mIters(v.mIters) {};
 
 		// copy assignment
 		vs_iterator & operator=(const vs_iterator & cit){
-			vs_iterator i(cit);
-			std::swap(i,*this);
+			if (cit != *this){
+				vs_iterator i(cit);
+				std::swap(i.mCont, mCont);
+				std::swap(i.mIdx, mIdx);
+				std::swap(i.mContIdx, mContIdx);
+				std::swap(i.mIters, mIters);
+			}
+			return *this;
+		}
+
+		// move assignment
+		vs_iterator & operator=(vs_iterator && cit){
+			if (cit != *this){
+				vs_iterator i(std::move(cit));
+				std::swap(i.mCont, mCont);
+				std::swap(i.mIdx, mIdx);
+				std::swap(i.mContIdx, mContIdx);
+				std::swap(i.mIters, mIters);
+			}
 			return *this;
 		}
 
@@ -370,6 +360,15 @@ private:
 			return detail::visit_at<pointer>(mIters, mContIdx, [&](auto & it){return it.operator->();});
 		};
 		reference operator*() {
+			// reference 
+			return *detail::visit_at<pointer>(mIters, mContIdx, [&](auto & it){return it.operator->();});
+		};
+
+
+		pointer operator->() const {
+			return detail::visit_at<pointer>(mIters, mContIdx, [&](auto & it){return it.operator->();});
+		};
+		reference operator*() const {
 			// reference 
 			return *detail::visit_at<pointer>(mIters, mContIdx, [&](auto & it){return it.operator->();});
 		};
