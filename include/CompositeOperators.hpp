@@ -96,7 +96,7 @@ public:
 
 	template <typename VectorType, typename VectorTypeOut>
 	void vmult(const VectorType & v, VectorTypeOut && vout) const {
-		mTop->vmult(v, vout);
+		mTOp->vmult(v, vout);
 		vout = vout - mlambda*v;
 	}
 };
@@ -168,7 +168,7 @@ public:
 
 	template <typename VectorType, typename VectorTypeOut>
 	void vmult(const VectorType & v, VectorTypeOut && vout) const {
-		mTop->vmult(v, vout);
+		mTOp->vmult(v, vout);
 		vout = vout - mlambda*vector::inner_product(*meigvec, v)*v;
 	}
 };
