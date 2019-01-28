@@ -247,11 +247,80 @@ unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn
 
 
 
+
+
+
+
+
+
+
+// unitary matrix Ux = b
+template <typename M, typename V>
+auto unitary_solve(M & U, const V & b)
+{
+	// if (U.rows() != b.length())
+	// {
+	// 	throw "Matrix-Vector dimensions do not match!";
+	// }
+	typedef typename std::remove_const<typename std::remove_reference<typename libra::type_traits::contained_type<V>::type>::type>::type 	ScalarType;
+
+
+	Vector<ScalarType, dynamic_size> out(U.cols());
+	for (auto i=0; i<U.cols(); i++)
+	{
+		out(i) = vector::inner_product(U.col(i), b);
+	}
+
+	return out;
+}
+
+
+
+
+
+
+// upper triangular matrix Ux = b
+template <typename M, typename V>
+auto upper_triangular_solve(M & U, const V & b)
+{
+	typedef typename std::remove_const<typename std::remove_reference<typename libra::type_traits::contained_type<V>::type>::type>::type 	ScalarType;
+	if (U.rows() != U.cols())
+	{
+		std::cout << "Matrix must be square to upper triangular solve!" << std::endl;
+		throw -1;
+	}
+	// if (b.length() != U.rows())
+	// {
+	// 	std::cout << "Matrix-Vector dimensions do not match in upper triangular solve!" << std::endl;
+	// 	throw -1;
+	// }
+
+	libra::Vector<ScalarType, libra::dynamic_size> out(b.size());
+	ScalarType sum;
+	// last element
+	out(U.rows()-1) = b(U.rows()-1)/U(U.rows()-1, U.rows()-1);
+	// backward substitution
+	for (int i=U.rows()-2; i>=0; i--)
+	{
+		sum = 0;
+		auto r = U.row(i);
+		for (int j=i+1; j<U.rows(); j++) sum += r(j)*out(j);
+		// sum = vector::inner_product();
+		
+		// sum = Vector_Proxy::dot(U.subrow(i, i+1, U.rows()-1), out(i+1, U.rows()-1));
+		out(i) = (b(i) - sum)/U(i,i);
+	}
+	return out;
+}
+
+
+
 } // end namespace libra
 
 
 
 
+////////////// Almost ready to move to libra namespace
 
 
 
@@ -267,7 +336,7 @@ unsigned int bicgstab_l(unsigned int l, const MatrixType & A, const VectorTypeIn
 
 
 
-
+////////////////////////////////////////////////////////////////
 
 
 
@@ -444,6 +513,7 @@ void invert2x2(const Matrix & A, Matrix & A_inv){
 
 
 // collection of solvers for linear algebra problems
+
 
 // upper triangular matrix Ux = b
 Vector upper_triangular_solve(const Matrix & U, const Vector & b)

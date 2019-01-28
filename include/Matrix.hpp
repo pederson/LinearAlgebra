@@ -28,6 +28,11 @@ namespace libra{
 		template <typename MatrixType>
 		struct MatrixRow : public vector::VectorFunctors<MatrixRow<MatrixType>>,
 						   public vector::VectorAssignment<MatrixRow<MatrixType>>{
+		private:
+			typedef std::remove_reference_t<
+						 decltype(std::declval<MatrixType>()(0, 0))
+						 > 		
+						 matrix_value_type;
 		public:
 
 			typedef MatrixRow<MatrixType> 					SelfType;
@@ -159,6 +164,7 @@ namespace libra{
 			const_iterator cend() const	 {return const_iterator(mMat, mRow, size());};
 
 
+			matrix_value_type & operator()(int n) {return mMat->operator()(mRow, n);};
 		private:
 			MatrixType * 	mMat;
 			size_type 		mRow;
@@ -173,6 +179,11 @@ namespace libra{
 		template <typename MatrixType>
 		struct MatrixCol : public vector::VectorFunctors<MatrixRow<MatrixType>>,
 						   public vector::VectorAssignment<MatrixCol<MatrixType>>{
+		private:
+			typedef std::remove_reference_t<
+						 decltype(std::declval<MatrixType>()(0, 0))
+						 > 		
+						 matrix_value_type;
 		public:
 
 			typedef MatrixCol<MatrixType> 					SelfType;
@@ -302,7 +313,7 @@ namespace libra{
 			const_iterator cbegin() const {return const_iterator(mMat, 0, mCol);};
 			const_iterator cend() const	 {return const_iterator(mMat, size(), mCol);};
 
-
+			matrix_value_type & operator()(int n) {return mMat->operator()(n, mCol);};
 		private:
 			MatrixType * 	mMat;
 			size_type 		mCol;
@@ -431,11 +442,33 @@ namespace libra{
 			};
 
 
+			// (matrix-transpose)-vector multiplication
+			template <typename VectorT, typename VectorT2>
+			void Tmult(const VectorT & v, VectorT2 && result) {
+				static_assert(type_traits::is_traversable_vector<VectorT>::value, "Matrix-Vector input must be a vector type!");
+				static_assert(type_traits::is_assignable_vector<VectorT2>::value, "Matrix-Vector input must be a vector type!");
+
+				// std::cout << "at begin of matmult" << std::endl;
+				scalar_type rowsum;
+				auto rit = this->cbegin();
+				auto resit = result.begin();//std::begin(result);
+
+				// std::cout << "at middle of matmult" << std::endl;
+				for (auto i=0; i<this->cols(); i++){
+					rowsum = vector::inner_product(v, this->col(i));
+					(*resit) = rowsum;
+					resit++;
+				}
+			};
+
+
 
 
 			MatrixRow<SelfType> row(size_type r) {return MatrixRow<SelfType>(*this, r);};
+			// MatrixRow<SelfType> row(size_type r) const {return MatrixRow<SelfType>(*this, r);};
 			MatrixCol<SelfType> col(size_type c) {return MatrixCol<SelfType>(*this, c);};
-		
+			// MatrixCol<SelfType> col(size_type c) const {return MatrixCol<SelfType>(*this, c);};
+	
 		private:
 		};
 
