@@ -96,9 +96,9 @@ int main(int argc, char * argv[]){
 	nested_for_each_tuple_type<Print<two_mtx>::type, Detail::RangeTuple<0,two_mtx::rows-1>, Detail::RangeTuple<0,two_mtx::cols-1>>(d);
 	std::cout << std::endl;
 
-	typedef ExpressionMatrixTranspose<two_mtx> 	two_transpose;
+	typedef ExpressionMatrixTranspose<two_mtx> 	two_trans;
 	std::cout << "Matrix Transpose: " << std::endl;
-	nested_for_each_tuple_type<Print<two_transpose>::type, Detail::RangeTuple<0,two_mtx::rows-1>, Detail::RangeTuple<0,two_mtx::cols-1>>(d);
+	nested_for_each_tuple_type<Print<two_trans>::type, Detail::RangeTuple<0,two_mtx::rows-1>, Detail::RangeTuple<0,two_mtx::cols-1>>(d);
 	std::cout << std::endl;
 
 	typedef ExpressionMatrixRow<0, two_mtx> 	two_row;
@@ -129,6 +129,32 @@ int main(int argc, char * argv[]){
 	std::cout << "Matrix diagonal: " << std::endl;
 	nested_for_each_tuple_type<Print<two_diag_m1>::type, Detail::RangeTuple<0,two_diag_m1::size-1>>(d);
 	std::cout << std::endl;
+
+	typedef ExpressionMatrixDiagonal<-2, two_mtx> 	two_diag_m2;
+	std::cout << "Matrix diagonal: " << std::endl;
+	nested_for_each_tuple_type<Print<two_diag_m2>::type, Detail::RangeTuple<0,two_diag_m2::size-1>>(d);
+	std::cout << std::endl;
+
+	typedef ExpressionMatrixDiagonal<2, two_mtx> 	two_diag_p2;
+	std::cout << "Matrix diagonal: " << std::endl;
+	nested_for_each_tuple_type<Print<two_diag_p2>::type, Detail::RangeTuple<0,two_diag_p2::size-1>>(d);
+	std::cout << std::endl;
+
+	typedef ExpressionMatrixSymmetricPart<two_mtx> 	two_symm;
+	std::cout << "Matrix symmetric part: " << std::endl;
+	nested_for_each_tuple_type<Print<two_symm>::type, Detail::RangeTuple<0,two_symm::rows-1>, Detail::RangeTuple<0,two_symm::cols-1>>(d);
+	std::cout << std::endl;
+
+	typedef ExpressionMatrixAntisymmetricPart<two_mtx> 	two_asymm;
+	std::cout << "Matrix antisymmetric part: " << std::endl;
+	nested_for_each_tuple_type<Print<two_asymm>::type, Detail::RangeTuple<0,two_asymm::rows-1>, Detail::RangeTuple<0,two_asymm::cols-1>>(d);
+	std::cout << std::endl;
+
+	typedef ExpressionMatrixSum<two_symm, two_asymm> 	two_sum;
+	std::cout << "Matrix sum: " << std::endl;
+	nested_for_each_tuple_type<Print<two_sum>::type, Detail::RangeTuple<0,two_sum::rows-1>, Detail::RangeTuple<0,two_sum::cols-1>>(d);
+	std::cout << std::endl;
+
 
 	std::cout << "Matrix: " << std::endl;
 	nested_for_each_tuple_type<Print<two_mtx>::type, Detail::RangeTuple<0,two_mtx::rows-1>, Detail::RangeTuple<0,two_mtx::cols-1>>(d);
