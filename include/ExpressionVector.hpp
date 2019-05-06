@@ -919,22 +919,32 @@ private:
 	static_assert(T1::rows == T2::rows,
 				  "ExpressionMatrixConcatHorz ERROR: input expression matrices must have same number of rows!");
 
+	template <std::size_t I, std::size_t J, bool dummy>
+	struct type_impl{};
+
+	template <std::size_t I, std::size_t J>
+	struct type_impl<I, J, true>{
+		typedef typename expression_type<T1, I, J>::type type;
+	};
+
+	template <std::size_t I, std::size_t J>
+	struct type_impl<I, J, false>{
+		typedef typename expression_type<T1, I, J-T1::cols>::type type;
+	};
+
+
 public:
 	static constexpr std::size_t 	rows 		= T1::rows;
 	static constexpr std::size_t 	cols 		= T1::cols+T2::cols;
 
 	template <std::size_t I, std::size_t J>
-	using type = std::conditional_t<I < T1::rows, 
-				 typename expression_type<T1, I, J>::type,
-				 typename expression_type<T2, I-T1::rows, J>::type>;
+	using type = typename type_impl<I, J, J<T1::cols>::type;
+
 
 	template <std::size_t I, std::size_t J, typename ... Args>
 	static decltype(auto) get(Args && ... args){
 		static_assert(I < rows && J < cols, "ExpressionMatrixConcatHorz ERROR: Index out of range");
-		typedef std::conditional_t<I < T1::rows, 
-				 typename expression_type<T1, I, J>::type,
-				 typename expression_type<T2, I-T1::rows, J>::type> 	El;
-
+		typedef ExpressionMatrixConcatHorz::type<I,J> 	El;
 		return El::get(std::forward<Args>(args)...);
 	}
 };
@@ -953,30 +963,29 @@ private:
 	static_assert(T1::cols == T2::cols,
 				  "ExpressionMatrixConcatVert ERROR: input expression matrices must have same number of cols!");
 
-	// define the atomic SumType so that individual elements of this class are ::get<I> -able
-	template <typename I, typename J>
-	struct SumType{
-		template <typename ... Args>
-		static decltype(auto) get(Args && ... args){
-			return I::get(std::forward<Args>(args)...) + J::get(std::forward<Args>(args)...);
-		};
+	template <std::size_t I, std::size_t J, bool dummy>
+	struct type_impl{};
+
+	template <std::size_t I, std::size_t J>
+	struct type_impl<I, J, true>{
+		typedef typename expression_type<T1, I, J>::type type;
+	};
+
+	template <std::size_t I, std::size_t J>
+	struct type_impl<I, J, false>{
+		typedef typename expression_type<T1, I-T1::rows, J>::type type;
 	};
 public:
 	static constexpr std::size_t 	rows 		= T1::rows+T2::rows;
 	static constexpr std::size_t 	cols 		= T1::cols;
 
 	template <std::size_t I, std::size_t J>
-	using type = std::conditional_t<J < T1::cols, 
-				 typename expression_type<T1, I, J>::type,
-				 typename expression_type<T2, I, J-T1::cols>::type>;
+	using type = typename type_impl<I, J, I<T1::rows>::type;
 
 	template <std::size_t I, std::size_t J, typename ... Args>
 	static decltype(auto) get(Args && ... args){
 		static_assert(I < rows && J < cols, "ExpressionMatrixConcatVert ERROR: Index out of range");
-		typedef std::conditional_t<J < T1::cols, 
-				 typename expression_type<T1, I, J>::type,
-				 typename expression_type<T2, I, J-T1::cols>::type> 	El;
-
+		typedef ExpressionMatrixConcatVert::type<I,J> 	El;
 		return El::get(std::forward<Args>(args)...);
 	}
 };
