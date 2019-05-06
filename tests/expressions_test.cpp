@@ -155,6 +155,11 @@ int main(int argc, char * argv[]){
 	nested_for_each_tuple_type<Print<two_sum>::type, Detail::RangeTuple<0,two_sum::rows-1>, Detail::RangeTuple<0,two_sum::cols-1>>(d);
 	std::cout << std::endl;
 
+	typedef ExpressionMatrixMatrixProduct<two_mtx, two_sum> 	two_prod;
+	std::cout << "Matrix-Matrix Product: " << std::endl;
+	nested_for_each_tuple_type<Print<two_prod>::type, Detail::RangeTuple<0,two_prod::rows-1>, Detail::RangeTuple<0,two_prod::cols-1>>(d);
+	std::cout << std::endl;
+
 
 	std::cout << "Matrix: " << std::endl;
 	nested_for_each_tuple_type<Print<two_mtx>::type, Detail::RangeTuple<0,two_mtx::rows-1>, Detail::RangeTuple<0,two_mtx::cols-1>>(d);

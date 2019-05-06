@@ -907,13 +907,114 @@ public:
 };
 
 
+//************************************************************
+//************************************************************
+
+
+template <typename T1, typename T2>
+struct ExpressionMatrixConcatHorz{
+private:
+	static_assert(is_expression_matrix<T1>::value && is_expression_matrix<T2>::value,
+				  "ExpressionMatrixConcatHorz ERROR: input types must be expression matrices!");
+	static_assert(T1::rows == T2::rows,
+				  "ExpressionMatrixConcatHorz ERROR: input expression matrices must have same number of rows!");
+
+public:
+	static constexpr std::size_t 	rows 		= T1::rows;
+	static constexpr std::size_t 	cols 		= T1::cols+T2::cols;
+
+	template <std::size_t I, std::size_t J>
+	using type = std::conditional_t<I < T1::rows, 
+				 typename expression_type<T1, I, J>::type,
+				 typename expression_type<T2, I-T1::rows, J>::type>;
+
+	template <std::size_t I, std::size_t J, typename ... Args>
+	static decltype(auto) get(Args && ... args){
+		static_assert(I < rows && J < cols, "ExpressionMatrixConcatHorz ERROR: Index out of range");
+		typedef std::conditional_t<I < T1::rows, 
+				 typename expression_type<T1, I, J>::type,
+				 typename expression_type<T2, I-T1::rows, J>::type> 	El;
+
+		return El::get(std::forward<Args>(args)...);
+	}
+};
+
+
 
 //************************************************************
 //************************************************************
 
-// Concatenate matrices and vectors horizontally
 
-// Concatenate matrices and vectors vertically (stacking)
+template <typename T1, typename T2>
+struct ExpressionMatrixConcatVert{
+private:
+	static_assert(is_expression_matrix<T1>::value && is_expression_matrix<T2>::value,
+				  "ExpressionMatrixConcatVert ERROR: input types must be expression matrices!");
+	static_assert(T1::cols == T2::cols,
+				  "ExpressionMatrixConcatVert ERROR: input expression matrices must have same number of cols!");
+
+	// define the atomic SumType so that individual elements of this class are ::get<I> -able
+	template <typename I, typename J>
+	struct SumType{
+		template <typename ... Args>
+		static decltype(auto) get(Args && ... args){
+			return I::get(std::forward<Args>(args)...) + J::get(std::forward<Args>(args)...);
+		};
+	};
+public:
+	static constexpr std::size_t 	rows 		= T1::rows+T2::rows;
+	static constexpr std::size_t 	cols 		= T1::cols;
+
+	template <std::size_t I, std::size_t J>
+	using type = std::conditional_t<J < T1::cols, 
+				 typename expression_type<T1, I, J>::type,
+				 typename expression_type<T2, I, J-T1::cols>::type>;
+
+	template <std::size_t I, std::size_t J, typename ... Args>
+	static decltype(auto) get(Args && ... args){
+		static_assert(I < rows && J < cols, "ExpressionMatrixConcatVert ERROR: Index out of range");
+		typedef std::conditional_t<J < T1::cols, 
+				 typename expression_type<T1, I, J>::type,
+				 typename expression_type<T2, I, J-T1::cols>::type> 	El;
+
+		return El::get(std::forward<Args>(args)...);
+	}
+};
+
+
+//************************************************************
+//************************************************************
+
+
+template <typename T1, typename T2>
+struct ExpressionMatrixMatrixProduct{
+private:
+	static_assert(is_expression_matrix<T1>::value && is_expression_matrix<T2>::value,
+				  "ExpressionMatrixMatrixProduct ERROR: input types must be expression matrices!");
+	static_assert(T1::cols == T2::rows,
+				  "ExpressionMatrixMatrixProduct ERROR: inner matrix dimensions must match!");
+
+public:
+	static constexpr std::size_t 	rows 		= T1::rows;
+	static constexpr std::size_t 	cols 		= T2::cols;
+
+	template <std::size_t I, std::size_t J>
+	using type = ExpressionInnerProduct<ExpressionMatrixRow<I, T1>, 
+										ExpressionMatrixCol<J, T2>>;
+
+	template <std::size_t I, std::size_t J, typename ... Args>
+	static decltype(auto) get(Args && ... args){
+		static_assert(I < rows && J < cols, "ExpressionMatrixMatrixProduct ERROR: Index out of range");
+		typedef ExpressionInnerProduct<ExpressionMatrixRow<I, T1>, 
+										ExpressionMatrixCol<J, T2>> El;
+
+		return El::get(std::forward<Args>(args)...);
+	}
+};
+
+
+//************************************************************
+//************************************************************
 
 // Block matrices into a larger sparse matrix
 
@@ -925,8 +1026,6 @@ public:
 
 // matrix col sum -- outputs as vector
 
-// matrix-matrix multiplication
-
 // matrix - matrix double contraction
 
 // matrix and vector tensor product
@@ -934,6 +1033,8 @@ public:
 // get a submatrix or subvector
 
 // identity matrix
+
+// zero matrix 
 
 // unit vectors
 
