@@ -170,6 +170,16 @@ int main(int argc, char * argv[]){
 	nested_for_each_tuple_type<Print<two_cathorz>::type, Detail::RangeTuple<0,two_cathorz::rows-1>, Detail::RangeTuple<0,two_cathorz::cols-1>>(d);
 	std::cout << std::endl;
 
+	typedef ExpressionMatrixIdentity<3> 	two_id;
+	std::cout << "Matrix Identity: " << std::endl;
+	nested_for_each_tuple_type<Print<two_id>::type, Detail::RangeTuple<0,two_id::rows-1>, Detail::RangeTuple<0,two_id::cols-1>>(d);
+	std::cout << std::endl;
+
+	typedef ExpressionMatrixZeros<2, 3> 	two_zer;
+	std::cout << "Matrix Zeros: " << std::endl;
+	nested_for_each_tuple_type<Print<two_zer>::type, Detail::RangeTuple<0,two_zer::rows-1>, Detail::RangeTuple<0,two_zer::cols-1>>(d);
+	std::cout << std::endl;
+
 	std::cout << "Matrix: " << std::endl;
 	nested_for_each_tuple_type<Print<two_mtx>::type, Detail::RangeTuple<0,two_mtx::rows-1>, Detail::RangeTuple<0,two_mtx::cols-1>>(d);
 	std::cout << std::endl;

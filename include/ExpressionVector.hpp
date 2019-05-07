@@ -619,6 +619,73 @@ public:
 };
 
 
+
+//************************************************************
+//************************************************************
+
+
+
+// N x N identity matrix 
+template <std::size_t N>
+struct ExpressionMatrixIdentity{
+private:
+	struct zero_value{
+		template <typename ... Args>
+		static constexpr double get(Args && ... args){return 0.0;};
+	};
+
+	struct one_value{
+		template <typename ... Args>
+		static constexpr double get(Args && ... args){return 1.0;};
+	};
+public:
+	
+	static constexpr std::size_t 	rows 		= N;
+	static constexpr std::size_t 	cols 		= N;
+
+	template <std::size_t I, std::size_t J>
+	using type = typename std::conditional<I==J, one_value, zero_value>::type;
+
+	template <std::size_t I, std::size_t J, typename ... Args>
+	static decltype(auto) get(Args && ... args){
+		static_assert(I < rows || J < cols, "ExpressionMatrixIdentity ERROR: Index out of range");
+		typedef typename std::conditional<I==J, one_value, zero_value>::type 	El;
+		return El::get(std::forward<Args>(args)...);
+	}
+};
+
+
+
+//************************************************************
+//************************************************************
+
+
+
+// N x N identity matrix 
+template <std::size_t R, std::size_t C>
+struct ExpressionMatrixZeros{
+private:
+	struct zero_value{
+		template <typename ... Args>
+		static constexpr double get(Args && ... args){return 0.0;};
+	};
+public:
+	
+	static constexpr std::size_t 	rows 		= R;
+	static constexpr std::size_t 	cols 		= C;
+
+	template <std::size_t I, std::size_t J>
+	using type = zero_value;
+
+	template <std::size_t I, std::size_t J, typename ... Args>
+	static decltype(auto) get(Args && ... args){
+		static_assert(I < rows || J < cols, "ExpressionMatrixZeros ERROR: Index out of range");
+		typedef zero_value 	El;
+		return El::get(std::forward<Args>(args)...);
+	}
+};
+
+
 //************************************************************
 //************************************************************
 
@@ -1040,10 +1107,6 @@ public:
 // matrix and vector tensor product
 
 // get a submatrix or subvector
-
-// identity matrix
-
-// zero matrix 
 
 // unit vectors
 
